@@ -35,10 +35,8 @@ footer{border-top:1px solid var(--line);padding-top:7px;color:#758899;font-size:
 #qa-controls.visible{display:flex}#qa-controls input,#qa-controls button{font:14px Heebo,Arial;padding:5px 9px;background:#111f2e;color:#fff;border:1px solid #735d2c;border-radius:5px;cursor:pointer}
 #qa-controls label{font-size:.8rem}#simFlag{font-weight:bold;color:#4adb8a}#status.warning{color:#f3b66a}
 #status.error{color:#ff9b9b}
-#status.update-stale{color:#ffbd68;font-weight:700;animation:update-status-pulse 1.7s ease-in-out infinite}
+#status.update-stale{color:#ffbd68;font-weight:700}
 html.light-theme #status.update-stale{color:#a34713}
-@keyframes update-status-pulse{0%,100%{opacity:1}50%{opacity:.38}}
-@media(prefers-reduced-motion:reduce){#status.update-stale{animation:none}}
 .tile.preview{border-color:#364353}
 .previewTag{font-size:clamp(.68rem,.95vw,1rem);color:#e8d5a0;font-weight:700}
 
@@ -233,12 +231,11 @@ function render(){
  status.classList.toggle('warning',computed.unknown);
  status.classList.toggle('error',cloudState==='error'&&!data);
  const description=preview?'תצוגה מקדימה של שישי ושבת הקרובים':'';
- const reused=usingPrevious?' · ⚠ מוצגים זמני המעלית מהעדכון האחרון (ללא עדכון ייעודי לשבת הנוכחית)':'';
  const update=window.ShabbatUpdateStatus?ShabbatUpdateStatus.status(saved,'elevator',instant):null;
  status.classList.toggle('update-stale',!!update?.warning&&cloudState==='ready');
  const conn=cloudState==='error'?' · לא ניתן לרענן מהענן — נתונים שמורים מוצגים אם קיימים'
   :cloudState==='pending'?' · בודק נתונים בענן':cloudState==='ready'?' · '+(update?update.text:'נתוני הענן נבדקו'):'';
- status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+reused+(!data?' · שבוע מבוקש: '+selectedWeek+(storedWeeks.length?' · שבועות שמורים: '+storedWeeks.slice(-3).join(', '):' · עדיין אין שבועות שמורים'):'')+conn+
+ status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+(!data?' · שבוע מבוקש: '+selectedWeek+(storedWeeks.length?' · שבועות שמורים: '+storedWeeks.slice(-3).join(', '):' · עדיין אין שבועות שמורים'):'')+conn+
    (computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'')+
    (cloudError&&cloudState==='error'?' · '+cloudError:'');
 }
