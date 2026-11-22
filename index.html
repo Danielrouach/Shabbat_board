@@ -935,6 +935,30 @@ html.light-theme #loading-overlay{background:#f7f9fc}
 #right .time-row {padding-block:calc(5px * var(--schedule-scale))}
 
 
+/* Tablet / iPad Safari: retain the controls within the visible viewport.
+   100dvh tracks the area above Safari's dynamic browser chrome. */
+@supports (height: 100dvh) {
+  #app { height: calc(100dvh - 26px); }
+}
+#app { grid-template-rows: auto auto minmax(0, 1fr) auto; min-height:0; }
+#footer { min-width:0; gap:6px 10px; flex-wrap:wrap; align-content:center;
+  padding-top:6px; max-height:min(30dvh, 150px); overflow-y:auto; scrollbar-width:thin; }
+#footer-left { min-width:0; flex:1 1 600px; display:flex; align-items:center;
+  justify-content:flex-start; flex-wrap:wrap; gap:5px 7px; line-height:1.25; }
+#footer-right { flex:0 0 auto; }
+#footer-left .theme-auto-control {margin-inline:2px}
+#footer-left a[data-elevator-link] {margin:0 !important}
+#footer-left #settings-btn,#footer-left #weekly-open-btn,
+#footer-left #theme-toggle,#footer-left #keep-awake-btn,#footer-left #fullscreen-btn {
+  flex:0 0 auto; min-height:28px;
+}
+@media (max-width: 1024px) {
+  #app {padding:8px 10px 5px;gap:4px}
+  #footer {font-size:.7rem; justify-content:center}
+  #footer-left {flex-basis:100%; justify-content:center}
+  #footer-right {font-size:.65rem}
+}
+
 /* Shared sunrise/sunset automatic appearance option, enabled by default */
 .theme-auto-control{display:inline-flex;align-items:center;gap:5px;color:var(--text-sec);font:500 clamp(.66rem,.77vw,.87rem) Heebo,Arial,sans-serif;white-space:nowrap;cursor:pointer;margin-inline:6px}
 .theme-auto-control input{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
