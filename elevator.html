@@ -74,9 +74,21 @@ html.light-theme #theme-toggle{background:#fffaf0;color:#805813;border-color:#bd
 html.light-theme #qa-controls{background:#fff;border-color:#c1a16b;box-shadow:0 8px 32px rgba(42,68,94,.15)}
 html.light-theme #qa-controls input,html.light-theme #qa-controls button{background:#f5f8fc;color:#1c3147;border-color:#b9c9da}
 html.light-theme #simFlag{color:#136b42}
+
+/* Persistent, clearly visible theme switch in the header; not hidden by the
+   schedule grid or footer on a short display. */
+.date-block #theme-toggle{display:inline-flex;align-items:center;justify-content:center;
+ align-self:flex-end;margin-top:clamp(5px,.75vh,11px);
+ padding:clamp(5px,.65vh,9px) clamp(11px,1vw,18px);
+ border-radius:8px;border:1px solid var(--gold);background:#233247;
+ color:#f0cf7c;font:700 clamp(.83rem,1.13vw,1.1rem) Heebo,Arial,sans-serif;
+ cursor:pointer;white-space:nowrap;min-height:32px;position:relative;z-index:8}
+.date-block #theme-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+html.light-theme .date-block #theme-toggle{background:#fff7e6;color:#76500f;border-color:#a77d32}
+@media(max-height:680px){.date-block #theme-toggle{min-height:26px;padding:3px 9px;margin-top:3px}}
 </style></head>
 <body><div id="frame">
-<header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div></div></header>
+<header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div><button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button></div></header>
 <div id="status"></div><div id="qa-controls" aria-label="סימולציית זמן">
   <label>תאריך <input type="date" id="qa-date"></label>
   <label>שעה <input type="time" id="qa-time" value="12:00"></label>
@@ -85,7 +97,7 @@ html.light-theme #simFlag{color:#136b42}
   <span id="simFlag"></span>
 </div>
 <div id="tiles" hidden></div><div id="empty">טוען את זמני מעלית שבת…</div>
-<footer><button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button><span>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</span></footer>
+<footer>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</footer>
 </div>
 <script>
 'use strict';
