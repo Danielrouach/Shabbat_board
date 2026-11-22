@@ -30,9 +30,22 @@ footer{border-top:1px solid var(--line);padding-top:7px;color:#758899;font-size:
 #qa-controls{display:none;position:fixed;top:9px;left:9px;z-index:999;border:1px solid var(--gold);background:#182536;padding:10px;border-radius:7px;box-shadow:0 0 18px #000;gap:7px;align-items:center;flex-wrap:wrap;max-width:90vw}
 #qa-controls.visible{display:flex}#qa-controls input,#qa-controls button{font:14px Heebo,Arial;padding:5px 9px;background:#111f2e;color:#fff;border:1px solid #735d2c;border-radius:5px;cursor:pointer}
 #qa-controls label{font-size:.8rem}#simFlag{font-weight:bold;color:#4adb8a}#status.warning{color:#f3b66a}
+
+/* Refined Hebrew-first header with graceful layout on TVs */
+header{align-items:center;padding-bottom:clamp(10px,1.5vh,17px);gap:clamp(12px,2vw,30px)}
+.masthead{min-width:0;flex:1}.eyebrow{font-size:clamp(.7rem,.95vw,1rem);letter-spacing:.1em;color:var(--muted);margin-bottom:2px}
+h1{line-height:1.12;letter-spacing:.01em}
+.date-range{color:#e8d5a0;font-size:clamp(.85rem,1.5vw,1.45rem);font-weight:500;margin-top:clamp(2px,.45vh,8px)}
+.subtitle{font-size:clamp(.8rem,1.1vw,1.05rem)}
+.date-block{display:flex;flex-direction:column;align-items:flex-end;gap:0;flex:0 0 auto;text-align:left;max-width:45%}
+#hebrewDate{font-family:'Frank Ruhl Libre',serif;color:var(--gold);font-size:clamp(1.1rem,2vw,2rem);font-weight:700;line-height:1.2}
+#date{font-size:clamp(.75rem,1.15vw,1.15rem);color:#b6c2ce;direction:rtl}
+#status{font-size:clamp(.7rem,.95vw,.9rem);min-height:0}
+@media(max-width:650px){header{gap:9px}h1{font-size:clamp(1.4rem,4.5vw,2rem)}#clock{font-size:clamp(1.25rem,4vw,2rem)}.date-range{font-size:clamp(.78rem,2.5vw,.95rem)}}
+@media(max-height:680px){.eyebrow{font-size:.7rem}.date-range{margin-top:0}#hebrewDate{font-size:1.2rem}}
 </style></head>
 <body><div id="frame">
-<header><div><h1>🛗 זמני מעלית שבת</h1><div class="subtitle" id="dayLabel">שארית ישראל</div></div><div><div id="clock">--:--</div><div id="date">--</div></div></header>
+<header><div class="masthead"><div class="eyebrow">בית הכנסת שארית ישראל</div><h1>🛗 זמני מעלית שבת</h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div></div></header>
 <div id="status"></div><div id="qa-controls" aria-label="סימולציית זמן">
   <label>תאריך <input type="date" id="qa-date"></label>
   <label>שעה <input type="time" id="qa-time" value="12:00"></label>
@@ -60,6 +73,30 @@ function weekKey(p){
  utc.setUTCDate(utc.getUTCDate()-(mapDay[p.weekday]??utc.getUTCDay()));
  return iso(utc.getUTCFullYear(),utc.getUTCMonth()+1,utc.getUTCDate());
 }
+
+function dateFromISO(ymd,days=0){
+ const [y,m,d]=ymd.split('-').map(Number);
+ return new Date(Date.UTC(y,m-1,d+days,12));
+}
+const hebrewFmt=new Intl.DateTimeFormat('he-IL-u-ca-hebrew',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+const civilFmt=new Intl.DateTimeFormat('he-IL',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+function hebrewDate(d){
+ try{return hebrewFmt.format(d)}catch{return '—'}
+}
+function civilDate(d){
+ return civilFmt.format(d);
+}
+function shabbatRange(p){
+ const fri=dateFromISO(weekKey(p),5),sat=dateFromISO(weekKey(p),6);
+ const fDay=fri.getUTCDate(),sDay=sat.getUTCDate();
+ const fMonth=new Intl.DateTimeFormat('he-IL',{month:'long',timeZone:'UTC'}).format(fri);
+ const sMonth=new Intl.DateTimeFormat('he-IL',{month:'long',timeZone:'UTC'}).format(sat);
+ const year=sat.getUTCFullYear();
+ const range=fMonth===sMonth&&fri.getUTCFullYear()===year
+   ? fDay+'–'+sDay+' ב'+sMonth+', '+year
+   : fDay+' ב'+fMonth+' – '+sDay+' ב'+sMonth+', '+year;
+ return 'זמני מעלית שבת לשבת שבין '+range;
+}
 function readStore(){try{const o=JSON.parse(localStorage.getItem(STORE)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch{return {}}}
 function isClock(v){return typeof v==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v)}
 function toMin(v){return +v.slice(0,2)*60 + +v.slice(3)}
@@ -67,7 +104,10 @@ function render(){
  const instant=mockNow===null?new Date():new Date(mockNow);
  const p=nowParts(),today=mapDay[p.weekday];
  document.getElementById('clock').textContent=[p.hour,p.minute,p.second].map(n=>String(n).padStart(2,'0')).join(':');
- document.getElementById('date').textContent=iso(p.year,p.month,p.day);
+ const todayDate=dateFromISO(iso(p.year,p.month,p.day));
+ document.getElementById('date').textContent=civilDate(todayDate);
+ document.getElementById('hebrewDate').textContent=hebrewDate(todayDate);
+ document.getElementById('weekRange').textContent=shabbatRange(p);
  const suffix=mockNow===null?'':' · סימולציה';
  document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'מעלית שבת · לוח שבועי')+suffix;
  const data=readStore()[weekKey(p)];
@@ -92,7 +132,7 @@ function render(){
  });
  grid.hidden=false;empty.hidden=true;
  status.classList.toggle('warning',computed.unknown);
- status.textContent='מוצגים '+arr.length+' חלונות · השבוע שמתחיל '+weekKey(p)+(computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'');
+ status.textContent='מוצגים '+arr.length+' חלונות פעילות'+(computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'');
 }
 
 function refresh(){
