@@ -133,7 +133,7 @@ function render(){
  document.getElementById('date').textContent=civilDate(todayDate);
  document.getElementById('hebrewDate').textContent=hebrewDate(todayDate);
  document.getElementById('weekRange').textContent=shabbatRange(p);
- const parasha=ShabbatElevator.parasha(instant);
+ const parasha=ShabbatElevator.parasha(instant).replace(/^(?:פרשת\s*)+/,'').trim();
  document.getElementById('parashaTitle').textContent=parasha?'זמני מעלית שבת לפרשת '+parasha:'זמני מעלית שבת';
  const suffix=mockNow===null?'':' · סימולציה';
  document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'תצוגה מקדימה · שבת הקרובה')+suffix;
