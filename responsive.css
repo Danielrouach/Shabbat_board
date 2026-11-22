@@ -737,73 +737,199 @@
   }
 }
 
-/* Android Chrome recovery (Galaxy portrait).
-   Keep the app in normal document flow and avoid GPU compositing of the
-   whole grid. Do not alter desktop, tablet or other mobile browsers. */
-@media (orientation: portrait) and (max-width: 768px) {
+/* Android-only kiosk: avoid GPU transforms of the complete board.
+   CSS zoom changes layout dimensions, not a composited transform layer.
+   JS measures all content and selects the largest zoom that fits. */
+@media (max-width: 1024px) {
   html.android-board-recovery,
   html.android-board-recovery body {
-    height: auto !important;
-    min-height: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
   }
   html.android-board-recovery #app {
     position: relative !important;
     inset: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    min-height: 100dvh !important;
-    max-height: none !important;
-    padding: 10px 10px 28px !important;
-    gap: 10px !important;
-    overflow: visible !important;
-    transform: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    contain: none !important;
-    content-visibility: visible !important;
-  }
-  html.android-board-recovery #app > #header,
-  html.android-board-recovery #app > #mobile-theme-controls,
-  html.android-board-recovery #app > #left,
-  html.android-board-recovery #app > #center,
-  html.android-board-recovery #app > #right,
-  html.android-board-recovery #app > #footer {
-    position: relative !important;
-    transform: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "header header header"
+      "theme-controls theme-controls theme-controls"
+      "bday bday bday"
+      "left center right"
+      "footer footer footer" !important;
+    width: var(--android-board-width, 100vw) !important;
+    height: var(--android-board-height, calc(100dvh - 22px)) !important;
     min-height: 0 !important;
     max-height: none !important;
-    flex-shrink: 0 !important;
+    padding: 4px 5px 2px !important;
+    gap: 3px !important;
     overflow: visible !important;
+    transform: none !important;
+    transform-origin: initial !important;
+    opacity: 1 !important;
+    visibility: visible !important;
     contain: none !important;
     content-visibility: visible !important;
   }
-  html.android-board-recovery #app > #header {
+  html.android-board-recovery #app > * { min-width: 0 !important; }
+  html.android-board-recovery #header {
     display: grid !important;
-    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, .85fr) minmax(0, 1fr) !important;
+    grid-template-areas: "parasha clock location" !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 2px 0 !important;
+    gap: 3px !important;
+    overflow: visible !important;
   }
-  html.android-board-recovery #app > #left,
-  html.android-board-recovery #app > #center,
-  html.android-board-recovery #app > #right {
+  html.android-board-recovery #header #parasha-block { grid-area: parasha !important; margin: 0 !important; gap: 1px !important; }
+  html.android-board-recovery #header #location-block { grid-area: location !important; align-items: flex-end !important; text-align: left !important; gap: 1px !important; }
+  html.android-board-recovery #header #clock-block { grid-area: clock !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 1px !important; }
+  html.android-board-recovery #header #bsd,
+  html.android-board-recovery #header #parasha-label { font-size: 10px !important; margin: 0 !important; }
+  html.android-board-recovery #header #parasha-name { font-size: 18px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #header #hebrew-date { font-size: 13px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #header #day-of-week-left { font-size: 14px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #header #gregorian-date,
+  html.android-board-recovery #header #location-name { font-size: 11px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #header #clock { font-size: 26px !important; line-height: 1 !important; white-space: nowrap !important; }
+  html.android-board-recovery #header #temp-display,
+  html.android-board-recovery #header #shabbat-clock { font-size: 10px !important; }
+  html.android-board-recovery #header #shabbat-combined-img { height: 44px !important; max-width: 100% !important; object-fit: contain; }
+
+  html.android-board-recovery #mobile-theme-controls {
+    grid-area: theme-controls !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 3px 6px !important;
+    padding: 2px !important;
+    min-height: 0 !important;
+  }
+  html.android-board-recovery #mobile-theme-toggle { min-height: 22px !important; padding: 2px 6px !important; font-size: 11px !important; }
+  html.android-board-recovery #mobile-theme-controls .theme-auto-control { font-size: 10px !important; }
+  html.android-board-recovery #bday-row { padding: 2px 4px !important; }
+  html.android-board-recovery #bday-row #cake-svg { width: 28px !important; height: 28px !important; }
+
+  html.android-board-recovery #app > .panel {
     display: flex !important;
     flex-direction: column !important;
-    height: auto !important;
-    width: 100% !important;
+    position: relative !important;
+    width: auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 4px !important;
+    gap: 2px !important;
+    overflow: visible !important;
+    transform: none !important;
+    contain: none !important;
+    content-visibility: visible !important;
   }
-  html.android-board-recovery #app > #mobile-theme-controls {
+  html.android-board-recovery .panel-title,
+  html.android-board-recovery #right > .weekday-section-title { font-size: 12px !important; line-height: 1.1 !important; padding: 1px 0 !important; margin: 0 !important; }
+  html.android-board-recovery #left .zman-row,
+  html.android-board-recovery #right .weekly-entry,
+  html.android-board-recovery #right .time-row { padding: 2px 0 !important; gap: 3px !important; }
+  html.android-board-recovery #left .zman-name,
+  html.android-board-recovery #right .weekly-entry-label,
+  html.android-board-recovery #right .time-label { font-size: 12px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #left .zman-sub { font-size: 9px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #left .zman-time,
+  html.android-board-recovery #right .weekly-entry-time,
+  html.android-board-recovery #right .time-val { font-size: 13px !important; line-height: 1.12 !important; }
+  html.android-board-recovery #right .weekly-heading { font-size: 11px !important; margin: 2px 0 !important; }
+  html.android-board-recovery #right #weekly-board { margin: 1px 0 !important; padding: 2px 0 !important; }
+  html.android-board-recovery #right #elevator-next-widget { position: static !important; padding: 3px !important; }
+  html.android-board-recovery #right #elevator-next-rows { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  html.android-board-recovery #right .elevator-next-time { font-size: 10px !important; }
+  html.android-board-recovery #right .elevator-next-caption,
+  html.android-board-recovery #right .elevator-next-foot { font-size: 9px !important; }
+  html.android-board-recovery #center .halacha-card { min-width: 0 !important; padding: 3px !important; gap: 1px !important; }
+  html.android-board-recovery #center .halacha-label { font-size: 10px !important; line-height: 1.1 !important; }
+  html.android-board-recovery #center .halacha-value { font-size: 15px !important; line-height: 1.12 !important; overflow-wrap: anywhere !important; }
+  html.android-board-recovery #center .halacha-sub { font-size: 10px !important; line-height: 1.1 !important; overflow-wrap: anywhere !important; }
+  html.android-board-recovery #footer {
     display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 2px 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  html.android-board-recovery #footer-left {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    flex-wrap: wrap !important;
+    gap: 3px !important;
+    justify-content: center !important;
+  }
+  html.android-board-recovery #footer-left > button,
+  html.android-board-recovery #footer-left > a[data-elevator-link] {
+    width: auto !important;
+    min-height: 21px !important;
+    padding: 2px 4px !important;
+    margin: 0 !important;
+    font-size: 10px !important;
+  }
+  html.android-board-recovery #footer-left > #theme-toggle,
+  html.android-board-recovery #footer-left > .theme-auto-control { display: none !important; }
+  html.android-board-recovery #footer-brand { font-size: 9px !important; }
+  html.android-board-recovery #footer-right {
+    display: flex !important;
+    flex: 0 1 auto !important;
+    max-width: 100% !important;
+    width: auto !important;
+    align-items: center !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
   }
   html.android-board-recovery #copyright-bar {
-    position: relative !important;
-    height: auto !important;
-    min-height: 26px !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    padding: 0 4px !important;
+    font-size: 9px !important;
   }
+}
+/* Portrait phones: two complete timetable columns, halacha strip above. */
+@media (orientation: portrait) and (max-width: 599px) {
+  html.android-board-recovery #app {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "header header"
+      "theme-controls theme-controls"
+      "bday bday"
+      "center center"
+      "left right"
+      "footer footer" !important;
+  }
+  html.android-board-recovery #center {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    align-content: start !important;
+    height: auto !important;
+    gap: 3px !important;
+  }
+  html.android-board-recovery #center > .panel-title { grid-column: 1 / -1; }
+  html.android-board-recovery #center .halacha-card { min-width: 0 !important; }
+  html.android-board-recovery #left,
+  html.android-board-recovery #right { height: 100% !important; }
 }
