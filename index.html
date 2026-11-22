@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>לוח זמנים הלכתי – חיפה</title>
+<title>לוח שבת - משפחת רואש</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Secular+One&family=Noto+Serif+Hebrew:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -1015,7 +1015,7 @@
       <span class="time-val secondary" id="val-rt">–</span>
     </div>
     <!-- Added only for the selected, saved week. -->
-    <div id="weekly-board" hidden aria-label="זמני שארית ישראל ומעלית שבת">
+    <div id="weekly-board" hidden aria-label="זמני תפילות ומעלית שבת">
       <div id="weekly-prayers"></div>
       <div id="weekly-elevators"></div>
     </div>
@@ -1025,7 +1025,7 @@
   <footer id="footer">
     <span id="footer-left">
       <button id="settings-btn" onclick="openSettings()" title="הגדרות">⚙</button>
-       <button id="weekly-open-btn" style="display:none" onclick="openWeeklySettings()" title="העלה לוח שארית ישראל והדבק זמני מעלית שבת">🗓 תפילות ומעלית</button>
+       <button id="weekly-open-btn" style="display:none" onclick="openWeeklySettings()" title="נהל זמני תפילות ומעלית שבת">🗓 תפילות ומעלית</button>
       <a href="elevator.html" target="_blank" rel="noopener" style="display:inline-block;margin:0 8px;padding:4px 9px;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:700 .75rem Heebo,sans-serif;text-decoration:none" title="פתח את זמני המעלית במסך נפרד לפני שבת">🛗 מסך מעלית נפרד</a>
       <button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="הפעלה לפני שבת: בקשה מהדפדפן לשמור על המסך פעיל">◌ מסך פעיל: כבוי</button>
        <!-- QA dev controls — only visible when ?qa=1 -->
@@ -1050,7 +1050,7 @@
         <button class="qa-btn" id="qa-go-btn" onclick="qaSetDateTime()" title="הפעל סימולציה">▶ הפעל</button>
         <button class="qa-btn" id="qa-reset-btn" onclick="qaResetDateTime()" title="איפוס לזמן אמיתי">↺ איפוס</button>
       </span>
-      לוח זמנים הלכתי • חיפה
+      לוח שבת - משפחת רואש • חיפה
     </span>
     <span id="footer-center"></span>
     <span id="footer-right">
@@ -1115,7 +1115,7 @@
 <div class="weekly-drag-mask" aria-hidden="true">שחרר את התמונה כדי לזהות את זמני התפילה</div>
 <div class="weekly-modal" id="weekly-panel" hidden role="dialog" aria-modal="true" aria-labelledby="weekly-title">
  <div class="weekly-modal-box">
-  <div class="weekly-modal-top"><h2 id="weekly-title">🗓 זמני שארית ישראל ומעלית שבת</h2><button class="weekly-close" type="button" onclick="closeWeeklySettings()" aria-label="סגור">×</button></div>
+  <div class="weekly-modal-top"><h2 id="weekly-title">🗓 זמני תפילות ומעלית שבת</h2><button class="weekly-close" type="button" onclick="closeWeeklySettings()" aria-label="סגור">×</button></div>
   <div class="weekly-dates">
    <label class="weekly-field">בחר תאריך מתוך השבוע שאליו שייכים הזמנים
     <input id="weekly-anchor" type="date" onchange="loadWeeklyEditor()" />
@@ -2722,8 +2722,6 @@ function renderNextElevatorWindows(now, data, old) {
 function renderFixedShacharit(now) {
   const p=document.getElementById('weekly-prayers');
   if(!p)return;
-  const heading=weeklyHeading('שחרית','זמנים קבועים');
-  p.append(heading);
   const day=now.getDay();
   if(day===6) {
     p.append(weeklyHeading('בית הכנסת הרב אליהו אבוחצרא','שבת'));
@@ -2734,8 +2732,6 @@ function renderFixedShacharit(now) {
     p.append(weeklyHeading('בית הכנסת רמב"ם','ימי חול'));
     p.append(weeklyEntry('שחרית','07:00',now));
     p.append(weeklyEntry('שחרית','08:00',now));
-  } else {
-    heading.remove();
   }
 }
 
