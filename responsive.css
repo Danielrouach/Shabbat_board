@@ -1,7 +1,7 @@
 /* Responsive display for the Shabbat Board.
-   The board fits completely without scrolling at every orientation.
-   Phones in portrait use two schedule columns plus a compact halacha strip;
-   larger screens use three columns. The JS fitter measures actual content. */
+   Keep the original fullscreen kiosk fit at desktop widths.
+   Portrait phones/tablets scroll for readability; landscape <=1024px
+   keeps all three panels visible with a content-aware, no-scroll fit. */
 
 @media (max-width: 1024px) {
   html, body {
@@ -546,10 +546,10 @@
   #mobile-theme-controls .theme-auto-control { font-size: .7rem; }
 }
 
-/* Universal compact kiosk for phones/tablets in BOTH orientations.
-   The fit script adjusts logical width and height before scaling; never
-   substitute hidden rows or scrollbars for a complete schedule. */
-@media (max-width: 1024px) {
+/* Landscape phones/tablets: the entire board is a single, no-scroll kiosk.
+   JS fits this 3-column layout to the *visible* viewport by adjusting the
+   logical board size and scale together, without hiding schedule entries. */
+@media (orientation: landscape) and (max-width: 1024px) {
   html, body {
     height: 100% !important;
     min-height: 0;
@@ -561,10 +561,10 @@
     top: 0;
     left: 0;
     right: auto;
-    width: var(--compact-board-width, 100vw) !important;
-    height: var(--compact-board-height, calc(100dvh - 18px)) !important;
+    width: var(--landscape-board-width, 100vw) !important;
+    height: var(--landscape-board-height, calc(100dvh - 18px)) !important;
     min-height: 0;
-    transform: scale(var(--compact-board-scale, 1)) !important;
+    transform: scale(var(--landscape-board-scale, 1)) !important;
     transform-origin: top left;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -735,128 +735,4 @@
     font-size: 9px;
     line-height: 1.1;
   }
-}
-
-/* Portrait phones have much more height than width. A three-column layout
-   wastes the available pixels on narrow text; a single stacked column
-   wastes the height. Use TWO schedule columns and a compact three-across
-   halacha strip, retaining every visible card, sublabel and schedule row. */
-@media (orientation: portrait) and (max-width: 599px) {
-  #app {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "header header"
-      "theme-controls theme-controls"
-      "bday bday"
-      "center center"
-      "left right"
-      "footer footer";
-    gap: 3px;
-    padding: 3px 4px 2px;
-  }
-  #header {
-    grid-template-columns: minmax(0, 1fr) minmax(96px, 1.04fr) minmax(0, 1fr);
-    gap: 3px;
-    padding-bottom: 3px;
-  }
-  #header #parasha-block, #header #location-block { gap: 1px; }
-  #header #clock-block { gap: 1px; }
-  #header #bsd { font-size: 10px; }
-  #header #parasha-label { font-size: 10px; }
-  #header #parasha-name { font-size: 17px; line-height: 1.12; }
-  #header #hebrew-date { font-size: 13px; line-height: 1.12; }
-  #header #day-of-week-left { font-size: 14px; line-height: 1.12; }
-  #header #gregorian-date { font-size: 11px; line-height: 1.12; }
-  #header #location-name { font-size: 10px; line-height: 1.12; }
-  #header #clock { font-size: 25px; line-height: 1; }
-  #header #temp-display { font-size: 10px; }
-  #header #shabbat-kodesh-block { max-height: 46px; }
-  #header #shabbat-combined-img, body.shabbat-day #header #shabbat-combined-img,
-  #header #shabbat-svg, body.shabbat-day #header #shabbat-svg { height: 44px; }
-  #header #shabbat-clock { font-size: 10px; }
-  #mobile-theme-controls { padding: 2px 3px; gap: 2px 6px; }
-  #mobile-theme-toggle { min-height: 21px; padding: 1px 6px; font-size: 11px; }
-  #mobile-theme-controls .theme-auto-control { font-size: 10px; }
-
-  #center {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: auto;
-    align-content: start;
-    height: auto;
-    gap: 3px;
-    padding: 4px;
-  }
-  #center > .panel-title {
-    grid-column: 1 / -1;
-    padding: 0 0 2px;
-    margin: 0;
-    font-size: 11px;
-  }
-  #center .halacha-card { min-width: 0; min-height: 0; padding: 3px 4px; gap: 1px; }
-  #center .halacha-label { font-size: 10px; line-height: 1.1; letter-spacing: 0; }
-  #center .halacha-value, #center #holiday-card .halacha-value,
-  #center #omer-card .halacha-value, #center #tachanun-card.has-tachanun .halacha-value {
-    font-size: 15px; line-height: 1.12; overflow-wrap: anywhere;
-  }
-  #center .halacha-sub, #center #omer-card .halacha-sub {
-    font-size: 9px; line-height: 1.12; overflow-wrap: anywhere;
-  }
-
-  #left, #right { min-height: 0; height: 100%; padding: 4px; gap: 1px; }
-  #left .panel-title, #right > .weekday-section-title { font-size: 11px; }
-  #left .zman-row { padding: 2px 0; gap: 3px; }
-  #left .zman-name { font-size: 13px; line-height: 1.12; }
-  #left .zman-sub { font-size: 10px; line-height: 1.1; overflow-wrap: anywhere; }
-  #left .zman-time { font-size: 14px; line-height: 1.12; }
-  #right .weekly-heading { font-size: 12px; line-height: 1.12; }
-  #right .weekly-entry { padding: 2px 0; gap: 3px; }
-  #right .weekly-entry-label { font-size: 13px; line-height: 1.12; }
-  #right .weekly-entry-time { font-size: 14px; line-height: 1.12; }
-  #right .time-row { padding: 2px 0; gap: 3px; }
-  #right .time-label { font-size: 13px; line-height: 1.12; }
-  #right .time-val, #right .time-val.secondary { font-size: 14px; line-height: 1.12; }
-  #right .shabbat-big-title { font-size: 15px; line-height: 1.12; }
-  #right .shabbat-candles-svg svg { width: 24px; height: 27px; }
-  #right #elevator-next-widget { padding: 3px; }
-  #right .elevator-next-title { font-size: 10px; line-height: 1.12; }
-  #right #elevator-next-rows { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  #right .elevator-next-time { font-size: 10px; line-height: 1.12; }
-  #right .elevator-next-caption, #right .elevator-next-foot { font-size: 9px; line-height: 1.1; }
-
-  #footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 3px;
-    padding: 2px 0 0;
-  }
-  #footer-left {
-    flex: 0 0 auto;
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 3px;
-  }
-  #footer-left > button, #footer-left > a[data-elevator-link] {
-    width: auto;
-    min-height: 21px;
-    padding: 2px 4px !important;
-    font-size: 10px !important;
-    line-height: 1.1;
-  }
-  #footer-brand { display: inline; font-size: 9px; text-align: center; }
-  #footer-right {
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    align-items: center;
-    text-align: center;
-    gap: 1px;
-    line-height: 1.12;
-    font-size: 9px;
-  }
-  #footer-right .feature-update-status { font-size: 9px; line-height: 1.12; }
 }
