@@ -8,7 +8,7 @@
 (function(){
   try {
     if (/Android/i.test(navigator.userAgent) &&
-        window.matchMedia('(max-width: 768px)').matches) {
+        window.matchMedia('(max-width: 1024px)').matches) {
       document.documentElement.classList.add('android-board-recovery');
     }
   } catch(e) {}
@@ -991,7 +991,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-android-recovery-v9">
+<link rel="stylesheet" href="responsive.css?v=20261122-android-zoom-v10">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (orientation: portrait) and (max-width: 768px) {
@@ -2864,6 +2864,74 @@ function measurePanelFit(panelId,cssVar,minScale,maxScale){
  }
  fits(best);
 }
+// Android Chrome: use layout-based CSS zoom, not GPU transforms.
+function isAndroidBoard(){
+ return document.documentElement.classList.contains('android-board-recovery') &&
+        window.matchMedia('(max-width: 1024px)').matches;
+}
+let androidFitQueued=false,androidFitBusy=false;
+function fitAndroidBoard(){
+ if(!isAndroidBoard()||androidFitBusy)return;
+ const app=document.getElementById('app');
+ if(!app)return;
+ androidFitBusy=true;
+ try{
+  const vw=Math.max(1,Math.floor(window.visualViewport?.width||window.innerWidth));
+  const vh=Math.max(1,Math.floor(window.visualViewport?.height||window.innerHeight));
+  const bar=document.getElementById('copyright-bar');
+  const barHeight=bar?.getBoundingClientRect().height||18;
+  const available=Math.max(1,vh-barHeight-2);
+  const panels=['left','center','right'].map(id=>document.getElementById(id)).filter(Boolean);
+  const parts=['header','mobile-theme-controls','bday-row','left','center','right','footer']
+    .map(id=>document.getElementById(id)).filter(Boolean);
+  const visible=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
+  const fits=zoom=>{
+   app.style.zoom=String(zoom);
+   app.style.setProperty('--android-board-width',(vw/zoom).toFixed(2)+'px');
+   app.style.setProperty('--android-board-height',(available/zoom).toFixed(2)+'px');
+   if(app.scrollHeight>app.clientHeight+2||app.scrollWidth>app.clientWidth+2)return false;
+   const ar=app.getBoundingClientRect();
+   if(ar.left< -2||ar.right>vw+2||ar.top< -2||ar.bottom>available+2)return false;
+   for(const el of parts){
+    if(!visible(el))continue;
+    const r=el.getBoundingClientRect();
+    if(r.left<ar.left-2||r.right>ar.right+2||r.top<ar.top-2||r.bottom>ar.bottom+2)return false;
+    if(el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)return false;
+   }
+   for(const panel of panels){
+    const r=panel.getBoundingClientRect();
+    for(const el of panel.children){
+     if(!visible(el))continue;
+     const b=el.getBoundingClientRect();
+     if(b.left<r.left-2||b.right>r.right+2||b.top<r.top-2||b.bottom>r.bottom+2)return false;
+     if(el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)return false;
+    }
+   }
+   return true;
+  };
+  if(fits(1))return;
+  let low=.2,high=1;
+  for(let i=0;i<12&&!fits(low);i++)low*=.5;
+  if(!fits(low)){
+   console.warn('Android kiosk: content cannot fit at minimum zoom');
+   return;
+  }
+  for(let i=0;i<15;i++){
+   const mid=(low+high)/2;
+   if(fits(mid))low=mid;
+   else high=mid;
+  }
+  fits(Math.max(.0001,low-.0003));
+ }finally{androidFitBusy=false;}
+}
+function requestAndroidFit(){
+ if(!isAndroidBoard()||androidFitQueued)return;
+ androidFitQueued=true;
+ requestAnimationFrame(()=>{
+  androidFitQueued=false;
+  fitAndroidBoard();
+ });
+}
 // Landscape phones/tablets keep the entire three-column board in view.
 // Expand the board's logical dimensions while scaling it down to the visible
 // viewport. Re-measure after prayer, elevator, holiday and birthday updates.
@@ -2944,7 +3012,8 @@ function fitZmanimFont(){
 }
 let fitColumnsQueued=false;
 function requestColumnFit(){
- if(isLandscapeBoard()){requestLandscapeFit();return;}
+ if(isAndroidBoard()){requestAndroidFit();return;}
+  if(isLandscapeBoard()){requestLandscapeFit();return;}
  if(fitColumnsQueued)return;
  fitColumnsQueued=true;
  requestAnimationFrame(()=>{
@@ -3016,6 +3085,7 @@ function fitShabbatFont(){
  } finally {rightFitBusy=false}
 }
 function requestRightFit(){
+  if(isAndroidBoard()){requestAndroidFit();return;}
   if(isLandscapeBoard()){requestLandscapeFit();return;}
   if(rightFitQueued)return;
   rightFitQueued=true;
@@ -3040,6 +3110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 window.addEventListener('resize',requestColumnFit);
 window.addEventListener('orientationchange',requestColumnFit);
+window.addEventListener('load',requestColumnFit);
 document.addEventListener('fullscreenchange',requestColumnFit);
 window.visualViewport?.addEventListener('resize',requestColumnFit);
 

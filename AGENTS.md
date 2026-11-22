@@ -188,3 +188,7 @@ Each screen stores a merged weekly DB in localStorage. This is a **cache**, not 
 ## Android blank-screen recovery
 
 For Android Chrome phones <=768px in portrait, the early inline head script adds `android-board-recovery` to `html`. The final rules in `responsive.css` force a safe, normal-flow vertical flex layout without whole-app transforms, fixed positioning, clipping or GPU compositing. The burn-in pixel-shift transform is disabled for those devices. This is intentionally a temporary **scrollable** safety fallback after a Galaxy screenshot showed an entirely blank board; do not claim the universal no-scroll requirement is met on Android. The fetch error handler also dismisses the loading overlay. Keep the cache-busting CSS query current and validate on an actual Galaxy before attempting another compact layout.
+
+## Android compact kiosk (CSS zoom)
+
+Android <=1024px is routed to `fitAndroidBoard()` ahead of the legacy landscape fitter. The layout uses CSS `zoom` on `#app`, **not** `transform: scale`, because whole-app compositing caused a blank Galaxy screen. In narrow portrait <=599px, left and right schedules sit side-by-side and halacha cards form a three-column strip above; in wider/landscape, three panels share a row. All main board content remains present, and the fit is retriggered by existing resize/observer/data hooks. The old Android scroll-only safety fallback has been replaced. Test real Galaxy Chrome in portrait and landscape before declaring production rendering verified; do not reintroduce whole-app transforms.
