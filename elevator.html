@@ -5,6 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@600;700&display=swap" rel="stylesheet">
 <script src="cloud-config.js"></script>
+<script src="shabbat-elevator.js"></script>
 <style>
 :root{--bg:#080c10;--panel:#0d1520;--line:#223344;--gold:#c8a44a;--green:#4adb8a;--muted:#9baabb}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:#eef2f8;overflow:hidden;font-family:Heebo,Arial,sans-serif}
@@ -25,10 +26,20 @@ footer{border-top:1px solid var(--line);padding-top:7px;color:#758899;font-size:
 [hidden]{display:none !important}
 @media(max-height:680px){#frame{padding:7px 18px;gap:5px}.tile{padding:2px 4px}.time{font-size:clamp(.9rem,2.1vw,1.7rem)}.caption{font-size:.73rem}header{padding-bottom:4px}h1{font-size:2rem}}
 @media(max-width:650px){#tiles{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr))}.time{font-size:clamp(.92rem,3vw,1.6rem)}}
+
+#qa-controls{display:none;position:fixed;top:9px;left:9px;z-index:999;border:1px solid var(--gold);background:#182536;padding:10px;border-radius:7px;box-shadow:0 0 18px #000;gap:7px;align-items:center;flex-wrap:wrap;max-width:90vw}
+#qa-controls.visible{display:flex}#qa-controls input,#qa-controls button{font:14px Heebo,Arial;padding:5px 9px;background:#111f2e;color:#fff;border:1px solid #735d2c;border-radius:5px;cursor:pointer}
+#qa-controls label{font-size:.8rem}#simFlag{font-weight:bold;color:#4adb8a}#status.warning{color:#f3b66a}
 </style></head>
 <body><div id="frame">
 <header><div><h1>🛗 זמני מעלית שבת</h1><div class="subtitle" id="dayLabel">שארית ישראל</div></div><div><div id="clock">--:--</div><div id="date">--</div></div></header>
-<div id="status"></div>
+<div id="status"></div><div id="qa-controls" aria-label="סימולציית זמן">
+  <label>תאריך <input type="date" id="qa-date"></label>
+  <label>שעה <input type="time" id="qa-time" value="12:00"></label>
+  <button id="qa-go" type="button">▶ הפעל</button>
+  <button id="qa-reset" type="button">↺ איפוס</button>
+  <span id="simFlag"></span>
+</div>
 <div id="tiles" hidden></div><div id="empty">טוען את זמני מעלית שבת…</div>
 <footer>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</footer>
 </div>
@@ -36,8 +47,9 @@ footer{border-top:1px solid var(--line);padding-top:7px;color:#758899;font-size:
 'use strict';
 const STORE='halachic_kiosk_weekly_v1';
 const zone='Asia/Jerusalem';
+let mockNow=null;
 function nowParts(){
- const parts=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(mockNow===null?new Date():new Date(mockNow));
  const p={};for(const x of parts)p[x.type]=x.value;
  return {year:+p.year,month:+p.month,day:+p.day,weekday:p.weekday,hour:+p.hour,minute:+p.minute,second:+p.second};
 }
@@ -52,30 +64,37 @@ function readStore(){try{const o=JSON.parse(localStorage.getItem(STORE)||'{}');r
 function isClock(v){return typeof v==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v)}
 function toMin(v){return +v.slice(0,2)*60 + +v.slice(3)}
 function render(){
+ const instant=mockNow===null?new Date():new Date(mockNow);
  const p=nowParts(),today=mapDay[p.weekday];
  document.getElementById('clock').textContent=[p.hour,p.minute,p.second].map(n=>String(n).padStart(2,'0')).join(':');
  document.getElementById('date').textContent=iso(p.year,p.month,p.day);
- document.getElementById('dayLabel').textContent=today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'מעלית שבת · לוח שבועי';
+ const suffix=mockNow===null?'':' · סימולציה';
+ document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'מעלית שבת · לוח שבועי')+suffix;
  const data=readStore()[weekKey(p)];
- const ranges=today===5?data?.elevatorFriday:today===6?data?.elevatorSaturday:null;
- const grid=document.getElementById('tiles'), empty=document.getElementById('empty'),status=document.getElementById('status');
- const arr=Array.isArray(ranges)?ranges.filter(r=>isClock(r.start)&&isClock(r.end)&&toMin(r.start)<toMin(r.end)).sort((a,b)=>toMin(a.start)-toMin(b.start)):[];
+ const computed=ShabbatElevator.display(instant,data);
+ const grid=document.getElementById('tiles'),empty=document.getElementById('empty'),status=document.getElementById('status');
+ const arr=computed.rows,minutes=computed.minutes,next=arr.findIndex(r=>r.b>minutes);
  grid.replaceChildren();
- if(!arr.length){grid.hidden=true;empty.hidden=false;
- empty.textContent=(today===5||today===6)?'אין זמני מעלית שמורים לשבוע הנוכחי':'זמני המעלית יוצגו כאן אוטומטית ביום שישי ובשבת';
- status.textContent=data?'נתוני השבוע נטענו':'ממתין לזמני השבוע מ־Google Drive';return;}
- const minutes=p.hour*60+p.minute, next=arr.findIndex(r=>toMin(r.end)>minutes);
+ if(!arr.length){
+   grid.hidden=true;empty.hidden=false;
+   empty.textContent=computed.finished?'מעלית השבת סיימה את פעילותה (30 דקות לאחר צאת שבת)':(today===5||today===6)?'אין זמני מעלית שמורים לשבוע הנוכחי':'זמני המעלית יוצגו כאן אוטומטית ביום שישי ובשבת';
+   status.textContent=data?'נתוני השבוע נטענו':'ממתין לזמני השבוע מ־Google Drive';return;
+ }
  arr.forEach((r,i)=>{
-  const a=toMin(r.start),b=toMin(r.end),active=minutes>=a&&minutes<b;
+  const active=minutes>=r.a&&minutes<r.b;
   const tile=document.createElement('div');
-  tile.className='tile'+(active?' current':b<=minutes?' past':i===next?' next':'');
-  const time=document.createElement('div');time.className='time';time.textContent=r.start+'–'+r.end;
-  const caption=document.createElement('div');caption.className='caption';caption.textContent=active?'פעיל עכשיו':b<=minutes?'הסתיים':i===next?'החלון הבא':'פעילות';
+  tile.className='tile'+(active?' current':r.b<=minutes?' past':i===next?' next':'');
+  const time=document.createElement('div');time.className='time';
+  time.textContent=r.start+'–'+(r.cutoffTime||r.end);
+  const caption=document.createElement('div');caption.className='caption';
+  caption.textContent=active?'פעיל עכשיו':r.b<=minutes?'הסתיים':i===next?'החלון הבא':r.repeated?'מחזור מוצאי שבת':'פעילות';
   tile.append(time,caption);grid.append(tile);
  });
  grid.hidden=false;empty.hidden=true;
- status.textContent='מוצגים '+arr.length+' חלונות · השבוע שמתחיל '+weekKey(p);
+ status.classList.toggle('warning',computed.unknown);
+ status.textContent='מוצגים '+arr.length+' חלונות · השבוע שמתחיל '+weekKey(p)+(computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'');
 }
+
 function refresh(){
  const url=window.SHABBAT_CLOUD_READ_URL;
  if(!url||!/^https:\/\/script\.google\.com\/macros\/s\//.test(url))return;
@@ -96,6 +115,41 @@ function refresh(){
  el.src=url+(url.includes('?')?'&':'?')+'callback='+encodeURIComponent(cb)+'&t='+Date.now();
  document.head.append(el);setTimeout(clean,20000);
 }
+
+// Simulation uses Asia/Jerusalem wall time even if the OS timezone differs.
+function simulatedInstant(date,time){
+ const parts=date.split('-').map(Number),hm=time.split(':').map(Number);
+ const target=Date.UTC(parts[0],parts[1]-1,parts[2],hm[0],hm[1]);
+ let ms=target;
+ for(let i=0;i<3;i++){
+  const p=ShabbatElevator.localParts(new Date(ms));
+  const got=Date.UTC(p.y,p.m-1,p.d,Math.floor(p.minutes/60),p.minutes%60);
+  ms+=target-got;
+ }
+ return ms;
+}
+function qaToggle(){document.getElementById('qa-controls').classList.toggle('visible')}
+function qaGo(){
+ const date=document.getElementById('qa-date').value,time=document.getElementById('qa-time').value;
+ if(!date||!time)return;
+ mockNow=simulatedInstant(date,time);
+ document.getElementById('simFlag').textContent='סימולציה פועלת';
+ ShabbatElevator.prime(new Date(mockNow)).then(render);render();
+}
+function qaReset(){mockNow=null;document.getElementById('simFlag').textContent='';ShabbatElevator.prime(new Date()).then(render);render()}
+document.addEventListener('keydown',e=>{
+ if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='q'){e.preventDefault();qaToggle()}
+ if(e.key==='Escape')document.getElementById('qa-controls').classList.remove('visible');
+});
+document.getElementById('qa-go').onclick=qaGo;
+document.getElementById('qa-reset').onclick=qaReset;
+const curr=nowParts();
+document.getElementById('qa-date').value=iso(curr.year,curr.month,curr.day);
+document.getElementById('qa-time').value=String(curr.hour).padStart(2,'0')+':'+String(curr.minute).padStart(2,'0');
+if(new URLSearchParams(location.search).has('qa'))qaToggle();
+ShabbatElevator.onChange(render);
 render();setInterval(render,1000);refresh();setInterval(refresh,5*60*1000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+ShabbatElevator.prime(new Date()).then(render);
+setInterval(()=>ShabbatElevator.prime(mockNow===null?new Date():new Date(mockNow)),60*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){refresh();ShabbatElevator.prime(mockNow===null?new Date():new Date(mockNow))}});
 </script></body></html>
