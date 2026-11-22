@@ -75,8 +75,9 @@ function apply(mode){
   button.setAttribute('aria-pressed',String(light));
   button.title=light?'מעבר למצב כהה (עד מעבר השמש הבא)':'מעבר למצב בהיר (עד מעבר השמש הבא)';
  }
- for(const link of document.querySelectorAll('a[href^="elevator.html"]')){
-  link.href='elevator.html?theme='+mode;
+ // Both screens share localStorage on the same origin; no theme query is needed.
+ for(const link of document.querySelectorAll('a[data-elevator-link]')){
+  link.href='/elevator/';
  }
  if(lastApplied!==mode){
   lastApplied=mode;
