@@ -377,3 +377,95 @@
   #clock .sep { animation: none; opacity: .7; }
   .flame-l, .flame-r { animation: none; }
 }
+
+/* Short landscape screens: use the available width, not a tall tablet header.
+   One compact row keeps the clock visible without stealing the timetable's height.
+   This deliberately follows the phone rules so it also wins at <=768px wide. */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1100px) {
+  #header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(125px, .72fr) minmax(0, 1fr);
+    grid-template-areas: "parasha clock location";
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 6px;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+  #header #parasha-block {
+    grid-area: parasha;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    gap: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+  #header #location-block {
+    grid-area: location;
+    min-width: 0;
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0;
+    overflow-wrap: anywhere;
+  }
+  #header #clock-block {
+    grid-area: clock;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+    gap: 2px;
+  }
+  #header #bsd { margin: 0; font-size: .7rem; }
+  #header #parasha-label { font-size: .66rem; line-height: 1.1; letter-spacing: .03em; }
+  #header #parasha-name {
+    font-size: clamp(.95rem, 2.25vw, 1.45rem);
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+  #header #hebrew-date {
+    font-size: clamp(.78rem, 1.7vw, 1.06rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  #header #day-of-week-left { font-size: clamp(.88rem, 1.8vw, 1.16rem); line-height: 1.15; }
+  #header #gregorian-date { font-size: clamp(.74rem, 1.35vw, .95rem); line-height: 1.2; }
+  #header #location-name { font-size: clamp(.68rem, 1.1vw, .83rem); line-height: 1.2; letter-spacing: 0; }
+  #header #clock {
+    grid-area: auto;
+    justify-self: auto;
+    margin: 0;
+    font-size: clamp(1.75rem, 3.9vw, 2.9rem);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  #header #temp-display {
+    grid-area: auto;
+    justify-self: auto;
+    margin: 0;
+    font-size: clamp(.7rem, 1.25vw, .88rem);
+    line-height: 1.2;
+    text-align: center;
+  }
+  #header #shabbat-kodesh-block {
+    grid-area: auto;
+    justify-self: center;
+    max-height: 66px;
+  }
+  #header #shabbat-combined-img,
+  body.shabbat-day #header #shabbat-combined-img {
+    height: 62px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  #header #shabbat-clock { font-size: .9rem; }
+}
