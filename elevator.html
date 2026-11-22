@@ -30,6 +30,9 @@ footer{border-top:1px solid var(--line);padding-top:7px;color:#758899;font-size:
 #qa-controls{display:none;position:fixed;top:9px;left:9px;z-index:999;border:1px solid var(--gold);background:#182536;padding:10px;border-radius:7px;box-shadow:0 0 18px #000;gap:7px;align-items:center;flex-wrap:wrap;max-width:90vw}
 #qa-controls.visible{display:flex}#qa-controls input,#qa-controls button{font:14px Heebo,Arial;padding:5px 9px;background:#111f2e;color:#fff;border:1px solid #735d2c;border-radius:5px;cursor:pointer}
 #qa-controls label{font-size:.8rem}#simFlag{font-weight:bold;color:#4adb8a}#status.warning{color:#f3b66a}
+#status.error{color:#ff9b9b}
+.tile.preview{border-color:#364353}
+.previewTag{font-size:clamp(.68rem,.95vw,1rem);color:#e8d5a0;font-weight:700}
 
 /* Refined Hebrew-first header with graceful layout on TVs */
 header{align-items:center;padding-bottom:clamp(10px,1.5vh,17px);gap:clamp(12px,2vw,30px)}
@@ -61,6 +64,8 @@ h1{line-height:1.12;letter-spacing:.01em}
 const STORE='halachic_kiosk_weekly_v1';
 const zone='Asia/Jerusalem';
 let mockNow=null;
+let cloudState='pending';
+let cloudError='';
 function nowParts(){
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(mockNow===null?new Date():new Date(mockNow));
  const p={};for(const x of parts)p[x.type]=x.value;
@@ -131,51 +136,68 @@ function render(){
  const parasha=ShabbatElevator.parasha(instant);
  document.getElementById('parashaTitle').textContent=parasha?'זמני מעלית שבת לפרשת '+parasha:'זמני מעלית שבת';
  const suffix=mockNow===null?'':' · סימולציה';
- document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'מעלית שבת · לוח שבועי')+suffix;
+ document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'תצוגה מקדימה · שבת הקרובה')+suffix;
  const data=readStore()[weekKey(p)];
  const computed=ShabbatElevator.display(instant,data);
  const grid=document.getElementById('tiles'),empty=document.getElementById('empty'),status=document.getElementById('status');
- const arr=computed.rows,minutes=computed.minutes,next=arr.findIndex(r=>r.b>minutes);
+ const preview=today!==5&&today!==6;
+ let arr=computed.rows,minutes=computed.minutes,next=arr.findIndex(r=>r.b>minutes);
+ // On Sunday–Thursday show stored Friday/Saturday schedules for the upcoming Shabbat.
+ // Keep preview clearly distinct from live running status.
+ if(preview && data){
+  const valid=r=>r && isClock(r.start)&&isClock(r.end)&&toMin(r.end)>toMin(r.start);
+  const friday=Array.isArray(data.elevatorFriday)?data.elevatorFriday.filter(valid).map(r=>({...r,previewDay:'ערב שבת',a:toMin(r.start),b:toMin(r.end)})):[];
+  const saturday=Array.isArray(data.elevatorSaturday)?data.elevatorSaturday.filter(valid).map(r=>({...r,previewDay:'יום שבת',a:toMin(r.start),b:toMin(r.end)})):[];
+  arr=friday.concat(saturday);minutes=-1;next=-1;
+ }
  grid.replaceChildren();
  if(!arr.length){
-   grid.hidden=true;empty.hidden=false;
-   empty.textContent=computed.finished?'מעלית השבת סיימה את פעילותה (30 דקות לאחר צאת שבת)':(today===5||today===6)?'אין זמני מעלית שמורים לשבוע הנוכחי':'זמני המעלית יוצגו כאן אוטומטית ביום שישי ובשבת';
-   status.textContent=data?'נתוני השבוע נטענו':'ממתין לזמני השבוע מ־Google Drive';return;
+  grid.hidden=true;empty.hidden=false;
+  if(computed.finished)empty.textContent='מעלית השבת סיימה את פעילותה (30 דקות לאחר צאת שבת)';
+  else if(!data)empty.textContent=cloudState==='error'?'לא ניתן להתחבר למקור הנתונים. ייתכן שיש בעיית רשת או הרשאת קריאה.':cloudState==='ready'?'לא נמצאו זמני מעלית לשבת הקרובה. יש לשמור אותם בפאנל הניהול.':'טוען את זמני מעלית שבת…';
+  else empty.textContent='לא הוגדרו זמני מעלית לשבת זו.';
+ }else{
+  arr.forEach((r,i)=>{
+   const active=!preview&&minutes>=r.a&&minutes<r.b;
+   const tile=document.createElement('div');
+   tile.className='tile'+(preview?' preview':active?' current':r.b<=minutes?' past':i===next?' next':'');
+   const time=document.createElement('div');time.className='time';time.textContent=r.start+'–'+(r.cutoffTime||r.end);
+   const caption=document.createElement('div');caption.className='caption';
+   caption.textContent=preview?r.previewDay:active?'פעיל עכשיו':r.b<=minutes?'הסתיים':i===next?'החלון הבא':r.repeated?'מחזור מוצאי שבת':'פעילות';
+   tile.append(time,caption);grid.append(tile);
+  });
+  grid.hidden=false;empty.hidden=true;
  }
- arr.forEach((r,i)=>{
-  const active=minutes>=r.a&&minutes<r.b;
-  const tile=document.createElement('div');
-  tile.className='tile'+(active?' current':r.b<=minutes?' past':i===next?' next':'');
-  const time=document.createElement('div');time.className='time';
-  time.textContent=r.start+'–'+(r.cutoffTime||r.end);
-  const caption=document.createElement('div');caption.className='caption';
-  caption.textContent=active?'פעיל עכשיו':r.b<=minutes?'הסתיים':i===next?'החלון הבא':r.repeated?'מחזור מוצאי שבת':'פעילות';
-  tile.append(time,caption);grid.append(tile);
- });
- grid.hidden=false;empty.hidden=true;
  status.classList.toggle('warning',computed.unknown);
- status.textContent='מוצגים '+arr.length+' חלונות פעילות'+(computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'');
+ status.classList.toggle('error',cloudState==='error'&&!data);
+ const description=preview?'תצוגה מקדימה של שישי ושבת הקרובים':'';
+ const conn=cloudState==='error'?' · לא ניתן לרענן מהענן — נתונים שמורים מוצגים אם קיימים'
+  :cloudState==='pending'?' · בודק נתונים בענן':cloudState==='ready'?' · נתוני הענן נבדקו':'';
+ status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+conn+
+   (computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'')+
+   (cloudError&&cloudState==='error'?' · '+cloudError:'');
 }
 
 function refresh(){
  const url=window.SHABBAT_CLOUD_READ_URL;
- if(!url||!/^https:\/\/script\.google\.com\/macros\/s\//.test(url))return;
+ if(!url||!/^https:\/\/script\.google\.com\/macros\/s\//.test(url)){cloudState='error';cloudError='כתובת שירות הקריאה אינה מוגדרת';render();return;}
  const cb='shabbatCloudCallback_'+Math.random().toString(36).slice(2,14);
- const el=document.createElement('script');let done=false;
- const clean=()=>{if(done)return;done=true;delete window[cb];el.remove()};
+ const el=document.createElement('script');let done=false;let timeoutId=null;
+ const clean=()=>{if(done)return;done=true;delete window[cb];el.remove();if(timeoutId)clearTimeout(timeoutId)};
  window[cb]=payload=>{
   clean();
-  if(!payload||!payload.ok||payload.data?.format!=='halachic-weekly-v1'||!payload.data.weeks||typeof payload.data.weeks!=='object')return;
+  if(!payload||!payload.ok||payload.data?.format!=='halachic-weekly-v1'||!payload.data.weeks||typeof payload.data.weeks!=='object'){cloudState='error';cloudError='שירות הקריאה לא החזיר נתונים תקינים';render();return;}
   const store=readStore();
   for(const [key,val] of Object.entries(payload.data.weeks)){
    if(/^20\d{2}-\d{2}-\d{2}$/.test(key)&&val&&typeof val==='object')store[key]=val;
   }
   try{localStorage.setItem(STORE,JSON.stringify(store))}catch(e){}
+  cloudState='ready';cloudError='';
   render();
  };
- el.onerror=clean;
+ el.onerror=()=>{clean();cloudState='error';cloudError='בקשת הנתונים נכשלה';render()};
  el.src=url+(url.includes('?')?'&':'?')+'callback='+encodeURIComponent(cb)+'&t='+Date.now();
- document.head.append(el);setTimeout(clean,20000);
+ document.head.append(el);timeoutId=setTimeout(()=>{if(!done){clean();cloudState='error';cloudError='תם זמן ההמתנה לתשובת השרת';render()}},20000);
 }
 
 // Simulation uses Asia/Jerusalem wall time even if the OS timezone differs.
