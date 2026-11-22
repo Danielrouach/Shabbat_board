@@ -1,6 +1,7 @@
 /* Responsive display for the Shabbat Board.
    Keep the original fullscreen kiosk fit at desktop widths.
-   On tablets and phones, prioritize complete, readable content and page scrolling. */
+   Portrait phones/tablets scroll for readability; landscape <=1024px
+   keeps all three panels visible with a content-aware, no-scroll fit. */
 
 @media (max-width: 1024px) {
   html, body {
@@ -543,4 +544,195 @@
   #mobile-theme-controls { gap: 4px 7px; padding: 4px 5px; }
   #mobile-theme-toggle { padding: 5px 7px; font-size: .74rem; }
   #mobile-theme-controls .theme-auto-control { font-size: .7rem; }
+}
+
+/* Landscape phones/tablets: the entire board is a single, no-scroll kiosk.
+   JS fits this 3-column layout to the *visible* viewport by adjusting the
+   logical board size and scale together, without hiding schedule entries. */
+@media (orientation: landscape) and (max-width: 1024px) {
+  html, body {
+    height: 100% !important;
+    min-height: 0;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+  #app {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: auto;
+    width: var(--landscape-board-width, 100vw) !important;
+    height: var(--landscape-board-height, calc(100dvh - 18px)) !important;
+    min-height: 0;
+    transform: scale(var(--landscape-board-scale, 1)) !important;
+    transform-origin: top left;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "header header header"
+      "theme-controls theme-controls theme-controls"
+      "bday bday bday"
+      "left center right"
+      "footer footer footer";
+    align-content: stretch;
+    gap: 3px;
+    padding: 4px 6px 2px;
+    overflow: visible;
+  }
+  #app > * { min-width: 0; }
+  #header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(100px, .72fr) minmax(0, 1fr);
+    grid-template-areas: "parasha clock location";
+    align-items: center;
+    gap: 5px;
+    min-height: 0;
+    max-height: none;
+    padding-bottom: 2px;
+    overflow: visible;
+  }
+  #header #parasha-block { grid-area: parasha; margin: 0; padding: 0; border: 0; gap: 0; }
+  #header #location-block { grid-area: location; align-items: flex-end; text-align: left; gap: 0; }
+  #header #clock-block {
+    grid-area: clock;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-height: none;
+    overflow: visible;
+    gap: 1px;
+  }
+  #header #bsd { font-size: 10px; margin: 0; }
+  #header #parasha-label { font-size: 9px; line-height: 1.1; }
+  #header #parasha-name { font-size: clamp(13px, 1.8vw, 20px); line-height: 1.12; }
+  #header #hebrew-date { font-size: clamp(11px, 1.4vw, 16px); line-height: 1.12; }
+  #header #day-of-week-left { font-size: clamp(12px, 1.6vw, 18px); line-height: 1.12; }
+  #header #gregorian-date { font-size: clamp(10px, 1.2vw, 14px); line-height: 1.12; }
+  #header #location-name { font-size: clamp(9px, 1.1vw, 12px); line-height: 1.12; }
+  #header #clock { grid-area: auto; font-size: clamp(24px, 3.3vw, 40px); line-height: 1; margin: 0; white-space: nowrap; }
+  #header #temp-display { grid-area: auto; margin: 0; font-size: 11px; line-height: 1.1; }
+  #header #shabbat-kodesh-block { grid-area: auto; max-height: 52px; }
+  #header #shabbat-combined-img, body.shabbat-day #header #shabbat-combined-img,
+  #header #shabbat-svg, body.shabbat-day #header #shabbat-svg { height: 48px; max-width: 100%; object-fit: contain; }
+  #header #shabbat-clock { font-size: 11px; margin: 0; }
+
+  /* One compact set of appearance controls replaces the duplicated footer pair. */
+  #mobile-theme-controls {
+    grid-area: theme-controls;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 3px 7px;
+    padding: 2px 4px;
+    min-height: 0;
+    border-radius: 4px;
+  }
+  #mobile-theme-toggle { min-height: 22px; padding: 1px 6px; font-size: 11px; line-height: 1.1; }
+  #mobile-theme-controls .theme-auto-control { font-size: 10px; padding: 0; line-height: 1.1; }
+  #mobile-theme-controls .theme-auto-control input { width: 12px; height: 12px; }
+  #bday-row { padding: 3px 6px; gap: 3px 8px; }
+  #bday-row #cake-svg { width: 32px; height: 32px; }
+  #bday-row #bday-who { font-size: 14px; }
+  #bday-row #bday-type, #bday-row #bday-wish, #bday-row .bday-item-name { font-size: 10px; }
+  #bday-row .bday-item-count { font-size: 9px; padding: 1px 4px; }
+
+  .panel { min-width: 0; min-height: 0; height: 100%; overflow: visible !important; padding: 4px 6px; gap: 2px; }
+  .panel-title, #left .panel-title, #center > .panel-title,
+  #right > .weekday-section-title { font-size: 11px; line-height: 1.1; padding-bottom: 2px; margin-bottom: 1px; }
+  #left { justify-content: flex-start; gap: 1px; }
+  #left .zman-row { padding: 2px 0; gap: 4px; }
+  #left .zman-name { font-size: 12px; line-height: 1.12; }
+  #left .zman-sub { font-size: 9px; line-height: 1.1; }
+  #left .zman-time { font-size: 14px; line-height: 1.1; }
+  #center {
+    display: flex;
+    flex-direction: column;
+    align-content: stretch;
+    justify-content: flex-start;
+    gap: 3px;
+  }
+  #center .halacha-card { min-width: 0; min-height: 0; padding: 3px 5px; gap: 1px; }
+  #center .halacha-label { font-size: 10px; line-height: 1.12; }
+  #center .halacha-value, #center #holiday-card .halacha-value,
+  #center #omer-card .halacha-value, #center #tachanun-card.has-tachanun .halacha-value {
+    font-size: 16px; line-height: 1.12;
+  }
+  #center .halacha-sub, #center #omer-card .halacha-sub { font-size: 11px; line-height: 1.15; }
+  #right { gap: 2px; justify-content: flex-start !important; }
+  #right .weekly-heading { font-size: 12px; line-height: 1.12; margin: 1px 0 2px; }
+  #right .weekly-entry { padding: 2px 0; gap: 4px; line-height: 1.1; }
+  #right .weekly-entry-label { font-size: 12px; line-height: 1.12; }
+  #right .weekly-entry-time { font-size: 13px; line-height: 1.12; }
+  #right .time-row { padding: 2px 0; gap: 4px; line-height: 1.12; }
+  #right .time-label { font-size: 12px; line-height: 1.12; }
+  #right .time-val, #right .time-val.secondary { font-size: 14px; line-height: 1.12; }
+  #right .shabbat-big-title { font-size: 16px; line-height: 1.12; padding: 2px 0; margin: 0; }
+  #right.weekday-prayers-first > #weekly-board { margin-bottom: 2px; padding-bottom: 2px; }
+  #right #weekly-board { margin-top: 1px; padding-top: 2px; }
+  #right #elevator-next-widget { position: static; top: auto; padding: 3px 5px; margin-bottom: 1px; box-shadow: none; }
+  #right .elevator-next-title { font-size: 11px; line-height: 1.12; margin-bottom: 2px; }
+  #right #elevator-next-rows { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
+  #right .elevator-next-slot { display: block; padding: 2px 1px; text-align: center; }
+  #right .elevator-next-time { font-size: 11px; line-height: 1.1; white-space: normal; overflow-wrap: anywhere; }
+  #right .elevator-next-caption, #right .elevator-next-foot { font-size: 9px; line-height: 1.1; }
+
+  #footer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 0 0;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+  #footer-left {
+    display: flex;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 3px 5px;
+    line-height: 1.1;
+  }
+  #footer-left > button, #footer-left > a[data-elevator-link] {
+    width: auto;
+    min-height: 22px;
+    padding: 2px 5px !important;
+    margin: 0 !important;
+    border-radius: 4px;
+    font-size: 10px !important;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  #footer-left > #theme-toggle, #footer-left > .theme-auto-control { display: none; }
+  #footer-brand { display: inline; font-size: 9px; text-align: right; }
+  #footer-right {
+    display: flex;
+    flex: 0 1 34%;
+    width: auto;
+    max-width: 34%;
+    min-width: 0;
+    align-items: flex-start;
+    text-align: right;
+    gap: 1px;
+    line-height: 1.1;
+    font-size: 10px;
+  }
+  #footer-right .feature-update-status { font-size: 10px; line-height: 1.1; }
+  #copyright-bar {
+    position: fixed;
+    height: 18px;
+    min-height: 18px;
+    padding: 0 4px;
+    font-size: 9px;
+    line-height: 1.1;
+  }
 }
