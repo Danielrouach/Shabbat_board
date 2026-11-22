@@ -899,6 +899,38 @@ html.light-theme #keep-awake-btn,html.light-theme #theme-toggle,html.light-theme
 html.light-theme #keep-awake-btn.active{color:#116c3f;border-color:#268553}
 html.light-theme #footer a[href="elevator.html"]{color:#805a13!important;border-color:#bda374!important}
 html.light-theme #loading-overlay{background:#f7f9fc}
+
+/* ─── Adaptive prayer/next Shabbat column ───
+   Critical: space-between distributes empty height BEFORE the content is sized,
+   producing large blank bands and inaccurate fit measurements. Size first with
+   flex-start, then use the available height for readable typography. */
+#right {
+  justify-content:flex-start !important;
+  align-content:flex-start;
+  gap:calc(5px * var(--schedule-scale, 1));
+}
+#right > #weekly-board,
+#right > .time-row,
+#right > #shabbat-title-block,
+#right > .panel-title {flex:0 0 auto;max-width:100%}
+#right #weekly-prayers {min-width:0}
+#right .weekly-heading {line-height:1.18;white-space:normal;overflow-wrap:break-word}
+#right .weekly-entry,
+#right .time-row {min-width:0}
+#right .weekly-entry-label,
+#right .time-label {overflow-wrap:break-word}
+#right .weekly-entry-time,
+#right .time-val {white-space:nowrap;font-variant-numeric:tabular-nums}
+#right .weekly-heading small {white-space:normal}
+/* Scale small structural spacings too, otherwise they consume a disproportionate
+   fraction of the panel at small viewport heights. */
+#right.weekday-prayers-first > #weekly-board {
+  margin-bottom:calc(4px * var(--schedule-scale));
+  padding-bottom:calc(4px * var(--schedule-scale));
+}
+#right .weekly-entry {padding-block:calc(3px * var(--schedule-scale))}
+#right .time-row {padding-block:calc(5px * var(--schedule-scale))}
+
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
@@ -2603,49 +2635,62 @@ function requestColumnFit(){
 let rightFitQueued=false, rightFitBusy=false;
 function fitShabbatFont(){
  const panel=document.getElementById('right');
- if(!panel || rightFitBusy || panel.clientHeight<40 || panel.clientWidth<60)return;
+ if(!panel||rightFitBusy||panel.clientHeight<40||panel.clientWidth<60)return;
  rightFitBusy=true;
  try{
-  panel.style.gap='';
-  // Same intrinsic-content checks used for the other two columns, but extended
-  // to all nested prayer rows, headings, and weekly elevator cards.
+  // Measure with compact flex positioning. justify-content:space-between
+  // would otherwise disguise unused height as spacing between the rows.
+  panel.style.justifyContent='flex-start';
+  panel.style.alignContent='flex-start';
   const active=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
-  const children=Array.from(panel.children).filter(active);
-  const tags='.weekly-heading,.weekly-entry,.weekly-entry-label,.weekly-entry-time,.time-row,.time-label,.time-val,.shabbat-big-title,#shabbat-big,.elevator-next-slot,.elevator-next-time,.elevator-next-caption';
+  const direct=Array.from(panel.children).filter(active);
+  const selectors=[
+    '.weekly-heading','.weekly-entry','.weekly-entry-label','.weekly-entry-time',
+    '.time-row','.time-label','.time-val','#shabbat-big-wrap','#shabbat-big',
+    '.elevator-next-title','.elevator-next-slot','.elevator-next-time',
+    '.elevator-next-caption','.elevator-mini-link'
+  ].join(',');
+  const padding=2;
   const fits=scale=>{
    panel.style.setProperty('--schedule-scale',scale.toFixed(4));
-   const pr=panel.getBoundingClientRect(),style=getComputedStyle(panel),pad=2;
+   const ps=getComputedStyle(panel),pr=panel.getBoundingClientRect();
    const bounds={
-    top:pr.top+parseFloat(style.paddingTop),
-    bottom:pr.bottom-parseFloat(style.paddingBottom),
-    left:pr.left+parseFloat(style.paddingLeft),
-    right:pr.right-parseFloat(style.paddingRight)
+    top:pr.top+parseFloat(ps.paddingTop),
+    bottom:pr.bottom-parseFloat(ps.paddingBottom),
+    left:pr.left+parseFloat(ps.paddingLeft),
+    right:pr.right-parseFloat(ps.paddingRight)
    };
-   const inside=(r,outer)=>r.top>=outer.top-pad&&r.bottom<=outer.bottom+pad&&r.left>=outer.left-pad&&r.right<=outer.right+pad;
-   if(panel.scrollHeight>panel.clientHeight+pad||panel.scrollWidth>panel.clientWidth+pad)return false;
-   for(const child of children){
-    if(!active(child))continue;
-    const box=child.getBoundingClientRect();
-    if(!inside(box,bounds))return false;
-    if(child.scrollHeight>child.clientHeight+pad||child.scrollWidth>child.clientWidth+pad)return false;
-    for(const node of child.querySelectorAll(tags)){
-     if(!active(node))continue;
-     const r=node.getBoundingClientRect();
-     if(r.left<bounds.left-pad||r.right>bounds.right+pad||r.top<bounds.top-pad||r.bottom>bounds.bottom+pad)return false;
-     if(node.scrollHeight>node.clientHeight+pad||node.scrollWidth>node.clientWidth+pad)return false;
+   const inside=(r)=>r.top>=bounds.top-padding&&r.bottom<=bounds.bottom+padding
+    &&r.left>=bounds.left-padding&&r.right<=bounds.right+padding;
+   // Always measure the true ends of each row, not the distributed flex gaps.
+   for(const el of direct){
+    if(!active(el))continue;
+    if(!inside(el.getBoundingClientRect()))return false;
+    if(el.scrollWidth>el.clientWidth+padding||el.scrollHeight>el.clientHeight+padding)return false;
+    for(const n of el.querySelectorAll(selectors)){
+     if(!active(n))continue;
+     if(!inside(n.getBoundingClientRect()))return false;
+     if(n.scrollWidth>n.clientWidth+padding||n.scrollHeight>n.clientHeight+padding)return false;
     }
    }
-   return true;
+   return panel.scrollHeight<=panel.clientHeight+padding &&
+          panel.scrollWidth<=panel.clientWidth+padding;
   };
-  let low=.22,high=4.0,best=low;
-  for(let i=0;i<9&&!fits(low);i++)low*=.8;
-  best=low;
-  for(let i=0;i<16;i++){
-   const mid=(low+high)/2;
-   if(fits(mid)){best=mid;low=mid}else{high=mid}
+  // Sizes are relative to the actual panel dimensions. The binary search
+  // grows text until the next larger size would overflow horizontally/vertically.
+  let min=.25,max=5.5,best=min;
+  // For exceptionally small displays fall below the base minimum if required.
+  for(let i=0;i<12&&!fits(min);i++)min*=.8;
+  best=min;
+  if(fits(min)){
+   for(let i=0;i<17;i++){
+    const mid=(min+max)/2;
+    if(fits(mid)){best=mid;min=mid}else{max=mid}
+   }
   }
   fits(best);
- }finally{rightFitBusy=false}
+  panel.dataset.fitScale=best.toFixed(3);
+ } finally {rightFitBusy=false}
 }
 function requestRightFit(){
   if(rightFitQueued)return;
