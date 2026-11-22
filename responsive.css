@@ -916,8 +916,8 @@
       "header header"
       "theme-controls theme-controls"
       "bday bday"
-      "center center"
       "left right"
+      "center center"
       "footer footer" !important;
   }
   html.android-board-recovery #center {
@@ -932,4 +932,35 @@
   html.android-board-recovery #center .halacha-card { min-width: 0 !important; }
   html.android-board-recovery #left,
   html.android-board-recovery #right { height: 100% !important; }
+  /* The halacha strip is the last information block, directly above
+     the footer. Give the schedules the flexible space first. */
+  html.android-board-recovery #app {
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto !important;
+  }
+  html.android-board-recovery #center { height: auto !important; }
+}
+/* On landscape phones the same information order applies, without
+   changing tablet/desktop layouts. */
+@media (orientation: landscape) and (max-width: 900px) and (max-height: 500px) {
+  html.android-board-recovery #app {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto !important;
+    grid-template-areas:
+      "header header"
+      "theme-controls theme-controls"
+      "bday bday"
+      "left right"
+      "center center"
+      "footer footer" !important;
+  }
+  html.android-board-recovery #center {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    align-content: start !important;
+    height: auto !important;
+    gap: 3px !important;
+  }
+  html.android-board-recovery #center > .panel-title { grid-column: 1 / -1; }
+  html.android-board-recovery #center .halacha-card { min-width: 0 !important; }
 }
