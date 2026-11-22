@@ -773,8 +773,16 @@
   #right > #shabbat-title-block,
   #right > .time-row,
   #right > .panel-title { flex:0 0 auto; }
+  /* Match the other two panels' titles; keep both headings in the right-column fit. */
+  #right > .weekday-section-title {
+    font-size:calc(11px * var(--schedule-scale));
+    padding-bottom:calc(6px * var(--schedule-scale));
+    margin-bottom:calc(3px * var(--schedule-scale));
+  }
+  /* On weekdays: elevator (if visible), prayers heading, prayers, Shabbat heading, Shabbat times. */
+  #right.weekday-prayers-first > #elevator-next-widget {order:-3}
+  #right.weekday-prayers-first > #prayer-times-heading {order:-2}
   #right.weekday-prayers-first > #weekly-board { order:-1; margin-bottom:calc(5px * var(--schedule-scale)); border-bottom:1px solid var(--gold-dim); padding-bottom:calc(5px * var(--schedule-scale)); }
-  #right.weekday-prayers-first > #elevator-next-widget {order:-2}
   #right .weekly-heading {font-size:calc(15px * var(--schedule-scale)); margin:calc(2px * var(--schedule-scale)) 0 calc(4px * var(--schedule-scale)); line-height:1.14}
   #right .weekly-heading small {font-size:.7em}
   #right .weekly-entry {padding:calc(3px * var(--schedule-scale)) 0;line-height:1.15}
@@ -972,7 +980,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-mobile-theme-v5">
+<link rel="stylesheet" href="responsive.css?v=20261122-weekday-headings-v6">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (max-width: 768px) {
@@ -1310,6 +1318,7 @@ html.light-theme .theme-auto-control{color:#40536b}
       <div class="elevator-next-foot"><a class="elevator-mini-link" href="https://elevator.rouach.org/" data-elevator-link target="_blank" rel="noopener" aria-label="פתח מסך נפרד של זמני מעלית שבת">מסך נפרד</a></div>
     </div>
     <div class="panel-title" id="right-title" style="display:none">שבת קודש</div>
+    <div class="panel-title weekday-section-title" id="prayer-times-heading" hidden>זמני תפילות</div>
     <div id="shabbat-title-block">
       <div class="shabbat-big-title" id="shabbat-big-wrap">
         <span id="shabbat-big">…</span>
@@ -1367,6 +1376,7 @@ html.light-theme .theme-auto-control{color:#40536b}
       </div>
     </div>
 
+    <div class="panel-title weekday-section-title" id="shabbat-times-heading" hidden>זמני השבת</div>
     <div class="time-row" id="row-candles">
       <span class="time-label">כניסת השבת</span>
       <span class="time-val" id="val-candles">–</span>
@@ -3125,8 +3135,8 @@ function combinedFridayTime(data) {
   }
   return '';
 }
-function isOrdinaryWeekday(now) {
-  if (now.getDay()>4) return false;
+function isOrdinaryWeekday(now,includeFriday=false) {
+  if (now.getDay()>(includeFriday?5:4)) return false;
   // Hebcal's explicit Yom Tov flag wins over weekday schedules.
   const events = state.fetchDate === localISO(now) && Array.isArray(state.hebrewEvents) ? getTodayEvents() : [];
   return !events.some(e => e.yomtov===true || (e.subcat==='major' && !/^(Erev|ערב)\b/i.test(String(e.title||e.hebrew||''))));
@@ -3210,13 +3220,21 @@ function renderFixedShacharit(now,data) {
  }
 }
 
-function updatePrayerOrder(now){
-  // In ordinary weekdays, put synagogue prayers ABOVE all Shabbat in/out times.
+function updatePrayerOrder(now,data){
+  // Weekdays (Sun–Thu, plus Friday before candles): prayers precede Shabbat times.
+  // On Shabbat / Yom Tov, preserve the original panel without these weekday titles.
   const panel=document.getElementById('right');
   if(!panel)return;
-  const ordinary=now.getDay()<=4 && isOrdinaryWeekday(now);
-  panel.classList.toggle('weekday-prayers-first',ordinary);
-  // Order property affects flex children without moving DOM nodes.
+  const weekday=isOrdinaryWeekday(now,true) &&
+    (now.getDay()!==5 || !isFridayAfterCandles(now,data)) &&
+    !document.body.classList.contains('shabbat-day');
+  panel.classList.toggle('weekday-prayers-first',weekday);
+  const prayers=document.getElementById('weekly-prayers');
+  const prayerHeading=document.getElementById('prayer-times-heading');
+  const shabbatHeading=document.getElementById('shabbat-times-heading');
+  if(prayerHeading)prayerHeading.hidden=!weekday || !prayers?.childElementCount;
+  if(shabbatHeading)shabbatHeading.hidden=!weekday;
+  // Flex order changes only the visual order; no schedule data is modified.
 }
 
 
@@ -3249,7 +3267,7 @@ function renderWeeklyBoard() {
   // A prayers-only update must not suppress the last saved elevator timetable.
   const elevatorSelection=ShabbatUpdateStatus.elevatorSchedule(loadWeeklyStore(),getWeekKey(now));
   renderNextElevatorWindows(now,elevatorSelection.entry,elevatorSelection.old);
-  if (!data) { board.hidden=p.childElementCount===0; updatePrayerOrder(now);requestRightFit();return; }
+  if (!data) { board.hidden=p.childElementCount===0; updatePrayerOrder(now,data);requestRightFit();return; }
   if (cloudEntry.old) {const warning=weeklyHeading('⚠ זמנים מהעדכון האחרון','לא עודכנו לשבוע הנוכחי'); p.append(warning);}
   const day=now.getDay(), rows=[];
   if (day<=4 && isOrdinaryWeekday(now)) {
@@ -3287,7 +3305,7 @@ function renderWeeklyBoard() {
     el.append(grid);
   }
   board.hidden = !(p.childElementCount||el.childElementCount);
-  updatePrayerOrder(now);
+  updatePrayerOrder(now,data);
   requestRightFit();
 }
 function weeklyStatus(message,isError=false) {
