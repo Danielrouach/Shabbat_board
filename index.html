@@ -746,6 +746,22 @@
   #keep-awake-btn { background:transparent; border:1px solid var(--gold-dim); border-radius:5px; color:var(--gold); font:inherit; padding:3px 8px; cursor:pointer; }
   #keep-awake-btn.active { border-color:var(--green); color:var(--green); }
   #keep-awake-btn:focus-visible { outline:2px solid var(--blue); }
+
+/* Always-visible, no-scroll elevator preview on the primary display */
+#right #elevator-next-widget { order:-2; position:sticky;top:0;z-index:25;flex:0 0 auto;
+  border:1px solid var(--gold-dim);background:#101c29;border-radius:7px;padding:8px 11px;
+  box-shadow:0 5px 16px rgba(0,0,0,.35);font-family:'Heebo',sans-serif;margin-bottom:5px; }
+#right .elevator-next-title{font-size:clamp(.79rem,1.05vw,1rem);font-weight:700;color:var(--gold);margin-bottom:5px}
+#right #elevator-next-rows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#right .elevator-next-slot{text-align:center;border:1px solid #24394b;border-radius:5px;padding:6px 2px;min-width:0}
+#right .elevator-next-slot.is-active{border-color:var(--green);background:rgba(74,219,138,.12)}
+#right .elevator-next-time{font-size:clamp(.74rem,.85vw,1rem);font-weight:700;white-space:nowrap;direction:ltr;color:var(--text-pri)}
+#right .elevator-next-slot.is-active .elevator-next-time{color:var(--green)}
+#right .elevator-next-caption{font-size:.63rem;color:var(--text-sec)}
+#right .elevator-next-foot{font-size:.62rem;color:var(--text-dim);margin-top:3px;text-align:left}
+#right .elevator-next-foot span{color:var(--text-sec)}
+/* Keep the prayers and existing Shabbat metrics; full elevator list lives on its own screen */
+#weekly-elevators{display:none !important}
 </style>
 <script src="cloud-config.js"></script>
 </head>
@@ -922,6 +938,11 @@
 
   <!-- RIGHT: Shabbat panel -->
   <section class="panel" id="right">
+    <div id="elevator-next-widget" hidden aria-live="off" aria-label="שלושת זמני מעלית השבת הקרובים">
+      <div class="elevator-next-title">🛗 מעלית שבת · שלושת החלונות הקרובים</div>
+      <div id="elevator-next-rows"></div>
+      <div class="elevator-next-foot">כל הזמנים: <span id="elevator-display-url">/Shabbat_board/elevator.html</span></div>
+    </div>
     <div class="panel-title" id="right-title" style="display:none">שבת קודש</div>
     <div id="shabbat-title-block">
       <div class="shabbat-big-title" id="shabbat-big-wrap">
@@ -2663,6 +2684,32 @@ function weeklyHeading(text,detail) {
   if (detail) { const s=document.createElement('small');s.textContent=' · '+detail;d.append(s); }
   return d;
 }
+
+function renderNextElevatorWindows(now, data, old) {
+  const panel=document.getElementById('elevator-next-widget');
+  const grid=document.getElementById('elevator-next-rows');
+  if(!panel || !grid)return;
+  const day=now.getDay();
+  const intervals=day===5?data?.elevatorFriday:day===6?data?.elevatorSaturday:null;
+  const isValid=Array.isArray(intervals);
+  // Never present previous week's intervals as current ones.
+  if(old || !isValid || !intervals.length){panel.hidden=true;grid.replaceChildren();return;}
+  const minutes=now.getHours()*60+now.getMinutes();
+  const clean=intervals.filter(r=>isClockTime(r.start)&&isClockTime(r.end))
+    .map(r=>({start:r.start,end:r.end,a:Number(r.start.slice(0,2))*60+Number(r.start.slice(3)),b:Number(r.end.slice(0,2))*60+Number(r.end.slice(3))}))
+    .sort((a,b)=>a.a-b.a).filter(r=>r.b>minutes).slice(0,3);
+  if(!clean.length) {panel.hidden=true;grid.replaceChildren();return;}
+  panel.hidden=false;grid.replaceChildren();
+  for(const t of clean){
+    const slot=document.createElement('div');slot.className='elevator-next-slot';
+    const active=minutes>=t.a&&minutes<t.b;
+    if(active)slot.classList.add('is-active');
+    const time=document.createElement('div');time.className='elevator-next-time';time.textContent=t.start+'–'+t.end;
+    const caption=document.createElement('div');caption.className='elevator-next-caption';caption.textContent=active?'פעיל עכשיו':'החלון הבא';
+    slot.append(time,caption);grid.append(slot);
+  }
+}
+
 function renderWeeklyBoard() {
   const board=document.getElementById('weekly-board');
   if (!board) return;
@@ -2671,6 +2718,7 @@ function renderWeeklyBoard() {
   const data=cloudEntry && cloudEntry.entry;
   const p=document.getElementById('weekly-prayers'), el=document.getElementById('weekly-elevators');
   p.replaceChildren();el.replaceChildren();
+  renderNextElevatorWindows(now,data,cloudEntry?.old);
   if (!data) { board.hidden=true;return; }
   if (cloudEntry.old) {const warning=weeklyHeading('⚠ זמנים מהעדכון האחרון','לא עודכנו לשבוע הנוכחי'); p.append(warning);}
   const day=now.getDay(), rows=[];
