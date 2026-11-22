@@ -972,7 +972,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-left-align-v4">
+<link rel="stylesheet" href="responsive.css?v=20261122-mobile-theme-v5">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (max-width: 768px) {
@@ -1169,6 +1169,15 @@ html.light-theme .theme-auto-control{color:#40536b}
       <div id="parasha-year"></div>
     </div>
   </header>
+
+  <!-- Compact theme controls for phones; theme.js synchronizes all data-theme-* controls. -->
+  <div id="mobile-theme-controls" role="group" aria-label="מצב תצוגת הלוח">
+    <button id="mobile-theme-toggle" type="button" data-theme-toggle aria-pressed="false">☀ מצב בהיר</button>
+    <label class="theme-auto-control" title="מסומן: שינוי אוטומטי לפי זריחה ושקיעה; בחירה ידנית עד רענון">
+      <input id="mobile-theme-auto" type="checkbox" data-theme-auto checked>
+      <span>אוטומטי לפי זריחה/שקיעה</span>
+    </label>
+  </div>
 
   <!-- BIRTHDAY ROW (hidden when no birthdays) -->
   <div id="bday-row">
