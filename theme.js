@@ -17,6 +17,8 @@ let lastMinute='';
 let overrideInstant=null;
 let lastApplied='';
 let lastPeriod='';
+// In-memory manual choice takes priority immediately, without depending on storage events.
+let manualOverride=null;
 function autoEnabled(){return safeGet(AUTO_KEY)!=='false'}
 function localDay(date){
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
@@ -49,8 +51,8 @@ function manual(){
 }
 function preferred(now){
  if(!autoEnabled())return {mode:safeGet(THEME_KEY)==='light'?'light':'dark',period:null};
- const choice=manual();
- if(choice)return {mode:choice.mode,period:'manual-until-refresh'};
+ const choice=manualOverride || manual()?.mode;
+ if(choice)return {mode:typeof choice==='string'?choice:choice.mode,period:'manual-until-refresh'};
  const p=phase(now);
  if(p)return p;
  // When offline with no exact solar data, preserve the last chosen appearance.
@@ -123,9 +125,16 @@ function toggle(){
  const mode=document.documentElement.classList.contains('light-theme')?'dark':'light';
  // Automatic enabled: override shared between both screens, but ONLY until F5.
  // Automatic disabled: persist chosen mode indefinitely.
- if(autoEnabled())safeSet(MANUAL_KEY,JSON.stringify({mode}));
- else safeRemove(MANUAL_KEY);
+ if(autoEnabled()){
+  manualOverride=mode;
+  safeSet(MANUAL_KEY,JSON.stringify({mode}));
+ }else{
+  manualOverride=null;
+  safeRemove(MANUAL_KEY);
+ }
  safeSet(THEME_KEY,mode);
+ // Make the button responsive immediately, even if storage is unavailable.
+ apply(mode);
  const url=new URL(location.href);
  if(url.searchParams.has('theme')){
   url.searchParams.delete('theme');
@@ -136,6 +145,7 @@ function toggle(){
 function setAuto(enabled){
  const fixedMode=document.documentElement.classList.contains('light-theme')?'light':'dark';
  safeSet(AUTO_KEY,enabled?'true':'false');
+ manualOverride=null;
  safeRemove(MANUAL_KEY);
  if(!enabled)safeSet(THEME_KEY,fixedMode);
  sync(undefined,true);
@@ -156,6 +166,8 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.querySelectorAll('[data-theme-auto]').forEach(box=>box.addEventListener('change',()=>setAuto(box.checked)));
 });
 window.addEventListener('storage',e=>{
+ // Another board window may have changed the manual choice.
+ if(e.key===MANUAL_KEY)manualOverride=null;
  if(e.key===SOLAR_KEY){try{solar=JSON.parse(e.newValue||'{}')||{}}catch(_){}}
  if([THEME_KEY,SOLAR_KEY,MANUAL_KEY,AUTO_KEY].includes(e.key)){
   sync(undefined,true);
