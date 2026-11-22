@@ -30,7 +30,7 @@ function savePrayerTimes(dateText, times) {
     const file=DriveApp.getFileById(DATA_FILE_ID);
     let db={format:'halachic-weekly-v1',weeks:{}};
     try {const parsed=JSON.parse(file.getBlob().getDataAsString('UTF-8'));if(parsed.format===db.format && parsed.weeks && typeof parsed.weeks==='object')db=parsed;}catch(e){}
-    db.weeks[key]={...(db.weeks[key]||{}),...changes};
+    db.weeks[key]={...(db.weeks[key]||{}),...changes,prayersUpdatedAt:new Date().toISOString()};
     db.updatedAt=new Date().toISOString();
     file.setContent(JSON.stringify(db));
     return 'נשמרו '+Object.keys(changes).length+' זמני תפילות לשבוע '+key;
@@ -65,7 +65,7 @@ function saveElevatorNotice(dateText, notice) {
     let data={format:'halachic-weekly-v1',weeks:{}};
     try {const parsed=JSON.parse(file.getBlob().getDataAsString('UTF-8'));if(parsed?.format==='halachic-weekly-v1' && parsed.weeks && typeof parsed.weeks==='object')data=parsed;}catch(e){}
     const previous=data.weeks[key] || {};
-    data.weeks[key]={...previous,elevatorFriday:ranges.slice(0,2),elevatorSaturday:ranges.slice(2)};
+    data.weeks[key]={...previous,elevatorFriday:ranges.slice(0,2),elevatorSaturday:ranges.slice(2),elevatorUpdatedAt:new Date().toISOString()};
     data.updatedAt=new Date().toISOString();
     file.setContent(JSON.stringify(data));
     return 'נשמרו '+ranges.length+' טווחי מעלית לשבוע שמתחיל ב-'+key+' (2 לערב שבת, '+(ranges.length-2)+' לשבת)';
