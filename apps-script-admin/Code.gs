@@ -47,14 +47,14 @@ function writeSchedules(jsonText) {
  * Only runs in the private owner-only Apps Script deployment.
  */
 function saveElevatorNotice(dateText, notice) {
-  if (typeof dateText !== 'string' || !/^20\\d{2}-\\d{2}-\\d{2}$/.test(dateText)) throw Error('יש לבחור תאריך תקין');
+  if (typeof dateText !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(dateText)) throw Error('יש לבחור תאריך תקין');
   const parts = dateText.split('-').map(Number);
   const d = new Date(parts[0], parts[1]-1, parts[2], 12);
   if (d.getFullYear()!==parts[0] || d.getMonth()!==parts[1]-1 || d.getDate()!==parts[2]) throw Error('תאריך לא תקין');
   d.setDate(d.getDate()-d.getDay());
   const key = Utilities.formatDate(d, 'Asia/Jerusalem', 'yyyy-MM-dd');
   if (typeof notice!=='string' || notice.length>15000) throw Error('טקסט לא תקין');
-  const matches = [...notice.matchAll(/(\\d{1,2})[:.](\\d{2})\\s*[-–—]\\s*(\\d{1,2})[:.](\\d{2})/g)];
+  const matches = [...notice.matchAll(/(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/g)];
   if (matches.length<3 || matches.length>40) throw Error('נדרשים לפחות 3 טווחים: שניים לערב שבת והיתר לשבת');
   const ranges = matches.map(m=>{
     const h=Number(m[1]), n=Number(m[2]), h2=Number(m[3]), n2=Number(m[4]);
