@@ -805,6 +805,20 @@
 #right #elevator-next-widget{min-width:0}
 #right .elevator-next-time{white-space:normal;overflow-wrap:anywhere}
 
+
+/* Use the available screen height: flex layouts stay intrinsic, text can wrap,
+   and the fitter grows every column until the next step would overflow. */
+#left{justify-content:space-between;gap:calc(5px * var(--zfit))}
+#left .zman-row{min-width:0;gap:calc(8px * var(--zfit));align-items:center}
+#left .zman-name{flex:1 1 auto;white-space:normal;overflow-wrap:break-word}
+#left .zman-sub{white-space:normal;overflow-wrap:break-word}
+#left .zman-time{flex:0 0 auto;white-space:nowrap}
+#center{justify-content:space-evenly}
+#center .halacha-card{max-width:100%}
+#center .halacha-value{white-space:normal;overflow-wrap:break-word}
+#right{justify-content:space-between}
+#right .weekly-entry-label{overflow-wrap:break-word}
+
 /* Per-column viewport fitting. Values are set by measurePanelFit() on resize,
    fullscreen, zoom and after text is refreshed. No vertical scrolling. */
 #left { --zfit:1; overflow:hidden !important; }
@@ -1514,10 +1528,7 @@ function renderAll() {
   renderWeeklyBoard();
   renderHalacha();
   // Fit fonts after a brief paint tick
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    fitZmanimFont();
-    fitShabbatFont();
-  }));
+  requestAnimationFrame(() => requestAnimationFrame(requestColumnFit));
 }
 
 // ── Render Hebrew date ────────────────────────────────────────
@@ -2572,8 +2583,8 @@ function fitZmanimFont(){
  if(fittingPanel)return;
  fittingPanel=true;
  try{
-  measurePanelFit('left','--zfit',.34,2.1);
-  measurePanelFit('center','--hfit',.28,1.85);
+  measurePanelFit('left','--zfit',.28,4.25);
+  measurePanelFit('center','--hfit',.24,4.25);
  }finally{fittingPanel=false}
 }
 let fitColumnsQueued=false;
@@ -2624,7 +2635,7 @@ function fitShabbatFont(){
    }
    return true;
   };
-  let low=.28,high=1.8,best=low;
+  let low=.22,high=4.0,best=low;
   for(let i=0;i<9&&!fits(low);i++)low*=.8;
   best=low;
   for(let i=0;i<16;i++){
