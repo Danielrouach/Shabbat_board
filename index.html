@@ -3135,8 +3135,8 @@ function combinedFridayTime(data) {
   }
   return '';
 }
-function isOrdinaryWeekday(now) {
-  if (now.getDay()>4) return false;
+function isOrdinaryWeekday(now,includeFriday=false) {
+  if (now.getDay()>(includeFriday?5:4)) return false;
   // Hebcal's explicit Yom Tov flag wins over weekday schedules.
   const events = state.fetchDate === localISO(now) && Array.isArray(state.hebrewEvents) ? getTodayEvents() : [];
   return !events.some(e => e.yomtov===true || (e.subcat==='major' && !/^(Erev|ערב)\b/i.test(String(e.title||e.hebrew||''))));
@@ -3225,8 +3225,8 @@ function updatePrayerOrder(now,data){
   // On Shabbat / Yom Tov, preserve the original panel without these weekday titles.
   const panel=document.getElementById('right');
   if(!panel)return;
-  const weekday=(isOrdinaryWeekday(now) ||
-    (now.getDay()===5 && !isFridayAfterCandles(now,data))) &&
+  const weekday=isOrdinaryWeekday(now,true) &&
+    (now.getDay()!==5 || !isFridayAfterCandles(now,data)) &&
     !document.body.classList.contains('shabbat-day');
   panel.classList.toggle('weekday-prayers-first',weekday);
   const prayers=document.getElementById('weekly-prayers');
