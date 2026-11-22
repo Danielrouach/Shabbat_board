@@ -931,6 +931,11 @@ html.light-theme #loading-overlay{background:#f7f9fc}
 #right .weekly-entry {padding-block:calc(3px * var(--schedule-scale))}
 #right .time-row {padding-block:calc(5px * var(--schedule-scale))}
 
+
+/* Shared sunrise/sunset automatic appearance option, enabled by default */
+.theme-auto-control{display:inline-flex;align-items:center;gap:5px;color:var(--text-sec);font:500 clamp(.66rem,.77vw,.87rem) Heebo,Arial,sans-serif;white-space:nowrap;cursor:pointer;margin-inline:6px}
+.theme-auto-control input{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
+html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
@@ -1198,6 +1203,7 @@ html.light-theme #loading-overlay{background:#f7f9fc}
        <button id="weekly-open-btn" style="display:none" onclick="openWeeklySettings()" title="נהל זמני תפילות ומעלית שבת">🗓 תפילות ומעלית</button>
       <a href="elevator.html" target="_blank" rel="noopener" style="display:inline-block;margin:0 8px;padding:4px 9px;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:700 .75rem Heebo,sans-serif;text-decoration:none" title="פתח את זמני המעלית במסך נפרד לפני שבת">🛗 מסך מעלית נפרד</a>
       <button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button>
+      <label class="theme-auto-control" title="מסומן: שינוי אוטומטי בהנץ ובשקיעה. שינוי ידני נשמר עד F5"><input type="checkbox" data-theme-auto checked> שנה מצב לוח לפי זריחה/שקיעה</label>
       <button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="הפעלה לפני שבת: בקשה מהדפדפן לשמור על המסך פעיל">◌ מסך פעיל: כבוי</button>
        <!-- QA dev controls — only visible when ?qa=1 -->
       <span id="qa-controls">
