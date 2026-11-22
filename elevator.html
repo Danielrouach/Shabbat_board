@@ -167,6 +167,7 @@ function isClock(v){return typeof v==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test
 function toMin(v){return +v.slice(0,2)*60 + +v.slice(3)}
 function render(){
  const instant=mockNow===null?new Date():new Date(mockNow);
+ if(window.ShabbatTheme)ShabbatTheme.sync(instant);
  const p=nowParts(),today=mapDay[p.weekday];
  document.getElementById('clock').textContent=[p.hour,p.minute,p.second].map(n=>String(n).padStart(2,'0')).join(':');
  const todayDate=dateFromISO(iso(p.year,p.month,p.day));
