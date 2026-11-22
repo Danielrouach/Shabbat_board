@@ -2101,6 +2101,9 @@ function qaSetDateTime() {
   const dateVal = document.getElementById('qa-date').value;
   const timeVal = document.getElementById('qa-time').value || '12:00';
   if (!dateVal) { alert('בחר תאריך'); return; }
+  // Manual date/time overrides the preset day selection.
+  qaSimDay = -1;
+  document.getElementById('qa-day').value = '-1';
   qaDateOverride   = dateVal;
   qaTimeOverride   = timeVal;
   state.fetchDate  = '';           // force re-fetch for the new date
@@ -2115,11 +2118,14 @@ function qaSetDateTime() {
 function qaResetDateTime() {
   qaDateOverride  = null;
   qaTimeOverride  = null;
+  qaSimDay = -1;
+  document.getElementById('qa-day').value = '-1';
   state.fetchDate = '';
   _prevOmerDay    = -1;
   _prevAfterTzet  = null;
   document.getElementById('qa-date').value = '';
-  document.getElementById('qa-time').value = '12:00';
+  const actualNow = new Date();
+  document.getElementById('qa-time').value = pad2(actualNow.getHours()) + ':' + pad2(actualNow.getMinutes());
   document.getElementById('qa-go-btn').classList.remove('active');
   document.getElementById('qa-reset-btn').classList.remove('active');
   fetchAllData();
@@ -2133,8 +2139,27 @@ function showQAControls() {
 
 function qaSetDay(val) {
   qaSimDay = val;
-  // Force updateShabbatMode with simulated time
-  tickClock(); // re-runs updateShabbatMode
+  // Calculate the preset day/time without an older manual override.
+  qaDateOverride = null;
+  qaTimeOverride = null;
+  const simulated = getSimulatedNow();
+  const automatic = String(val) === '-1';
+  const dateValue = localISO(simulated);
+  const timeValue = pad2(simulated.getHours()) + ':' + pad2(simulated.getMinutes());
+  document.getElementById('qa-date').value = automatic ? '' : dateValue;
+  document.getElementById('qa-time').value = timeValue;
+  if (!automatic) {
+    qaDateOverride = dateValue;
+    qaTimeOverride = timeValue;
+  }
+  // Preset, manual input and on-screen clock must represent the same instant.
+  state.fetchDate = '';
+  _prevOmerDay = -1;
+  _prevAfterTzet = null;
+  document.getElementById('qa-go-btn').classList.toggle('active', !automatic);
+  document.getElementById('qa-reset-btn').classList.remove('active');
+  fetchAllData();
+  tickClock();
 }
 
 function qaSetTemp(val) {
