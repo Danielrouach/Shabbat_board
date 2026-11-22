@@ -972,7 +972,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-landscape-v3">
+<link rel="stylesheet" href="responsive.css?v=20261122-left-align-v4">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (max-width: 768px) {
@@ -1000,7 +1000,8 @@ html.light-theme .theme-auto-control{color:#40536b}
     grid-area: location;
     min-width: 0;
     width: 100%;
-    align-items: flex-start;
+    /* In RTL flex-start is the right edge. flex-end is the physical left edge. */
+    align-items: flex-end;
     text-align: left;
     overflow-wrap: anywhere;
   }
@@ -1061,6 +1062,8 @@ html.light-theme .theme-auto-control{color:#40536b}
     grid-area: location;
     gap: 1px;
     align-self: center;
+    align-items: flex-end;
+    text-align: left;
     overflow-wrap: anywhere;
   }
   #header #clock-block {
