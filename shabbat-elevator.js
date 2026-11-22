@@ -3,6 +3,7 @@
 (function(global){
 'use strict';
 const STORAGE='shabbat_board_havdalah_v1';
+const PARASHA_STORAGE='shabbat_board_parasha_v1';
 const ZONE='Asia/Jerusalem';
 const cache=new Map();
 const listeners=new Set();
@@ -22,6 +23,21 @@ function havdalah(d){
  const ms=Date.parse(raw||'');
  return Number.isFinite(ms)?ms:null;
 }
+function parasha(d) {
+  try {
+    const db=JSON.parse(localStorage.getItem(PARASHA_STORAGE)||'{}');
+    const value=db[key(d)];
+    return typeof value==='string'?value:'';
+  }catch(e){return ''}
+}
+function saveParasha(sat,hebrew){
+  if(typeof hebrew!=='string'||!hebrew.trim())return;
+  let db={};
+  try{db=JSON.parse(localStorage.getItem(PARASHA_STORAGE)||'{}')}catch(e){}
+  db[sat]=hebrew.trim().replace(/^פרשת\\s+/,'');
+  try{localStorage.setItem(PARASHA_STORAGE,JSON.stringify(db))}catch(e){}
+  listeners.forEach(fn=>{try{fn()}catch(e){}});
+}
 function onChange(fn){listeners.add(fn);return()=>listeners.delete(fn)}
 function save(sat,iso){
  const obj=load();obj[sat]=iso;
@@ -38,6 +54,8 @@ async function prime(d){
    const data=await res.json();
    const item=(data.items||[]).find(i=>i.category==='havdalah'&&i.date&&localParts(new Date(i.date)).day===6);
    if(item&&Number.isFinite(Date.parse(item.date)))save(sat,item.date);
+   const reading=(data.items||[]).find(i=>i.category==='parashat' && i.hebrew && i.date && i.date.slice(0,10)===sat);
+   if(reading)saveParasha(sat,reading.hebrew);
   }catch(e){console.warn('Could not refresh havdalah: using cached value if available',e)}
  })();
  cache.set(sat,promise);return promise;
@@ -67,5 +85,5 @@ function display(d,data){
  rows.sort((a,b)=>a.a-b.a);
  return {rows,cutoff:until,unknown:day===6&&until===null,minutes,day};
 }
-global.ShabbatElevator={prime,havdalah,onChange,display,saturdayISO,localParts};
+global.ShabbatElevator={prime,havdalah,parasha,onChange,display,saturdayISO,localParts};
 })(window);
