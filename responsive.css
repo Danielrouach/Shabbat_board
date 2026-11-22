@@ -798,7 +798,7 @@
   #center .halacha-label { font-size: 10px; line-height: 1.1; letter-spacing: 0; }
   #center .halacha-value, #center #holiday-card .halacha-value,
   #center #omer-card .halacha-value, #center #tachanun-card.has-tachanun .halacha-value {
-    font-size: 14px; line-height: 1.12; overflow-wrap: anywhere;
+    font-size: 15px; line-height: 1.12; overflow-wrap: anywhere;
   }
   #center .halacha-sub, #center #omer-card .halacha-sub {
     font-size: 9px; line-height: 1.12; overflow-wrap: anywhere;
@@ -807,17 +807,18 @@
   #left, #right { min-height: 0; height: 100%; padding: 4px; gap: 1px; }
   #left .panel-title, #right > .weekday-section-title { font-size: 11px; }
   #left .zman-row { padding: 2px 0; gap: 3px; }
-  #left .zman-name { font-size: 11px; line-height: 1.12; }
-  #left .zman-sub { font-size: 9px; line-height: 1.1; overflow-wrap: anywhere; }
-  #left .zman-time { font-size: 12px; line-height: 1.12; }
-  #right .weekly-heading { font-size: 11px; line-height: 1.12; }
+  #left .zman-name { font-size: 13px; line-height: 1.12; }
+  #left .zman-sub { font-size: 10px; line-height: 1.1; overflow-wrap: anywhere; }
+  #left .zman-time { font-size: 14px; line-height: 1.12; }
+  #right .weekly-heading { font-size: 12px; line-height: 1.12; }
   #right .weekly-entry { padding: 2px 0; gap: 3px; }
-  #right .weekly-entry-label { font-size: 11px; line-height: 1.12; }
-  #right .weekly-entry-time { font-size: 12px; line-height: 1.12; }
+  #right .weekly-entry-label { font-size: 13px; line-height: 1.12; }
+  #right .weekly-entry-time { font-size: 14px; line-height: 1.12; }
   #right .time-row { padding: 2px 0; gap: 3px; }
-  #right .time-label { font-size: 11px; line-height: 1.12; }
-  #right .time-val, #right .time-val.secondary { font-size: 12px; line-height: 1.12; }
-  #right .shabbat-big-title { font-size: 14px; line-height: 1.12; }
+  #right .time-label { font-size: 13px; line-height: 1.12; }
+  #right .time-val, #right .time-val.secondary { font-size: 14px; line-height: 1.12; }
+  #right .shabbat-big-title { font-size: 15px; line-height: 1.12; }
+  #right .shabbat-candles-svg svg { width: 24px; height: 27px; }
   #right #elevator-next-widget { padding: 3px; }
   #right .elevator-next-title { font-size: 10px; line-height: 1.12; }
   #right #elevator-next-rows { grid-template-columns: repeat(3, minmax(0, 1fr)); }
