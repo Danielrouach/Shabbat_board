@@ -3,43 +3,39 @@ const DATA_FILE_ID = '1rL-LOkjaV0FWOTDm2fGopW04G2ROfuMM';
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Admin').setTitle('ניהול לוח שארית ישראל');
 }
-function writeSchedules(jsonText) {
-  if (typeof jsonText !== 'string' || jsonText.length > 250000) throw Error('קלט גדול מדי');
-  const parsed = JSON.parse(jsonText);
-  if (parsed.format !== 'halachic-weekly-v1' || !parsed.weeks || typeof parsed.weeks !== 'object' || Array.isArray(parsed.weeks)) throw Error('פורמט לא תקין');
-  const clock = /^([01]\d|2[0-3]):[0-5]\d$/;
-  const fields = ['weekdayMincha','weekdayArvit','fridayMinchaGedola','fridayCandles','fridayMinchaArvit','shabbatMinchaGedola','shabbatMinchaKetana','shabbatArvit'];
-  const clean = {};
-  for (const [week, data] of Object.entries(parsed.weeks)) {
-    if (!/^20\d\d-\d\d-\d\d$/.test(week) || !data || typeof data !== 'object' || Array.isArray(data)) throw Error('שבוע לא תקין');
-    const entry = {};
-    for (const field of fields) {
-      const value = data[field] || '';
-      if (typeof value !== 'string' || (value && !clock.test(value) && !(field === 'fridayMinchaArvit' && /^\+\d{1,3}$/.test(value)))) throw Error('שעה לא תקינה: ' + field);
-      entry[field] = value;
-    }
-    for (const type of ['elevatorFriday','elevatorSaturday']) {
-      const ranges = data[type] || [];
-      if (!Array.isArray(ranges) || ranges.length > 40) throw Error('רשימת מעלית לא תקינה');
-      entry[type] = ranges.map(r => {
-        if (!r || !clock.test(r.start) || !clock.test(r.end) || r.end <= r.start) throw Error('טווח מעלית לא תקין');
-        return {start:r.start,end:r.end};
-      });
-    }
-    clean[week] = entry;
+
+const PRAYER_FIELDS = ['weekdayMincha','weekdayArvit','fridayMinchaGedola','fridayCandles','fridayMinchaArvit','shabbatMinchaGedola','shabbatMinchaKetana','shabbatArvit'];
+function weekKeyFromDate(dateText) {
+  if (!/^20\d{2}-\d{2}-\d{2}$/.test(String(dateText))) throw Error('תאריך לא תקין');
+  const [y,m,day] = dateText.split('-').map(Number);
+  const d = new Date(y,m-1,day,12);
+  if (d.getFullYear()!==y || d.getMonth()!==m-1 || d.getDate()!==day) throw Error('תאריך לא תקין');
+  d.setDate(d.getDate()-d.getDay());
+  return Utilities.formatDate(d,'Asia/Jerusalem','yyyy-MM-dd');
+}
+function savePrayerTimes(dateText, times) {
+  const key=weekKeyFromDate(dateText), valid=/^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!times || typeof times!=='object' || Array.isArray(times)) throw Error('נתונים לא תקינים');
+  const changes={};
+  for (const field of PRAYER_FIELDS) {
+    const raw=times[field];
+    if (raw===undefined || raw===null) continue;
+    const time=String(raw).trim();
+    if (time && !valid.test(time) && !(field==='fridayMinchaArvit' && /^\+\d{1,3}$/.test(time))) throw Error('שעה לא תקינה: '+field);
+    if (time) changes[field]=time;  // Empty fields do not erase previous data.
   }
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
+  if (!Object.keys(changes).length) throw Error('אין שעות לשמירה');
+  const lock=LockService.getScriptLock();lock.waitLock(15000);
   try {
-    const file = DriveApp.getFileById(DATA_FILE_ID);
-    let old = {format:'halachic-weekly-v1',weeks:{}};
-    try { old = JSON.parse(file.getBlob().getDataAsString('UTF-8')); } catch (e) {}
-    const merged = {format:'halachic-weekly-v1',updatedAt:new Date().toISOString(),weeks:{...(old.weeks || {}),...clean}};
-    file.setContent(JSON.stringify(merged));
-    return 'נשמרו ' + Object.keys(clean).length + ' שבועות';
+    const file=DriveApp.getFileById(DATA_FILE_ID);
+    let db={format:'halachic-weekly-v1',weeks:{}};
+    try {const parsed=JSON.parse(file.getBlob().getDataAsString('UTF-8'));if(parsed.format===db.format && parsed.weeks && typeof parsed.weeks==='object')db=parsed;}catch(e){}
+    db.weeks[key]={...(db.weeks[key]||{}),...changes};
+    db.updatedAt=new Date().toISOString();
+    file.setContent(JSON.stringify(db));
+    return 'נשמרו '+Object.keys(changes).length+' זמני תפילות לשבוע '+key;
   } finally { lock.releaseLock(); }
 }
-
 
 /**
  * Save elevator schedule pasted from a WhatsApp notice.
