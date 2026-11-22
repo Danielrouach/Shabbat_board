@@ -959,6 +959,15 @@ html.light-theme #loading-overlay{background:#f7f9fc}
   #footer-right {font-size:.65rem}
 }
 
+/* Separate prayer and elevator update status in bottom-left footer. */
+#footer-right{display:flex;flex-direction:column;align-items:flex-start;text-align:right;gap:2px;min-width:220px;max-width:min(48vw,590px);line-height:1.35}
+#footer-right .feature-update-status{display:block;font:500 clamp(.62rem,.77vw,.85rem) Heebo,Arial,sans-serif;color:var(--text-sec);white-space:normal;overflow-wrap:anywhere}
+#footer-right .feature-update-status.stale{color:#ffbd68;font-weight:700;animation:feature-warning-pulse 1.7s ease-in-out infinite}
+html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
+@keyframes feature-warning-pulse{0%,100%{opacity:1}50%{opacity:.38}}
+@media(prefers-reduced-motion:reduce){#footer-right .feature-update-status.stale{animation:none}}
+@media(max-width:1024px){#footer-right{max-width:100%;width:100%;align-items:center;text-align:center}}
+
 /* Shared sunrise/sunset automatic appearance option, enabled by default */
 .theme-auto-control{display:inline-flex;align-items:center;gap:5px;color:var(--text-sec);font:500 clamp(.66rem,.77vw,.87rem) Heebo,Arial,sans-serif;white-space:nowrap;cursor:pointer;margin-inline:6px}
 .theme-auto-control input{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
@@ -966,6 +975,7 @@ html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
+<script src="update-status.js"></script>
 <script src="theme.js"></script>
 </head>
 <body>
@@ -1258,8 +1268,10 @@ html.light-theme .theme-auto-control{color:#40536b}
       לוח שבת - משפחת רואש • חיפה
     </span>
     <span id="footer-center"></span>
-    <span id="footer-right">
+    <span id="footer-right" aria-live="polite">
       <span id="last-updated">מתעדכן...</span>
+      <span id="prayers-update-status" class="feature-update-status">זמני תפילות: בודק עדכון…</span>
+      <span id="elevator-update-status" class="feature-update-status">זמני מעלית: בודק עדכון…</span>
     </span>
   </footer>
 
@@ -1579,12 +1591,12 @@ async function fetchAllData() {
 
     renderAll();
     document.getElementById('loading-overlay').classList.add('hidden');
-    document.getElementById('footer-right').textContent =
-      'עודכן: ' + new Date().toLocaleTimeString('he-IL');
+    document.getElementById('last-updated').textContent =
+      'נתוני הלוח עודכנו: ' + new Date().toLocaleTimeString('he-IL');
 
   } catch(e) {
     console.error('Fetch error:', e);
-    document.getElementById('footer-right').textContent = 'שגיאה בטעינה – מנסה שוב...';
+    document.getElementById('last-updated').textContent = 'שגיאה בטעינה – מנסה שוב...';
     setTimeout(fetchAllData, 30000);
   }
 }
@@ -3023,10 +3035,27 @@ function updatePrayerOrder(now){
   // Order property affects flex children without moving DOM nodes.
 }
 
+
+function updateFeatureStatusLabels(now){
+ if(!window.ShabbatUpdateStatus)return;
+ const weeks=loadWeeklyStore();
+ for(const [feature,id,label] of [
+   ['prayers','prayers-update-status','תפילות שארית ישראל'],
+   ['elevator','elevator-update-status','מעלית שבת']
+ ]){
+   const el=document.getElementById(id);
+   if(!el)continue;
+   const result=ShabbatUpdateStatus.status(weeks,feature,now);
+   el.textContent=label+': '+result.text;
+   el.classList.toggle('stale',result.warning);
+ }
+}
+
 function renderWeeklyBoard() {
   const board=document.getElementById('weekly-board');
   if (!board) return;
   const now=getSimulatedNow();
+  updateFeatureStatusLabels(now);
   const cloudEntry = cloudCurrentEntry();
   const data=cloudEntry && cloudEntry.entry;
   const p=document.getElementById('weekly-prayers'), el=document.getElementById('weekly-elevators');
