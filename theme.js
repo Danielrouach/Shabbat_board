@@ -77,7 +77,7 @@ function apply(mode){
  }
  // Both screens share localStorage on the same origin; no theme query is needed.
  for(const link of document.querySelectorAll('a[data-elevator-link]')){
-  link.href='/elevator/';
+  link.href='https://elevator.rouach.org/';
  }
  if(lastApplied!==mode){
   lastApplied=mode;
