@@ -980,7 +980,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-universal-fit-v8">
+<link rel="stylesheet" href="responsive.css?v=20261122-landscape-fit-v7">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (orientation: portrait) and (max-width: 768px) {
@@ -1120,16 +1120,9 @@ html.light-theme .theme-auto-control{color:#40536b}
 }
 @media (orientation: portrait) and (max-width: 360px) {
   #header { grid-template-columns: minmax(0, 1fr) minmax(78px, 1.08fr) minmax(0, 1fr); }
-}
-/* The external compact kiosk CSS owns the two-column body layout.
-   Keep this final inline header fallback readable at portrait widths. */
-@media (orientation: portrait) and (max-width: 599px) {
-  #header #parasha-name { font-size: clamp(14px, 4.5vw, 18px); line-height: 1.12; }
-  #header #hebrew-date { font-size: clamp(12px, 3.2vw, 14px); line-height: 1.12; }
-  #header #day-of-week-left { font-size: clamp(12px, 3.6vw, 15px); line-height: 1.12; }
-  #header #gregorian-date { font-size: clamp(10px, 2.8vw, 12px); line-height: 1.12; }
-  #header #clock { font-size: clamp(19px, 5.5vw, 26px); line-height: 1; }
-  #header #shabbat-combined-img, body.shabbat-day #header #shabbat-combined-img { height: 44px; }
+  #header #parasha-name { font-size: .82rem; }
+  #header #hebrew-date { font-size: .67rem; }
+  #header #day-of-week-left { font-size: .74rem; }
 }
 </style>
 <script src="cloud-config.js"></script>
@@ -2855,18 +2848,18 @@ function measurePanelFit(panelId,cssVar,minScale,maxScale){
  }
  fits(best);
 }
-// Phones/tablets in either orientation: fit ALL of the board, not a
-// one-column scroll view. CSS gives narrow portrait screens two schedule
-// columns + a compact halacha strip; the fitter then maximizes legibility.
-function isCompactBoard(){
- return window.matchMedia('(max-width: 1024px)').matches;
+// Landscape phones/tablets keep the entire three-column board in view.
+// Expand the board's logical dimensions while scaling it down to the visible
+// viewport. Re-measure after prayer, elevator, holiday and birthday updates.
+function isLandscapeBoard(){
+ return window.matchMedia('(orientation: landscape) and (max-width: 1024px)').matches;
 }
-let compactFitQueued=false, compactFitBusy=false;
-function fitCompactBoard(){
- if(!isCompactBoard()||compactFitBusy)return;
+let landscapeFitQueued=false, landscapeFitBusy=false;
+function fitLandscapeBoard(){
+ if(!isLandscapeBoard()||landscapeFitBusy)return;
  const app=document.getElementById('app');
  if(!app)return;
- compactFitBusy=true;
+ landscapeFitBusy=true;
  try{
   const viewportWidth=Math.max(1,Math.floor(window.visualViewport?.width||window.innerWidth));
   const viewportHeight=Math.max(1,Math.floor(window.visualViewport?.height||window.innerHeight));
@@ -2877,70 +2870,48 @@ function fitCompactBoard(){
   const sections=ids.map(id=>document.getElementById(id)).filter(Boolean);
   const panels=['left','center','right'].map(id=>document.getElementById(id)).filter(Boolean);
   const visible=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
-  const overflow=el=>el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1;
-  const within=(r,b,pad=2)=>r.top>=b.top-pad&&r.bottom<=b.bottom+pad&&
-    r.left>=b.left-pad&&r.right<=b.right+pad;
   const fits=scale=>{
-   app.style.setProperty('--compact-board-scale',scale.toFixed(6));
-   app.style.setProperty('--compact-board-width',(viewportWidth/scale).toFixed(2)+'px');
-   app.style.setProperty('--compact-board-height',(availableHeight/scale).toFixed(2)+'px');
-   // All geometry is read AFTER the width/height change, including text
-   // wrapping. A CSS transform alone cannot make clipped content visible.
-   if(overflow(app))return false;
-   const screen={top:0,left:0,right:viewportWidth,bottom:availableHeight};
+   app.style.setProperty('--landscape-board-scale',scale.toFixed(5));
+   app.style.setProperty('--landscape-board-width',(viewportWidth/scale).toFixed(2)+'px');
+   app.style.setProperty('--landscape-board-height',(availableHeight/scale).toFixed(2)+'px');
+   // Read unscaled overflow: transforms alone can conceal clipped content.
+   if(app.scrollHeight>app.clientHeight+1||app.scrollWidth>app.clientWidth+1)return false;
    for(const el of sections){
     if(!visible(el))continue;
-    if(overflow(el)||!within(el.getBoundingClientRect(),screen))return false;
+    if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)return false;
+    const r=el.getBoundingClientRect();
+    if(r.top< -2||r.left< -2||r.bottom>availableHeight+2||r.right>viewportWidth+2)return false;
    }
-   // Check individual cards, timetable rows and footer/header descendants,
-   // including nested weekly prayers and elevator windows. No hiding rows.
    for(const panel of panels){
     const outer=panel.getBoundingClientRect();
     for(const el of panel.children){
      if(!visible(el))continue;
-     if(overflow(el)||!within(el.getBoundingClientRect(),outer))return false;
-     for(const inner of el.querySelectorAll(
-      '.weekly-entry,.weekly-heading,.elevator-next-slot,.halacha-value,.halacha-sub,.shabbat-big-title'
-     )){
-      if(!visible(inner))continue;
-      if(overflow(inner))return false;
-     }
-    }
-   }
-   for(const id of ['header','footer','mobile-theme-controls']){
-    const parent=document.getElementById(id);
-    if(!parent||!visible(parent))continue;
-    const outer=parent.getBoundingClientRect();
-    for(const el of parent.children){
-     if(visible(el)&&(!within(el.getBoundingClientRect(),outer)||overflow(el)))return false;
+     const r=el.getBoundingClientRect();
+     if(r.top<outer.top-2||r.bottom>outer.bottom+2||
+        r.left<outer.left-2||r.right>outer.right+2)return false;
+     if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)return false;
     }
    }
    return true;
   };
   if(fits(1))return;
-  // Even a very narrow/short phone must keep every data row. We use a
-  // shrinking lower bound, not a hard-coded minimum that silently clips.
-  let low=.15,high=1;
-  for(let i=0;i<12&&!fits(low);i++)low*=.5;
-  if(!fits(low)){
-   console.warn('Compact board: could not fit all content at minimum scale');
-   return;
-  }
-  for(let i=0;i<17;i++){
+  let low=.12,high=1;
+  // Tiny landscape phones may require a smaller scale, never fewer rows.
+  if(!fits(low)){fits(low);return;}
+  for(let i=0;i<14;i++){
    const mid=(low+high)/2;
    if(fits(mid))low=mid;
    else high=mid;
   }
-  // Small rounding margin prevents 1px clipping on mobile Safari.
-  fits(Math.max(.0001,low-.0002));
- }finally{compactFitBusy=false;}
+  fits(low);
+ }finally{landscapeFitBusy=false;}
 }
-function requestCompactFit(){
- if(compactFitQueued||!isCompactBoard())return;
- compactFitQueued=true;
+function requestLandscapeFit(){
+ if(landscapeFitQueued||!isLandscapeBoard())return;
+ landscapeFitQueued=true;
  requestAnimationFrame(()=>{
-  compactFitQueued=false;
-  fitCompactBoard();
+  landscapeFitQueued=false;
+  fitLandscapeBoard();
  });
 }
 function isCompactLayout(){
@@ -2957,7 +2928,7 @@ function fitZmanimFont(){
 }
 let fitColumnsQueued=false;
 function requestColumnFit(){
- if(isCompactBoard()){requestCompactFit();return;}
+ if(isLandscapeBoard()){requestLandscapeFit();return;}
  if(fitColumnsQueued)return;
  fitColumnsQueued=true;
  requestAnimationFrame(()=>{
@@ -3029,7 +3000,7 @@ function fitShabbatFont(){
  } finally {rightFitBusy=false}
 }
 function requestRightFit(){
-  if(isCompactBoard()){requestCompactFit();return;}
+  if(isLandscapeBoard()){requestLandscapeFit();return;}
   if(rightFitQueued)return;
   rightFitQueued=true;
   requestAnimationFrame(()=>{rightFitQueued=false;fitShabbatFont()});
@@ -3053,7 +3024,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 window.addEventListener('resize',requestColumnFit);
 window.addEventListener('orientationchange',requestColumnFit);
-window.addEventListener('load',requestColumnFit);
 document.addEventListener('fullscreenchange',requestColumnFit);
 window.visualViewport?.addEventListener('resize',requestColumnFit);
 
