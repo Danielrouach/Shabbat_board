@@ -34,7 +34,7 @@ function saveParasha(sat,hebrew){
   if(typeof hebrew!=='string'||!hebrew.trim())return;
   let db={};
   try{db=JSON.parse(localStorage.getItem(PARASHA_STORAGE)||'{}')}catch(e){}
-  db[sat]=hebrew.trim().replace(/^פרשת\\s+/,'');
+  db[sat]=hebrew.trim().replace(/^(?:פרשת\s*)+/,'');
   try{localStorage.setItem(PARASHA_STORAGE,JSON.stringify(db))}catch(e){}
   listeners.forEach(fn=>{try{fn()}catch(e){}});
 }
