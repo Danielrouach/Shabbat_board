@@ -157,6 +157,35 @@ function detectTimes(text,ocrLines) {
  syncFridayPrayer();
  return {count:Object.keys(found).length,uncertain};
 }
+
+/*
+ * Table-layout fallback for the known Shaarit Yisrael notice.
+ * OCR may lose the Hebrew weekday labels entirely. The weekday prayers
+ * are rows 4 and 5 of the first time column in this synagogue's layout.
+ * Only suggest numeric values; admin MUST confirm them against the photo.
+ */
+async function readWeekdayTableTimes(worker, imageFile) {
+ const image=await createImageBitmap(imageFile);
+ try {
+  const w=image.width,h=image.height;
+  const canvas=document.createElement('canvas');
+  // The notice's first table occupies approximately y=0.15..0.56;
+  // the time column is left of the central divider.
+  const x=Math.round(w*.29), y=Math.round(h*.242);
+  const cw=Math.round(w*.19), ch=Math.round(h*.081);
+  canvas.width=Math.max(300,cw*3);canvas.height=Math.max(120,ch*3);
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(image,x,y,cw,ch,0,0,canvas.width,canvas.height);
+  const result=await worker.recognize(canvas,{rectangle:{left:0,top:0,width:canvas.width,height:canvas.height}},{
+    tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789:.'
+  });
+  const times=findClocks(result.data.text||'');
+  return {mincha:times[0]||'',arvit:times[1]||'',raw:result.data.text||''};
+ } finally {image.close()}
+}
+
 function loadOCR(){
   if(window.Tesseract)return Promise.resolve(window.Tesseract);
   return new Promise((resolve,reject)=>{
@@ -185,7 +214,22 @@ async function handleImage(file) {
       const text=result.data.text||'';
       document.getElementById('ocrRaw').value=text;
       const detected=detectTimes(text,result.data.lines);
-      status.textContent='זוהו '+detected.count+' שדות באופן חד-משמעי. בדוק והשלים את שאר השעות לפי התמונה לפני שמירה. אם מנחה או ערבית בימי חול ריקות, השלם לפי התמונה. מנחה–קבלת שבת–ערבית מחושבת אוטומטית כ־15 דקות אחרי כניסת שבת.';
+      let fallbackNote='';
+      if(!document.getElementById('weekdayMincha').value || !document.getElementById('weekdayArvit').value){
+        try{
+          const fallback=await readWeekdayTableTimes(worker,file);
+          if(fallback.mincha && !document.getElementById('weekdayMincha').value) {
+            document.getElementById('weekdayMincha').value=fallback.mincha;
+            fallbackNote+=' מנחה חול הוצעה מקריאת עמודת השעות.';
+          }
+          if(fallback.arvit && !document.getElementById('weekdayArvit').value) {
+            document.getElementById('weekdayArvit').value=fallback.arvit;
+            fallbackNote+=' ערבית חול הוצעה מקריאת עמודת השעות.';
+          }
+          document.getElementById('ocrRaw').value+='\n\n--- עמודת שעות (קריאה נוספת) ---\n'+fallback.raw;
+        }catch(err){console.warn('OCR time column fallback failed',err);}
+      }
+      status.textContent='זוהו '+detected.count+' שדות בתמונה.'+fallbackNote+' בדוק והשלים את שאר השעות לפי התמונה לפני שמירה. אם מנחה או ערבית בימי חול ריקות, השלם לפי התמונה. מנחה–קבלת שבת–ערבית מחושבת אוטומטית כ־15 דקות אחרי כניסת שבת.';
     }finally{await worker.terminate()}
   }catch(err){status.textContent='זיהוי התמונה נכשל: '+err.message+' — ניתן למלא את השעות ידנית.'}
 }
