@@ -1040,6 +1040,79 @@ html.light-theme .theme-auto-control{color:#40536b}
   #header #hebrew-date { font-size: .95rem; }
   #header #day-of-week-left { font-size: .95rem; }
 }
+/* Portrait phones: all header information in one compact horizontal strip.
+   This must follow the older <=768px fallback to override its two-row clock. */
+@media (orientation: portrait) and (max-width: 768px) {
+  #header {
+    grid-template-columns: minmax(0, 1fr) minmax(88px, 1.12fr) minmax(0, 1fr);
+    grid-template-areas: "parasha clock location";
+    align-items: center;
+    column-gap: clamp(3px, 1vw, 8px);
+    row-gap: 0;
+    padding-bottom: 8px;
+  }
+  #header #parasha-block {
+    grid-area: parasha;
+    gap: 1px;
+    align-self: center;
+    overflow-wrap: anywhere;
+  }
+  #header #location-block {
+    grid-area: location;
+    gap: 1px;
+    align-self: center;
+    overflow-wrap: anywhere;
+  }
+  #header #clock-block {
+    grid-area: clock;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    justify-content: center;
+    align-self: center;
+    max-height: none;
+    overflow: visible;
+  }
+  #header #bsd { font-size: .62rem; margin: 0; }
+  #header #parasha-label { font-size: .56rem; letter-spacing: 0; line-height: 1.15; }
+  #header #parasha-name { font-size: clamp(.83rem, 3.05vw, 1.15rem); line-height: 1.12; }
+  #header #hebrew-date { font-size: clamp(.68rem, 2.4vw, .95rem); line-height: 1.16; }
+  #header #day-of-week-left { font-size: clamp(.75rem, 2.65vw, 1rem); line-height: 1.14; }
+  #header #gregorian-date { font-size: clamp(.64rem, 2.2vw, .84rem); line-height: 1.16; }
+  #header #location-name { font-size: clamp(.6rem, 1.9vw, .76rem); line-height: 1.18; letter-spacing: 0; }
+  #header #clock {
+    grid-area: auto;
+    margin: 0;
+    font-size: clamp(.85rem, 3.2vw, 1.35rem);
+    letter-spacing: -.035em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.12;
+  }
+  #header #temp-display {
+    grid-area: auto;
+    justify-self: center;
+    font-size: clamp(.59rem, 1.9vw, .76rem);
+    line-height: 1.2;
+    margin: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  #header #shabbat-kodesh-block {
+    grid-area: auto;
+    justify-self: center;
+    max-height: 60px;
+  }
+  #header #shabbat-combined-img,
+  body.shabbat-day #header #shabbat-combined-img { height: 52px; max-width: 100%; object-fit: contain; }
+  #header #shabbat-clock { font-size: .68rem; }
+}
+@media (orientation: portrait) and (max-width: 360px) {
+  #header { grid-template-columns: minmax(0, 1fr) minmax(78px, 1.08fr) minmax(0, 1fr); }
+  #header #parasha-name { font-size: .82rem; }
+  #header #hebrew-date { font-size: .67rem; }
+  #header #day-of-week-left { font-size: .74rem; }
+}
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
