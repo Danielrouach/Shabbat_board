@@ -762,6 +762,31 @@
 #right .elevator-next-foot span{color:var(--text-sec)}
 /* Keep the prayers and existing Shabbat metrics; full elevator list lives on its own screen */
 #weekly-elevators{display:none !important}
+
+  /* Responsive prayer & Shabbat column: scale ALL content to fit without scrolling. */
+  #right { overflow:hidden !important; --schedule-scale:1; --schedule-gap:5px; }
+  #right > #weekly-board { flex:0 0 auto; min-height:0; margin-top:0; padding-top:0; border-top:0; }
+  #right > #shabbat-title-block,
+  #right > .time-row,
+  #right > .panel-title { flex:0 0 auto; }
+  #right.weekday-prayers-first > #weekly-board { order:-1; margin-bottom:calc(5px * var(--schedule-scale)); border-bottom:1px solid var(--gold-dim); padding-bottom:calc(5px * var(--schedule-scale)); }
+  #right.weekday-prayers-first > #elevator-next-widget {order:-2}
+  #right .weekly-heading {font-size:calc(15px * var(--schedule-scale)); margin:calc(2px * var(--schedule-scale)) 0 calc(4px * var(--schedule-scale)); line-height:1.14}
+  #right .weekly-heading small {font-size:.7em}
+  #right .weekly-entry {padding:calc(3px * var(--schedule-scale)) 0;line-height:1.15}
+  #right .weekly-entry-label {font-size:calc(13px * var(--schedule-scale));line-height:1.15}
+  #right .weekly-entry-time {font-size:calc(16px * var(--schedule-scale));line-height:1.15}
+  #right .time-row {padding:calc(6px * var(--schedule-scale)) 0;line-height:1.2}
+  #right .time-label {font-size:calc(16px * var(--schedule-scale));line-height:1.2}
+  #right .time-val {font-size:calc(20px * var(--schedule-scale));line-height:1.2}
+  #right .time-val.secondary {font-size:calc(17px * var(--schedule-scale))}
+  #right .shabbat-big-title {font-size:calc(24px * var(--schedule-scale)); padding-bottom:calc(6px * var(--schedule-scale));margin-bottom:calc(3px * var(--schedule-scale))}
+  #right .shabbat-candles-svg {transform:scale(var(--schedule-scale));transform-origin:center}
+  #right .elevator-next-title {font-size:calc(14px * var(--schedule-scale))}
+  #right .elevator-next-time {font-size:calc(13px * var(--schedule-scale))}
+  #right .elevator-next-caption,#right .elevator-next-foot {font-size:calc(10px * var(--schedule-scale))}
+  #right #elevator-next-widget {padding:calc(8px * var(--schedule-scale));margin-bottom:calc(4px * var(--schedule-scale))}
+  #right .elevator-next-slot {padding:calc(5px * var(--schedule-scale)) 2px}
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
@@ -2433,55 +2458,48 @@ function fitZmanimFont() {
   });
 }
 
-function fitShabbatFont() {
-  const panel = document.getElementById('right');
-  if (!panel) return;
-  const rows = panel.querySelectorAll('.time-row');
-  if (!rows.length) return;
-
-  const panelRect  = panel.getBoundingClientRect();
-  const panelH     = panelRect.height;
-  const titleEl    = panel.querySelector('.panel-title');
-  const bigTitle   = panel.querySelector('.shabbat-big-title');
-  const style      = getComputedStyle(panel);
-  const paddingV   = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-  const titleH     = titleEl && titleEl.offsetParent ? titleEl.getBoundingClientRect().height + 4 : 0;
-  const bigH       = bigTitle ? bigTitle.getBoundingClientRect().height + 8 : 0;
-  const available  = panelH - paddingV - titleH - bigH;
-
-  if (available <= 20) return;
-
-  let lo = 8, hi = 30, best = 12;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    rows.forEach(r => {
-      const l = r.querySelector('.time-label');
-      const v = r.querySelector('.time-val');
-      if (l) l.style.fontSize = mid + 'px';
-      if (v) v.style.fontSize = Math.round(mid * 1.28) + 'px';
-    });
-    let total = 0;
-    rows.forEach(r => { total += r.getBoundingClientRect().height; });
-    if (total <= available) { best = mid; lo = mid + 1; }
-    else                    { hi = mid - 1; }
-  }
-  rows.forEach(r => {
-    const l = r.querySelector('.time-label');
-    const v = r.querySelector('.time-val');
-    if (l) l.style.fontSize = best + 'px';
-    if (v) v.style.fontSize = Math.round(best * 1.28) + 'px';
-  });
+let rightFitQueued=false, rightFitBusy=false;
+function fitShabbatFont(){
+  const panel=document.getElementById('right');
+  if(!panel || rightFitBusy || panel.clientHeight<40 || panel.clientWidth<60)return;
+  rightFitBusy=true;
+  try{
+    // Only scale the visible content; do not hide prayers or rely on scrolling.
+    // Measure the actual layout on each viewport (including zoom and fonts).
+    const available=panel.clientHeight;
+    let lo=.38,hi=1.22,best=.38;
+    const fits=scale=>{
+      panel.style.setProperty('--schedule-scale',scale.toFixed(3));
+      // scrollHeight checks wrapping, vertical gaps, borders, prayer headings,
+      // three upcoming elevator windows and Shabbat metrics together.
+      return panel.scrollHeight<=available+1;
+    };
+    for(let i=0;i<14;i++){
+      const mid=(lo+hi)/2;
+      if(fits(mid)){best=mid;lo=mid}else{hi=mid}
+    }
+    fits(best);
+    // On very short screens reduce spaces further before letting anything clip.
+    if(panel.scrollHeight>available+1){
+      panel.style.gap='1px';
+      fits(.38);
+    }else panel.style.gap='';
+  } finally {rightFitBusy=false}
 }
-
+function requestRightFit(){
+  if(rightFitQueued)return;
+  rightFitQueued=true;
+  requestAnimationFrame(()=>{rightFitQueued=false;fitShabbatFont()});
+}
 // Re-fit on any size change — covers window resize AND bday-row appearing
-const _fitObserver = new ResizeObserver(() => { fitZmanimFont(); fitShabbatFont(); });
+const _fitObserver = new ResizeObserver(() => { fitZmanimFont(); requestRightFit(); });
 document.addEventListener('DOMContentLoaded', () => {
   const left  = document.getElementById('left');
   const right = document.getElementById('right');
   if (left)  _fitObserver.observe(left);
   if (right) _fitObserver.observe(right);
 });
-window.addEventListener('resize', () => { fitZmanimFont(); fitShabbatFont(); });
+window.addEventListener('resize', () => { fitZmanimFont(); requestRightFit(); });
 
 // ── Burn-in / pixel-shift protection ─────────────────────────
 // Slowly drifts the entire #app by up to ±2px every 3 minutes.
@@ -2735,6 +2753,15 @@ function renderFixedShacharit(now) {
   }
 }
 
+function updatePrayerOrder(now){
+  // In ordinary weekdays, put synagogue prayers ABOVE all Shabbat in/out times.
+  const panel=document.getElementById('right');
+  if(!panel)return;
+  const ordinary=now.getDay()<=4 && isOrdinaryWeekday(now);
+  panel.classList.toggle('weekday-prayers-first',ordinary);
+  // Order property affects flex children without moving DOM nodes.
+}
+
 function renderWeeklyBoard() {
   const board=document.getElementById('weekly-board');
   if (!board) return;
@@ -2745,7 +2772,7 @@ function renderWeeklyBoard() {
   p.replaceChildren();el.replaceChildren();
   renderFixedShacharit(now);
   renderNextElevatorWindows(now,data,cloudEntry?.old);
-  if (!data) { board.hidden=p.childElementCount===0;return; }
+  if (!data) { board.hidden=p.childElementCount===0; updatePrayerOrder(now);requestRightFit();return; }
   if (cloudEntry.old) {const warning=weeklyHeading('⚠ זמנים מהעדכון האחרון','לא עודכנו לשבוע הנוכחי'); p.append(warning);}
   const day=now.getDay(), rows=[];
   if (day<=4 && isOrdinaryWeekday(now)) {
@@ -2783,7 +2810,8 @@ function renderWeeklyBoard() {
     el.append(grid);
   }
   board.hidden = !(p.childElementCount||el.childElementCount);
-  requestAnimationFrame(()=>{ if(typeof fitShabbatFont==='function')fitShabbatFont(); });
+  updatePrayerOrder(now);
+  requestRightFit();
 }
 function weeklyStatus(message,isError=false) {
   const e=document.getElementById('weekly-status');if(!e)return;
