@@ -1451,6 +1451,7 @@ function tickClock() {
 
   updateZmanimHighlight(real); // always highlight based on real time
   updateShabbatMode(now);      // shabbat mode based on simulated time
+  if(window.ShabbatTheme)ShabbatTheme.sync(now);
   maybeRenderOmer();
   const minuteKey = localISO(now) + ':' + hh + ':' + mm;
   if (minuteKey !== lastWeeklyRenderMinute) {
@@ -1506,6 +1507,7 @@ async function fetchAllData() {
     ]);
 
     state.zmanim       = zmanim;
+    if(window.ShabbatTheme)ShabbatTheme.setTimes(dateStr,zmanim);
     state.hebrewEvents = calItems;
     const MONTH_NAME_TO_NUM = {
       'Nisan':1,'Iyyar':2,'Sivan':3,'Tamuz':4,'Av':5,'Elul':6,
