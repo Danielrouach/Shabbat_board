@@ -2466,8 +2466,9 @@ function fitShabbatFont(){
   try{
     // Only scale the visible content; do not hide prayers or rely on scrolling.
     // Measure the actual layout on each viewport (including zoom and fonts).
+    panel.style.gap='';
     const available=panel.clientHeight;
-    let lo=.38,hi=1.22,best=.38;
+    let lo=.22,hi=1.22,best=.22;
     const fits=scale=>{
       panel.style.setProperty('--schedule-scale',scale.toFixed(3));
       // scrollHeight checks wrapping, vertical gaps, borders, prayer headings,
@@ -2482,8 +2483,8 @@ function fitShabbatFont(){
     // On very short screens reduce spaces further before letting anything clip.
     if(panel.scrollHeight>available+1){
       panel.style.gap='1px';
-      fits(.38);
-    }else panel.style.gap='';
+      fits(.22);
+    }
   } finally {rightFitBusy=false}
 }
 function requestRightFit(){
