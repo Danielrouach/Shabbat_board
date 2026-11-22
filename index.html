@@ -980,10 +980,10 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-weekday-headings-v6">
+<link rel="stylesheet" href="responsive.css?v=20261122-landscape-fit-v7">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
-@media (max-width: 768px) {
+@media (orientation: portrait) and (max-width: 768px) {
   #header {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1043,7 +1043,7 @@ html.light-theme .theme-auto-control{color:#40536b}
   #header #temp-display { grid-area: auto; margin-top: 2px; }
   #header #shabbat-kodesh-block { grid-area: auto; }
 }
-@media (max-width: 360px) {
+@media (orientation: portrait) and (max-width: 360px) {
   #header { column-gap: 8px; }
   #header #parasha-name { font-size: 1.05rem; }
   #header #hebrew-date { font-size: .95rem; }
@@ -2848,6 +2848,72 @@ function measurePanelFit(panelId,cssVar,minScale,maxScale){
  }
  fits(best);
 }
+// Landscape phones/tablets keep the entire three-column board in view.
+// Expand the board's logical dimensions while scaling it down to the visible
+// viewport. Re-measure after prayer, elevator, holiday and birthday updates.
+function isLandscapeBoard(){
+ return window.matchMedia('(orientation: landscape) and (max-width: 1024px)').matches;
+}
+let landscapeFitQueued=false, landscapeFitBusy=false;
+function fitLandscapeBoard(){
+ if(!isLandscapeBoard()||landscapeFitBusy)return;
+ const app=document.getElementById('app');
+ if(!app)return;
+ landscapeFitBusy=true;
+ try{
+  const viewportWidth=Math.max(1,Math.floor(window.visualViewport?.width||window.innerWidth));
+  const viewportHeight=Math.max(1,Math.floor(window.visualViewport?.height||window.innerHeight));
+  const bar=document.getElementById('copyright-bar');
+  const barHeight=bar?.getBoundingClientRect().height||18;
+  const availableHeight=Math.max(1,viewportHeight-barHeight-2);
+  const ids=['header','mobile-theme-controls','bday-row','left','center','right','footer'];
+  const sections=ids.map(id=>document.getElementById(id)).filter(Boolean);
+  const panels=['left','center','right'].map(id=>document.getElementById(id)).filter(Boolean);
+  const visible=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
+  const fits=scale=>{
+   app.style.setProperty('--landscape-board-scale',scale.toFixed(5));
+   app.style.setProperty('--landscape-board-width',(viewportWidth/scale).toFixed(2)+'px');
+   app.style.setProperty('--landscape-board-height',(availableHeight/scale).toFixed(2)+'px');
+   // Read unscaled overflow: transforms alone can conceal clipped content.
+   if(app.scrollHeight>app.clientHeight+2||app.scrollWidth>app.clientWidth+2)return false;
+   for(const el of sections){
+    if(!visible(el))continue;
+    if(el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)return false;
+    const r=el.getBoundingClientRect();
+    if(r.top< -2||r.left< -2||r.bottom>availableHeight+2||r.right>viewportWidth+2)return false;
+   }
+   for(const panel of panels){
+    const outer=panel.getBoundingClientRect();
+    for(const el of panel.children){
+     if(!visible(el))continue;
+     const r=el.getBoundingClientRect();
+     if(r.top<outer.top-2||r.bottom>outer.bottom+2||
+        r.left<outer.left-2||r.right>outer.right+2)return false;
+     if(el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)return false;
+    }
+   }
+   return true;
+  };
+  if(fits(1))return;
+  let low=.12,high=1;
+  // Tiny landscape phones may require a smaller scale, never fewer rows.
+  if(!fits(low)){fits(low);return;}
+  for(let i=0;i<14;i++){
+   const mid=(low+high)/2;
+   if(fits(mid))low=mid;
+   else high=mid;
+  }
+  fits(low);
+ }finally{landscapeFitBusy=false;}
+}
+function requestLandscapeFit(){
+ if(landscapeFitQueued||!isLandscapeBoard())return;
+ landscapeFitQueued=true;
+ requestAnimationFrame(()=>{
+  landscapeFitQueued=false;
+  fitLandscapeBoard();
+ });
+}
 function isCompactLayout(){
  return window.matchMedia('(max-width: 1024px)').matches;
 }
@@ -2862,6 +2928,7 @@ function fitZmanimFont(){
 }
 let fitColumnsQueued=false;
 function requestColumnFit(){
+ if(isLandscapeBoard()){requestLandscapeFit();return;}
  if(fitColumnsQueued)return;
  fitColumnsQueued=true;
  requestAnimationFrame(()=>{
@@ -2933,6 +3000,7 @@ function fitShabbatFont(){
  } finally {rightFitBusy=false}
 }
 function requestRightFit(){
+  if(isLandscapeBoard()){requestLandscapeFit();return;}
   if(rightFitQueued)return;
   rightFitQueued=true;
   requestAnimationFrame(()=>{rightFitQueued=false;fitShabbatFont()});
@@ -2946,10 +3014,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (left) _fitObserver.observe(left);
   if (right) _fitObserver.observe(right);
   if (center) _fitObserver.observe(center);
+  // Content outside the panels can also change the available height.
+  for(const id of ['header','bday-row','footer']){
+    const el=document.getElementById(id);
+    if(el)_fitObserver.observe(el);
+  }
   document.fonts?.ready.then(requestColumnFit);
   requestColumnFit();
 });
 window.addEventListener('resize',requestColumnFit);
+window.addEventListener('orientationchange',requestColumnFit);
 document.addEventListener('fullscreenchange',requestColumnFit);
 window.visualViewport?.addEventListener('resize',requestColumnFit);
 
