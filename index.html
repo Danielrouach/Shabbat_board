@@ -2691,6 +2691,7 @@ function renderNextElevatorWindows(now, data, old) {
   const panel=document.getElementById('elevator-next-widget');
   const grid=document.getElementById('elevator-next-rows');
   if(!panel || !grid || !window.ShabbatElevator)return;
+  ShabbatElevator.prime(now); // Preload the simulated/real week's Havdalah cutoff when online.
   const result=ShabbatElevator.display(now,old?null:data);
   // Keep the elevator widget visible with its status even after the last slot.
   if(![5,6].includes(now.getDay()) || old || !data) {panel.hidden=true;grid.replaceChildren();return;}
@@ -2711,10 +2712,11 @@ function renderNextElevatorWindows(now, data, old) {
     caption.textContent=active?'פעיל עכשיו':t.repeated?'מחזור מוצאי שבת':'החלון הבא';
     slot.append(time,caption);grid.append(slot);
   }
+  let note=panel.querySelector('.elevator-cutoff-warning');
   if(result.unknown){
-    const note=document.createElement('div');note.className='elevator-next-caption';
-    note.textContent='⚠ שעת עצירה לא אומתה — נדרשת טעינה לפני שבת';panel.append(note);
-  }
+    if(!note){note=document.createElement('div');note.className='elevator-next-caption elevator-cutoff-warning';panel.append(note);}
+    note.textContent='⚠ זמן עצירת המעלית לא אומת — טען את העמוד לפני שבת';
+  } else if(note){note.remove();}
 }
 
 function renderFixedShacharit(now) {
