@@ -45,7 +45,7 @@ h1{line-height:1.12;letter-spacing:.01em}
 @media(max-height:680px){.eyebrow{font-size:.7rem}.date-range{margin-top:0}#hebrewDate{font-size:1.2rem}}
 </style></head>
 <body><div id="frame">
-<header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 זמני מעלית שבת</h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div></div></header>
+<header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div></div></header>
 <div id="status"></div><div id="qa-controls" aria-label="סימולציית זמן">
   <label>תאריך <input type="date" id="qa-date"></label>
   <label>שעה <input type="time" id="qa-time" value="12:00"></label>
@@ -80,8 +80,28 @@ function dateFromISO(ymd,days=0){
 }
 const hebrewFmt=new Intl.DateTimeFormat('he-IL-u-ca-hebrew',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
 const civilFmt=new Intl.DateTimeFormat('he-IL',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+function hebrewNumeral(value){
+ let n=Number(value);
+ if(!Number.isInteger(n)||n<1)return String(value);
+ const letters=[[400,'ת'],[300,'ש'],[200,'ר'],[100,'ק'],[90,'צ'],[80,'פ'],[70,'ע'],[60,'ס'],[50,'נ'],[40,'מ'],[30,'ל'],[20,'כ'],[10,'י'],[9,'ט'],[8,'ח'],[7,'ז'],[6,'ו'],[5,'ה'],[4,'ד'],[3,'ג'],[2,'ב'],[1,'א']];
+ if(n===15)return 'ט״ו';
+ if(n===16)return 'ט״ז';
+ let out='';
+ for(const [amount,letter] of letters)while(n>=amount){out+=letter;n-=amount;}
+ return out.length===1?out+'׳':out.slice(0,-1)+'״'+out.slice(-1);
+}
+function hebrewYear(year){
+ const n=Number(year);
+ if(!Number.isInteger(n)||n<1)return String(year);
+ const thousands=Math.floor(n/1000),remainder=n%1000;
+ return hebrewNumeral(thousands)+hebrewNumeral(remainder);
+}
 function hebrewDate(d){
- try{return hebrewFmt.format(d)}catch{return '—'}
+ try{
+  const parts=hebrewFmt.formatToParts(d);
+  const get=k=>parts.find(p=>p.type===k)?.value||'';
+  return hebrewNumeral(get('day'))+' ב'+get('month')+' '+hebrewYear(get('year'));
+ }catch{return '—'}
 }
 function civilDate(d){
  return civilFmt.format(d);
@@ -108,6 +128,8 @@ function render(){
  document.getElementById('date').textContent=civilDate(todayDate);
  document.getElementById('hebrewDate').textContent=hebrewDate(todayDate);
  document.getElementById('weekRange').textContent=shabbatRange(p);
+ const parasha=ShabbatElevator.parasha(instant);
+ document.getElementById('parashaTitle').textContent=parasha?'זמני מעלית שבת לפרשת '+parasha:'זמני מעלית שבת';
  const suffix=mockNow===null?'':' · סימולציה';
  document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'מעלית שבת · לוח שבועי')+suffix;
  const data=readStore()[weekKey(p)];
