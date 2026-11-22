@@ -54,7 +54,7 @@ The public reader uses a generated **shabbatCloudCallback_...** callback name an
 | **apps-script-public/Code.gs** | **Public read-only** doGet JSONP service reading the Drive file. |
 | **CNAME** | Custom GitHub Pages domain: shabbat.rouach.org. |
 | **.nojekyll** | Disable Jekyll processing on Pages. |
-| **README.md** | Older setup/background notes; may contain legacy URLs and references to files that are no longer in the repository. **This AGENTS.md is the current agent handoff.** |
+| **README.md** | Current human-friendly Hebrew overview, screens, architecture, operating instructions and the short deployment history. **This AGENTS.md remains the detailed agent/developer handoff.** |
 
 Use focused changes; do not reformat or regenerate the entire ~1 MB main HTML. Avoid accidentally deleting embedded base64 images. No package install or build step is necessary.
 
@@ -176,4 +176,4 @@ Each screen stores a merged weekly DB in localStorage. This is a **cache**, not 
 
 ---
 
-**Pointers:** See README.md for historical context; source code is authoritative for implementation details. If any information conflicts, inspect the latest code and correct this document before relying on it.
+**Pointers:** See README.md for the current human-friendly overview and the brief original deployment story. Source code is authoritative for implementation details. If anything conflicts, inspect the latest code and update both docs accordingly.
