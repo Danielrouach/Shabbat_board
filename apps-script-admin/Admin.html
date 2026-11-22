@@ -1,57 +1,166 @@
 <!doctype html>
-<html lang="he" dir="rtl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ניהול לוח שארית ישראל</title>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ניהול זמני שארית ישראל</title>
 <style>
-body{font:16px Arial,sans-serif;background:#080c10;color:#eef2f8;max-width:760px;margin:25px auto;padding:16px}
-h1,h2{color:#c8a44a}h1{font-size:1.8rem}
-section{background:#0d1520;border:1px solid #29394a;border-radius:9px;padding:18px;margin:18px 0}
-label{display:block;margin:12px 0 6px}textarea{width:100%;min-height:170px;background:#182536;color:white;border:1px solid #445;padding:12px;box-sizing:border-box;border-radius:5px;resize:vertical;line-height:1.5;direction:rtl}
-input[type=date],input[type=file]{background:#182536;color:#fff;border:1px solid #445;padding:10px;max-width:100%;border-radius:5px}
-button{padding:11px 22px;background:#c8a44a;color:#111;font-size:1rem;font-weight:bold;border:0;border-radius:6px;cursor:pointer;margin-top:12px}
-small,p{color:#a8b6c5;line-height:1.6}.status{min-height:25px;padding:8px;font-weight:bold}
-pre{white-space:pre-wrap;direction:ltr}
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{font:16px Arial,sans-serif;background:#080c10;color:#eef2f8;max-width:850px;margin:22px auto;padding:15px;line-height:1.5}
+h1,h2{color:#c8a44a}h1{font-size:1.7rem}h2{font-size:1.25rem}
+section{background:#0d1520;border:1px solid #29394a;border-radius:10px;padding:18px;margin:16px 0}
+label{display:block;color:#c9d5e0;font-weight:bold;margin:12px 0 5px}
+input,textarea{font:inherit;background:#182536;color:#fff;border:1px solid #455b70;padding:10px;border-radius:6px;max-width:100%}
+textarea{width:100%;min-height:145px;resize:vertical;line-height:1.7}
+input[type=file]{width:100%}input[type=time]{width:100%;direction:ltr}
+button{padding:11px 20px;background:#c8a44a;color:#15110a;font-weight:bold;border:0;border-radius:6px;cursor:pointer;margin-top:12px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.status{padding:10px 0;min-height:28px;white-space:pre-wrap}
+small,p{color:#aebdcc}
+#drop{border:2px dashed #7a5f28;padding:22px;border-radius:10px;text-align:center;background:#111d29;cursor:pointer}
+#drop.drag{background:#244057;border-color:#c8a44a}
+#preview{display:none;max-width:100%;max-height:260px;object-fit:contain;margin:12px auto}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+.fields label{margin:5px 0}
+fieldset{border:1px solid #3d5064;border-radius:8px;margin:14px 0;padding:14px}
+legend{color:#c8a44a;font-weight:bold}
+.note{border-right:3px solid #d3a64c;padding:8px 12px;background:#25200f}
+#ocrRaw{min-height:85px;direction:auto}
+@media(max-width:560px){.fields{grid-template-columns:1fr}}
 </style></head><body>
-<h1>ניהול פרטי — לוח שארית ישראל</h1>
-<p>העדכונים נשמרים ב־Google Drive ומוצגים אוטומטית בלוח הציבורי. מסך זה מיועד לבעל החשבון בלבד.</p>
+<h1>ניהול לוח בית הכנסת שארית ישראל</h1>
+<p>העלאת תמונת זמני תפילות והדבקת הודעת מעלית שבת. הנתונים נשמרים בענן עבור השבוע שבחרת, ללא קובצי JSON.</p>
+<section>
+<h2>תאריך השבוע</h2>
+<label for="weekDate">בחר יום כלשהו בשבוע המבוקש (למשל יום שישי)</label>
+<input type="date" id="weekDate" required>
+<p><small>שני סוגי הנתונים נשמרים באותו שבוע. ניתן לעדכן תפילות ומעלית בנפרד.</small></p>
+</section>
+<section>
+<h2>🕍 העלאת תמונת זמני התפילות</h2>
+<div id="drop" role="button" tabindex="0" aria-label="בחר או גרור תמונת זמני תפילות">
+<b>גרור לכאן קובץ JPG / PNG</b><p>או לחץ לבחירת תמונה</p>
+<input type="file" accept="image/jpeg,image/png,image/webp" id="prayerFile">
+</div>
+<img alt="תצוגה מקדימה של התמונה" id="preview">
+<div id="ocrStatus" class="status" role="status"></div>
+<p class="note">זיהוי מתוך תמונה עלול לטעות, במיוחד בטבלאות בעברית. חובה לבדוק כל שעה לפני השמירה. שעות שלא זוהו נשארות ריקות.</p>
+<fieldset><legend>ימי חול (רק בימי חול)</legend><div class="fields">
+<label>מנחה <input id="weekdayMincha" type="time"></label>
+<label>ערבית <input id="weekdayArvit" type="time"></label>
+</div></fieldset>
+<fieldset><legend>ערב שבת</legend><div class="fields">
+<label>מנחה גדולה <input id="fridayMinchaGedola" type="time"></label>
+<label>כניסת שבת / הדלקת נרות <input id="fridayCandles" type="time"></label>
+<label>מנחה, קבלת שבת וערבית <input id="fridayMinchaArvit" type="time"></label>
+</div></fieldset>
+<fieldset><legend>שבת ומוצאי שבת</legend><div class="fields">
+<label>מנחה גדולה <input id="shabbatMinchaGedola" type="time"></label>
+<label>מנחה קטנה <input id="shabbatMinchaKetana" type="time"></label>
+<label>ערבית מוצאי שבת <input id="shabbatArvit" type="time"></label>
+</div></fieldset>
+<details><summary>תוצאות הזיהוי הגולמיות — לעזרה בבדיקה</summary><textarea id="ocrRaw" readonly></textarea></details>
+<button type="button" id="savePrayer">שמור זמני תפילות ב־Drive</button>
+<div id="prayerStatus" class="status" role="status"></div>
+</section>
 <section>
 <h2>🛗 זמני מעלית שבת</h2>
-<label for="weekDate">בחר תאריך מתוך השבוע הרצוי (מומלץ: יום שישי)</label>
-<input type="date" id="weekDate">
-<label for="elevator">הדבק כאן את כל הודעת זמני המעלית מ־WhatsApp</label>
+<label for="elevator">הדבק את הודעת WhatsApp המלאה</label>
 <textarea id="elevator" placeholder="זמני מעלית לשבת:
 17:15-18:15
 19:30-20:30
 07:30-08:15
 08:45-09:00
 ..."></textarea>
-<p><small>כאשר אין כותרות נפרדות, שני הטווחים הראשונים נחשבים לערב שבת וכל השאר לשבת. בדוק שהסדר נכון לפני השמירה. שמירת המעלית לא מוחקת זמני תפילות של אותו שבוע.</small></p>
-<button id="saveElevator">שמור זמני מעלית ב־Drive</button>
-<div class="status" id="elevatorStatus" role="status"></div>
-</section>
-<section>
-<h2>🕍 זמני תפילות — ייבוא JSON</h2>
-<p>בשלב זה, תמונת JPG מעובדת בעורך המקומי של הלוח, ולא ישירות בדף ניהול זה. לאחר בדיקה ותיקון השעות, ייצא קובץ JSON והעלה אותו כאן.</p>
-<label for="file">קובץ גיבוי JSON</label><input type="file" accept=".json,application/json" id="file">
-<label for="json">או הדבק את תוכן ה־JSON</label>
-<textarea id="json" placeholder='{"format":"halachic-weekly-v1","weeks":{}}'></textarea>
-<button id="saveJson">שמור JSON ב־Drive</button>
-<div class="status" id="jsonStatus" role="status"></div>
+<p><small>לפי פורמט ההודעה שלך: שני הטווחים הראשונים לערב שבת, והיתר לשבת. בדוק את סדר הטווחים.</small></p>
+<button type="button" id="saveElevator">שמור זמני מעלית ב־Drive</button>
+<div id="elevatorStatus" class="status" role="status"></div>
 </section>
 <script>
-document.getElementById('weekDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-document.getElementById('file').onchange=async e=>{const f=e.target.files[0];if(f)document.getElementById('json').value=await f.text()};
-document.getElementById('saveElevator').onclick=()=>{
- const date=document.getElementById('weekDate').value,notice=document.getElementById('elevator').value;
- const status=document.getElementById('elevatorStatus');
- const ranges=[...notice.matchAll(/\d{1,2}[:.]\d{2}\s*[-–—]\s*\d{1,2}[:.]\d{2}/g)];
- if(!date||ranges.length<3){status.textContent='בחר תאריך והדבק לפחות שלושה טווחי שעות';return;}
- if(!confirm('לשמור '+ranges.length+' טווחים? שניים הראשונים לערב שבת והיתר לשבת.'))return;
- status.textContent='שומר…';
- google.script.run.withSuccessHandler(x=>status.textContent='✅ '+x).withFailureHandler(e=>status.textContent='❌ '+e.message).saveElevatorNotice(date,notice);
+const fields=['weekdayMincha','weekdayArvit','fridayMinchaGedola','fridayCandles','fridayMinchaArvit','shabbatMinchaGedola','shabbatMinchaKetana','shabbatArvit'];
+const dateInput=document.getElementById('weekDate');
+const now=new Date();dateInput.value=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+const fileInput=document.getElementById('prayerFile'),drop=document.getElementById('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0]) handleImage(e.dataTransfer.files[0])});
+fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleImage(fileInput.files[0])});
+drop.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===drop){e.preventDefault();fileInput.click()}});
+const clockRegex=/\b(?:[01]?\d|2[0-3])[:.][0-5]\d\b/g;
+function normClock(str){const [h,m]=str.replace('.',':').split(':').map(Number);return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')}
+function detectTimes(text){
+  // Conservative by design: a time is assigned only when the same OCR line has an unambiguous prayer label.
+  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const found={}, uncertain=[];
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i], low=line.replace(/[׳״"']/g,'');
+    const times=[...line.matchAll(clockRegex)].map(m=>normClock(m[0]));
+    if(!times.length)continue;
+    if(times.length!==1){uncertain.push(line);continue}
+    let field=null;
+    if(/מנחה/.test(low) && /(חול|א[׳'].*ה[׳']|ראשון.*חמישי)/.test(low))field='weekdayMincha';
+    else if(/ערבית/.test(low) && /(חול|א[׳'].*ה[׳']|ראשון.*חמישי)/.test(low))field='weekdayArvit';
+    else if(/מנחה\s*גדולה/.test(low) && /(ערב|שישי)/.test(low))field='fridayMinchaGedola';
+    else if(/מנחה\s*גדולה/.test(low) && /שבת/.test(low))field='shabbatMinchaGedola';
+    else if(/מנחה\s*קטנה/.test(low))field='shabbatMinchaKetana';
+    else if(/ערבית/.test(low) && /(מוצאי|מוצש|מוצ"ש)/.test(low))field='shabbatArvit';
+    else if(/הדלקת|כניסת\s*שבת/.test(low))field='fridayCandles';
+    else if(/מנחה/.test(low) && /(קבלת|ערב\s*שבת|שישי)/.test(low))field='fridayMinchaArvit';
+    if(field) {
+      if(!found[field]) found[field]=times[0];
+      else if(found[field]!==times[0]){delete found[field];uncertain.push(line)}
+    } else uncertain.push(line);
+  }
+  for(const k of fields)document.getElementById(k).value=found[k]||'';
+  return {count:Object.keys(found).length,uncertain};
+}
+function loadOCR(){
+  if(window.Tesseract)return Promise.resolve(window.Tesseract);
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+    s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(Error('מנוע הזיהוי לא נטען'));
+    s.onerror=()=>reject(Error('לא ניתן לטעון את מנוע הזיהוי. בדוק חיבור אינטרנט'));
+    document.head.append(s);
+  });
+}
+async function handleImage(file) {
+  const status=document.getElementById('ocrStatus');
+  if(!file.type.startsWith('image/')){status.textContent='נדרש קובץ תמונה';return}
+  const preview=document.getElementById('preview');
+  const objectUrl=URL.createObjectURL(file);
+  preview.src=objectUrl;preview.style.display='block';
+  preview.onload=()=>URL.revokeObjectURL(objectUrl);
+  status.textContent='מזהה טקסט בתמונה… (ייתכן שייקח זמן)';
+  document.getElementById('ocrRaw').value='';
+  fields.forEach(k=>document.getElementById(k).value='');
+  try{
+    const Tess=await loadOCR();
+    const worker=await Tess.createWorker('heb+eng',1,{logger:m=>{if(m.status==='recognizing text')status.textContent='מזהה טקסט: '+Math.round((m.progress||0)*100)+'%'}});
+    try{
+      const result=await worker.recognize(file);
+      const text=result.data.text||'';
+      document.getElementById('ocrRaw').value=text;
+      const detected=detectTimes(text);
+      status.textContent='זוהו '+detected.count+' שדות באופן חד-משמעי. בדוק והשלים את שאר השעות לפי התמונה לפני שמירה. אם מנחה של ימי חול ריקה, הזן אותה ידנית.';
+    }finally{await worker.terminate()}
+  }catch(err){status.textContent='זיהוי התמונה נכשל: '+err.message+' — ניתן למלא את השעות ידנית.'}
+}
+function callServer(functionName, args, statusId){
+  const status=document.getElementById(statusId);
+  status.textContent='שומר…';
+  const runner=google.script.run.withSuccessHandler(msg=>{status.textContent='✅ '+msg}).withFailureHandler(e=>{status.textContent='❌ '+e.message});
+  runner[functionName](...args);
+}
+document.getElementById('savePrayer').onclick=()=>{
+  const data={};
+  for(const k of fields){const value=document.getElementById(k).value;if(value)data[k]=value}
+  if(!dateInput.value||Object.keys(data).length===0){document.getElementById('prayerStatus').textContent='בחר תאריך והזן לפחות זמן תפילה אחד';return}
+  if(!confirm('בדקת את השעות בתמונה? לשמור '+Object.keys(data).length+' זמני תפילות לשבוע שבחרת?'))return;
+  callServer('savePrayerTimes',[dateInput.value,data],'prayerStatus');
 };
-document.getElementById('saveJson').onclick=()=>{
- const s=document.getElementById('jsonStatus');s.textContent='שומר…';
- google.script.run.withSuccessHandler(x=>s.textContent='✅ '+x).withFailureHandler(e=>s.textContent='❌ '+e.message).writeSchedules(document.getElementById('json').value);
+document.getElementById('saveElevator').onclick=()=>{
+  const text=document.getElementById('elevator').value;
+  const matches=[...text.matchAll(/\d{1,2}[:.]\d{2}\s*[-–—]\s*\d{1,2}[:.]\d{2}/g)];
+  if(!dateInput.value||matches.length<3){document.getElementById('elevatorStatus').textContent='בחר תאריך והדבק לפחות שלושה טווחי מעלית';return}
+  if(!confirm('לשמור '+matches.length+' טווחים (2 לערב שבת, היתר לשבת)?'))return;
+  callServer('saveElevatorNotice',[dateInput.value,text],'elevatorStatus');
 };
 </script></body></html>
