@@ -788,6 +788,23 @@
   #right #elevator-next-widget {padding:calc(8px * var(--schedule-scale));margin-bottom:calc(4px * var(--schedule-scale))}
   #right .elevator-next-slot {padding:calc(5px * var(--schedule-scale)) 2px}
 
+
+/* Prayer & Shabbat panel: do not truncate individual labels or headings. */
+#right {min-width:0;overflow:hidden!important;justify-content:flex-start}
+#right > #weekly-board,#right > #shabbat-title-block,#right > .time-row {min-width:0;flex-shrink:0}
+#right .weekly-heading{white-space:normal;overflow-wrap:break-word;line-height:1.22}
+#right .weekly-entry{min-width:0;align-items:center;gap:calc(7px * var(--schedule-scale))}
+#right .weekly-entry-label{min-width:0;flex:1 1 auto;white-space:normal;overflow-wrap:break-word;line-height:1.25}
+#right .weekly-entry-time{flex:0 0 auto}
+#right .time-row{min-width:0;gap:calc(8px * var(--schedule-scale));align-items:center}
+#right .time-label{min-width:0;flex:1 1 auto;white-space:normal;overflow-wrap:break-word;line-height:1.2}
+#right .time-val{flex:0 0 auto;white-space:nowrap}
+#right #shabbat-big-wrap{min-width:0;white-space:normal;overflow:visible}
+#right #shabbat-big{min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word}
+#right #weekly-board,#right #weekly-prayers{overflow:visible}
+#right #elevator-next-widget{min-width:0}
+#right .elevator-next-time{white-space:normal;overflow-wrap:anywhere}
+
 /* Per-column viewport fitting. Values are set by measurePanelFit() on resize,
    fullscreen, zoom and after text is refreshed. No vertical scrolling. */
 #left { --zfit:1; overflow:hidden !important; }
@@ -2513,32 +2530,50 @@ function requestColumnFit(){
 
 let rightFitQueued=false, rightFitBusy=false;
 function fitShabbatFont(){
-  const panel=document.getElementById('right');
-  if(!panel || rightFitBusy || panel.clientHeight<40 || panel.clientWidth<60)return;
-  rightFitBusy=true;
-  try{
-    // Only scale the visible content; do not hide prayers or rely on scrolling.
-    // Measure the actual layout on each viewport (including zoom and fonts).
-    panel.style.gap='';
-    const available=panel.clientHeight;
-    let lo=.22,hi=1.22,best=.22;
-    const fits=scale=>{
-      panel.style.setProperty('--schedule-scale',scale.toFixed(3));
-      // scrollHeight checks wrapping, vertical gaps, borders, prayer headings,
-      // three upcoming elevator windows and Shabbat metrics together.
-      return panel.scrollHeight<=available+1;
-    };
-    for(let i=0;i<14;i++){
-      const mid=(lo+hi)/2;
-      if(fits(mid)){best=mid;lo=mid}else{hi=mid}
+ const panel=document.getElementById('right');
+ if(!panel || rightFitBusy || panel.clientHeight<40 || panel.clientWidth<60)return;
+ rightFitBusy=true;
+ try{
+  panel.style.gap='';
+  // Same intrinsic-content checks used for the other two columns, but extended
+  // to all nested prayer rows, headings, and weekly elevator cards.
+  const active=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
+  const children=Array.from(panel.children).filter(active);
+  const tags='.weekly-heading,.weekly-entry,.weekly-entry-label,.weekly-entry-time,.time-row,.time-label,.time-val,.shabbat-big-title,#shabbat-big,.elevator-next-slot,.elevator-next-time,.elevator-next-caption';
+  const fits=scale=>{
+   panel.style.setProperty('--schedule-scale',scale.toFixed(4));
+   const pr=panel.getBoundingClientRect(),style=getComputedStyle(panel),pad=2;
+   const bounds={
+    top:pr.top+parseFloat(style.paddingTop),
+    bottom:pr.bottom-parseFloat(style.paddingBottom),
+    left:pr.left+parseFloat(style.paddingLeft),
+    right:pr.right-parseFloat(style.paddingRight)
+   };
+   const inside=(r,outer)=>r.top>=outer.top-pad&&r.bottom<=outer.bottom+pad&&r.left>=outer.left-pad&&r.right<=outer.right+pad;
+   if(panel.scrollHeight>panel.clientHeight+pad||panel.scrollWidth>panel.clientWidth+pad)return false;
+   for(const child of children){
+    if(!active(child))continue;
+    const box=child.getBoundingClientRect();
+    if(!inside(box,bounds))return false;
+    if(child.scrollHeight>child.clientHeight+pad||child.scrollWidth>child.clientWidth+pad)return false;
+    for(const node of child.querySelectorAll(tags)){
+     if(!active(node))continue;
+     const r=node.getBoundingClientRect();
+     if(r.left<bounds.left-pad||r.right>bounds.right+pad||r.top<bounds.top-pad||r.bottom>bounds.bottom+pad)return false;
+     if(node.scrollHeight>node.clientHeight+pad||node.scrollWidth>node.clientWidth+pad)return false;
     }
-    fits(best);
-    // On very short screens reduce spaces further before letting anything clip.
-    if(panel.scrollHeight>available+1){
-      panel.style.gap='1px';
-      fits(.22);
-    }
-  } finally {rightFitBusy=false}
+   }
+   return true;
+  };
+  let low=.28,high=1.8,best=low;
+  for(let i=0;i<9&&!fits(low);i++)low*=.8;
+  best=low;
+  for(let i=0;i<16;i++){
+   const mid=(low+high)/2;
+   if(fits(mid)){best=mid;low=mid}else{high=mid}
+  }
+  fits(best);
+ }finally{rightFitBusy=false}
 }
 function requestRightFit(){
   if(rightFitQueued)return;
