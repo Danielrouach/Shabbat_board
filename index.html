@@ -897,7 +897,7 @@ html.light-theme #settings-panel button,html.light-theme .weekly-modal button,ht
 html.light-theme #copyright-bar{background:var(--bg);border-color:var(--border);color:#65758b}
 html.light-theme #keep-awake-btn,html.light-theme #theme-toggle,html.light-theme #settings-btn,html.light-theme #weekly-open-btn{color:#805a13;border-color:#bda374}
 html.light-theme #keep-awake-btn.active{color:#116c3f;border-color:#268553}
-html.light-theme #footer a[href="elevator.html"]{color:#805a13!important;border-color:#bda374!important}
+html.light-theme #footer a[data-elevator-link]{color:#805a13!important;border-color:#bda374!important}
 html.light-theme #loading-overlay{background:#f7f9fc}
 
 /* ─── Adaptive prayer/next Shabbat column ───
@@ -1117,7 +1117,7 @@ html.light-theme .theme-auto-control{color:#40536b}
     <div id="elevator-next-widget" hidden aria-live="off" aria-label="שלושת זמני מעלית השבת הקרובים">
       <div class="elevator-next-title">🛗 מעלית שבת · שלושת החלונות הקרובים</div>
       <div id="elevator-next-rows"></div>
-      <div class="elevator-next-foot"><a class="elevator-mini-link" href="elevator.html" target="_blank" rel="noopener" aria-label="פתח מסך נפרד של זמני מעלית שבת">מסך נפרד</a></div>
+      <div class="elevator-next-foot"><a class="elevator-mini-link" href="/elevator/" data-elevator-link target="_blank" rel="noopener" aria-label="פתח מסך נפרד של זמני מעלית שבת">מסך נפרד</a></div>
     </div>
     <div class="panel-title" id="right-title" style="display:none">שבת קודש</div>
     <div id="shabbat-title-block">
@@ -1201,7 +1201,7 @@ html.light-theme .theme-auto-control{color:#40536b}
     <span id="footer-left">
       <button id="settings-btn" onclick="openSettings()" title="הגדרות">⚙</button>
        <button id="weekly-open-btn" style="display:none" onclick="openWeeklySettings()" title="נהל זמני תפילות ומעלית שבת">🗓 תפילות ומעלית</button>
-      <a href="elevator.html" target="_blank" rel="noopener" style="display:inline-block;margin:0 8px;padding:4px 9px;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:700 .75rem Heebo,sans-serif;text-decoration:none" title="פתח את זמני המעלית במסך נפרד לפני שבת">🛗 מסך מעלית נפרד</a>
+      <a href="/elevator/" data-elevator-link target="_blank" rel="noopener" style="display:inline-block;margin:0 8px;padding:4px 9px;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:700 .75rem Heebo,sans-serif;text-decoration:none" title="פתח את זמני המעלית במסך נפרד לפני שבת">🛗 מסך מעלית נפרד</a>
       <button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button>
       <label class="theme-auto-control" title="מסומן: שינוי אוטומטי בהנץ ובשקיעה. שינוי ידני נשמר עד F5"><input type="checkbox" data-theme-auto checked> שנה מצב לוח לפי זריחה/שקיעה</label>
       <button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="הפעלה לפני שבת: בקשה מהדפדפן לשמור על המסך פעיל">◌ מסך פעיל: כבוי</button>
