@@ -1,6 +1,7 @@
 /* Responsive display for the Shabbat Board.
    Keep the original fullscreen kiosk fit at desktop widths.
-   On tablets and phones, prioritize complete, readable content and page scrolling. */
+   Portrait phones/tablets scroll for readability; landscape <=1024px
+   keeps all three panels visible with a content-aware, no-scroll fit. */
 
 @media (max-width: 1024px) {
   html, body {
