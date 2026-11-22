@@ -826,9 +826,67 @@
 #center #tachanun-card.has-tachanun .halacha-value {font-size:calc(25px * var(--hfit));line-height:1.18;overflow-wrap:anywhere}
 #center .halacha-sub,
 #center #omer-card .halacha-sub {font-size:calc(13px * var(--hfit));line-height:1.26}
+
+/* ─── Light mode, coordinated across all Shabbat Board panels ─── */
+#theme-toggle {background:transparent;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:inherit;padding:3px 9px;cursor:pointer;white-space:nowrap}
+#theme-toggle:hover,#theme-toggle:focus-visible{border-color:var(--blue);outline-color:var(--blue)}
+html.light-theme {
+ --bg:#f7f9fc;--surface:#fffefb;--border:#d6e0e9;
+ --gold:#986a13;--gold-dim:#c8a96b;--blue:#2063b1;--blue-dim:#d9e9fa;
+ --red:#b54545;--green:#177745;--green-dim:#cde8d9;
+ --text-pri:#172435;--text-sec:#45586f;--text-dim:#63748a;
+}
+html.light-theme body::before{display:none}
+html.light-theme .corner{opacity:.55}
+html.light-theme #clock{color:#111827!important;text-shadow:none!important}
+html.light-theme #clock .sep{opacity:.75}
+html.light-theme #header,html.light-theme #footer{border-color:#d3dce6}
+html.light-theme .panel{background:#fffefb;border-color:#d6e0e9;box-shadow:0 4px 18px rgba(38,69,100,.055)}
+html.light-theme .panel-title,html.light-theme .halacha-label{color:#57687c}
+html.light-theme .zman-row,html.light-theme .time-row,html.light-theme .weekly-entry{border-color:#e5ebf1}
+html.light-theme .zman-row.passed{opacity:.65}
+html.light-theme .zman-name,html.light-theme .weekly-entry-label,html.light-theme .time-label{color:#45586f}
+html.light-theme .zman-sub{color:#69798d}
+html.light-theme .zman-time,html.light-theme .weekly-entry-time{color:#1d2d40}
+html.light-theme .zman-row.current .zman-name,html.light-theme .zman-row.current .zman-time{color:#1259a1;text-shadow:none}
+html.light-theme .halacha-card{background:#fbfcff;border-color:#dce5ef}
+html.light-theme .halacha-card .halacha-value{color:#1f3554}
+html.light-theme .halacha-card.gold-accent .halacha-value,html.light-theme #holiday-card .halacha-value{color:#956514}
+html.light-theme .halacha-card.blue-accent .halacha-value{color:#205faa}
+html.light-theme .halacha-card.green-accent .halacha-value{color:#147247}
+html.light-theme .halacha-card.red-accent .halacha-value{color:#b54545}
+html.light-theme #tachanun-card.no-tachanun .halacha-value{color:#956514}
+html.light-theme #tachanun-card.has-tachanun .halacha-value{color:#35475a}
+html.light-theme #omer-card.count-time{border-color:#acd8c1}
+html.light-theme .halacha-sub{color:#46596e}
+html.light-theme .shabbat-big-title{color:#946617;text-shadow:none}
+html.light-theme #right .time-val{color:#966716}
+html.light-theme #right .time-val.secondary{color:#4c6076}
+html.light-theme #right .weekly-heading{color:#956514}
+html.light-theme #right .weekly-heading small{color:#53657c}
+html.light-theme #right .weekly-entry.active .weekly-entry-label,html.light-theme #right .weekly-entry.active .weekly-entry-time{color:#147247}
+html.light-theme #right #elevator-next-widget{background:#f4f7fc;border-color:#c8ac6b;box-shadow:0 4px 12px rgba(52,67,94,.09)}
+html.light-theme .elevator-next-title{color:#916414}
+html.light-theme .elevator-next-slot{background:#ffffff;border-color:#d6e0e9}
+html.light-theme .elevator-next-slot.is-active{background:#e1f4e7;border-color:#258054}
+html.light-theme .elevator-next-slot.is-active .elevator-next-time{color:#10643b}
+html.light-theme .elevator-next-caption,html.light-theme .elevator-next-foot,html.light-theme #elevator-display-url{color:#4e6177}
+html.light-theme #settings-panel,html.light-theme .weekly-modal{background:rgba(226,233,243,.93)}
+html.light-theme #settings-box,html.light-theme .weekly-modal-box{background:#fffefb;color:#172435;border-color:#d5deea;box-shadow:0 12px 45px rgba(36,58,82,.16)}
+html.light-theme #settings-box h2,html.light-theme .weekly-modal-top h2{color:#936515}
+html.light-theme #settings-panel input,html.light-theme #settings-panel select,html.light-theme #settings-panel textarea,
+html.light-theme .weekly-modal input,html.light-theme .weekly-modal textarea,html.light-theme .weekly-modal select,
+html.light-theme #qa-controls input,html.light-theme #qa-controls select{background:#fff;color:#172435;border-color:#bfcdda}
+html.light-theme #settings-panel button,html.light-theme .weekly-modal button,html.light-theme #qa-controls button{color:#213a56;border-color:#b9c7d9}
+html.light-theme #copyright-bar{background:var(--bg);border-color:var(--border);color:#65758b}
+html.light-theme #keep-awake-btn,html.light-theme #theme-toggle,html.light-theme #settings-btn,html.light-theme #weekly-open-btn{color:#805a13;border-color:#bda374}
+html.light-theme #keep-awake-btn.active{color:#116c3f;border-color:#268553}
+html.light-theme #footer a[href="elevator.html"]{color:#805a13!important;border-color:#bda374!important}
+html.light-theme #loading-overlay{background:#f7f9fc}
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
+<script src="theme.js"></script>
 </head>
 <body>
 
@@ -1091,6 +1149,7 @@
       <button id="settings-btn" onclick="openSettings()" title="הגדרות">⚙</button>
        <button id="weekly-open-btn" style="display:none" onclick="openWeeklySettings()" title="נהל זמני תפילות ומעלית שבת">🗓 תפילות ומעלית</button>
       <a href="elevator.html" target="_blank" rel="noopener" style="display:inline-block;margin:0 8px;padding:4px 9px;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:700 .75rem Heebo,sans-serif;text-decoration:none" title="פתח את זמני המעלית במסך נפרד לפני שבת">🛗 מסך מעלית נפרד</a>
+      <button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button>
       <button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="הפעלה לפני שבת: בקשה מהדפדפן לשמור על המסך פעיל">◌ מסך פעיל: כבוי</button>
        <!-- QA dev controls — only visible when ?qa=1 -->
       <span id="qa-controls">
