@@ -787,6 +787,25 @@
   #right .elevator-next-caption,#right .elevator-next-foot {font-size:calc(10px * var(--schedule-scale))}
   #right #elevator-next-widget {padding:calc(8px * var(--schedule-scale));margin-bottom:calc(4px * var(--schedule-scale))}
   #right .elevator-next-slot {padding:calc(5px * var(--schedule-scale)) 2px}
+
+/* Per-column viewport fitting. Values are set by measurePanelFit() on resize,
+   fullscreen, zoom and after text is refreshed. No vertical scrolling. */
+#left { --zfit:1; overflow:hidden !important; }
+#left .panel-title {font-size:calc(11px * var(--zfit));padding-bottom:calc(7px * var(--zfit));margin-bottom:calc(3px * var(--zfit))}
+#left .zman-row {padding:calc(4px * var(--zfit)) 0;min-height:0;line-height:1.18}
+#left .zman-name {font-size:calc(15px * var(--zfit));line-height:1.16;min-width:0}
+#left .zman-sub {font-size:calc(10px * var(--zfit));line-height:1.15}
+#left .zman-time {font-size:calc(19px * var(--zfit));line-height:1.16;flex-shrink:0;margin-right:4px}
+#center {--hfit:1;overflow:hidden !important;gap:calc(8px * var(--hfit));justify-content:space-around}
+#center .panel-title {font-size:calc(11px * var(--hfit));padding-bottom:calc(6px * var(--hfit));margin-bottom:calc(3px * var(--hfit))}
+#center .halacha-card {padding:calc(12px * var(--hfit)) calc(15px * var(--hfit));gap:calc(4px * var(--hfit));min-height:0;flex:0 1 auto}
+#center .halacha-label {font-size:calc(11px * var(--hfit));line-height:1.2}
+#center .halacha-value,
+#center #holiday-card .halacha-value,
+#center #omer-card .halacha-value,
+#center #tachanun-card.has-tachanun .halacha-value {font-size:calc(25px * var(--hfit));line-height:1.18;overflow-wrap:anywhere}
+#center .halacha-sub,
+#center #omer-card .halacha-sub {font-size:calc(13px * var(--hfit));line-height:1.26}
 </style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
@@ -2415,47 +2434,63 @@ async function convertGregToHeb() {
 }
 
 // ── Auto-fit font for zmanim panel ───────────────────────────
-function fitZmanimFont() {
-  const panel = document.getElementById('left');
-  if (!panel) return;
-  const rows = panel.querySelectorAll('.zman-row');
-  if (!rows.length) return;
-
-  const panelRect  = panel.getBoundingClientRect();
-  const panelH     = panelRect.height;
-  const titleEl    = panel.querySelector('.panel-title');
-  const titleH     = titleEl ? titleEl.getBoundingClientRect().height + 4 : 0;
-  const style      = getComputedStyle(panel);
-  const paddingV   = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-  const available  = panelH - paddingV - titleH;
-
-  if (available <= 20) return; // panel not laid out yet
-
-  let lo = 6, hi = 24, best = 8;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    rows.forEach(r => {
-      const n = r.querySelector('.zman-name');
-      const s = r.querySelector('.zman-sub');
-      const t = r.querySelector('.zman-time');
-      if (n) n.style.fontSize = mid + 'px';
-      if (s) s.style.fontSize = Math.max(6, Math.round(mid * 0.58)) + 'px';
-      if (t) t.style.fontSize = Math.round(mid * 1.15) + 'px';
-    });
-    let total = 0;
-    rows.forEach(r => { total += r.getBoundingClientRect().height; });
-    if (total <= available) { best = mid; lo = mid + 1; }
-    else                    { hi = mid - 1; }
-  }
-  rows.forEach(r => {
-    const n = r.querySelector('.zman-name');
-    const s = r.querySelector('.zman-sub');
-    const t = r.querySelector('.zman-time');
-    if (n) n.style.fontSize = best + 'px';
-    if (s) s.style.fontSize = Math.max(6, Math.round(best * 0.58)) + 'px';
-    if (t) t.style.fontSize = Math.round(best * 1.15) + 'px';
-    r.style.fontSize = '';
-  });
+// Width- AND height-aware sizing. Binary search uses the actual rendered content,
+// including subtitles, wrapping and conditional holidays/Omer.
+let fittingPanel=false;
+function measurePanelFit(panelId,cssVar,minScale,maxScale){
+ const panel=document.getElementById(panelId);
+ if(!panel||panel.clientHeight<32||panel.clientWidth<60)return;
+ const isVisible=el=>getComputedStyle(el).display!=='none';
+ const content=Array.from(panel.children).filter(isVisible);
+ if(!content.length)return;
+ const rect=panel.getBoundingClientRect();
+ const style=getComputedStyle(panel);
+ const availableHeight=panel.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+ const availableWidth=panel.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+ if(availableHeight<=8||availableWidth<=8)return;
+ // flex gap and vertical margins are included by measuring child bounding boxes.
+ const fits=scale=>{
+  panel.style.setProperty(cssVar,scale.toFixed(4));
+  const children=content.filter(isVisible);
+  if(!children.length)return true;
+  const bottom=Math.max(...children.map(el=>el.getBoundingClientRect().bottom));
+  const top=Math.min(...children.map(el=>el.getBoundingClientRect().top));
+  const calculatedHeight=bottom-top;
+  // scrollHeight covers children growing beyond the clipped panel;
+  // scrollWidth catches text that cannot fit the current column width.
+  return calculatedHeight<=availableHeight+1.5 &&
+    panel.scrollHeight<=panel.clientHeight+1.5 &&
+    panel.scrollWidth<=panel.clientWidth+1.5;
+ };
+ let low=minScale,high=maxScale,best=minScale;
+ // Always test smallest scale before searching upward.
+ if(!fits(low)){
+   for(let i=0;i<7 && !fits(low);i++)low*=.8;
+   best=low;
+ }
+ for(let i=0;i<16;i++){
+   const mid=(low+high)/2;
+   if(fits(mid)){best=mid;low=mid}else{high=mid}
+ }
+ fits(best);
+}
+function fitZmanimFont(){
+ if(fittingPanel)return;
+ fittingPanel=true;
+ try{
+  measurePanelFit('left','--zfit',.34,2.1);
+  measurePanelFit('center','--hfit',.28,1.85);
+ }finally{fittingPanel=false}
+}
+let fitColumnsQueued=false;
+function requestColumnFit(){
+ if(fitColumnsQueued)return;
+ fitColumnsQueued=true;
+ requestAnimationFrame(()=>{
+   fitColumnsQueued=false;
+   fitZmanimFont();
+   if(typeof fitShabbatFont==='function')fitShabbatFont();
+ });
 }
 
 let rightFitQueued=false, rightFitBusy=false;
@@ -2493,14 +2528,20 @@ function requestRightFit(){
   requestAnimationFrame(()=>{rightFitQueued=false;fitShabbatFont()});
 }
 // Re-fit on any size change — covers window resize AND bday-row appearing
-const _fitObserver = new ResizeObserver(() => { fitZmanimFont(); requestRightFit(); });
+const _fitObserver = new ResizeObserver(requestColumnFit);
 document.addEventListener('DOMContentLoaded', () => {
   const left  = document.getElementById('left');
   const right = document.getElementById('right');
-  if (left)  _fitObserver.observe(left);
+  const center = document.getElementById('center');
+  if (left) _fitObserver.observe(left);
   if (right) _fitObserver.observe(right);
+  if (center) _fitObserver.observe(center);
+  document.fonts?.ready.then(requestColumnFit);
+  requestColumnFit();
 });
-window.addEventListener('resize', () => { fitZmanimFont(); requestRightFit(); });
+window.addEventListener('resize',requestColumnFit);
+document.addEventListener('fullscreenchange',requestColumnFit);
+window.visualViewport?.addEventListener('resize',requestColumnFit);
 
 // ── Burn-in / pixel-shift protection ─────────────────────────
 // Slowly drifts the entire #app by up to ±2px every 3 minutes.
