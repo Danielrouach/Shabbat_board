@@ -2902,20 +2902,33 @@ function renderNextElevatorWindows(now, data, old) {
   } else if(note){note.remove();}
 }
 
-function renderFixedShacharit(now) {
-  const p=document.getElementById('weekly-prayers');
-  if(!p)return;
-  const day=now.getDay();
-  if(day===6) {
-    p.append(weeklyHeading('בית הכנסת הרב אליהו אבוחצרא','שבת'));
-    p.append(weeklyEntry('שחרית','08:00',now));
-  } else if(day<=5 && (day===5 || isOrdinaryWeekday(now))) {
-    p.append(weeklyHeading('בית הכנסת אור וישועה','ימי חול'));
-    p.append(weeklyEntry('שחרית','07:10',now));
-    p.append(weeklyHeading('בית הכנסת רמב"ם','ימי חול'));
-    p.append(weeklyEntry('שחרית','07:00',now));
-    p.append(weeklyEntry('שחרית','08:00',now));
-  }
+function isFridayAfterCandles(now,data){
+ if(now.getDay()!==5)return false;
+ // Prefer the explicitly saved Friday candle time for the selected week.
+ let candle=data && isClockTime(data.fridayCandles)?data.fridayCandles:'';
+ // Otherwise, use Hebcal only if the candle-lighting date belongs to
+ // the exact same Friday (avoids taking next week's time in QA mode).
+ const fromApi=state.shabbatData && state.shabbatData.candles;
+ if(!candle && fromApi instanceof Date && !Number.isNaN(fromApi.getTime()) &&
+    localISO(fromApi)===localISO(now)) candle=fmt(fromApi);
+ if(!isClockTime(candle))return false;
+ const [hh,mm]=candle.split(':').map(Number);
+ return now.getHours()*60+now.getMinutes()>=hh*60+mm;
+}
+function renderFixedShacharit(now,data) {
+ const p=document.getElementById('weekly-prayers');
+ if(!p)return;
+ const day=now.getDay();
+ if(day===6 || isFridayAfterCandles(now,data)) {
+   p.append(weeklyHeading('בית הכנסת הרב אליהו אבוחצרא','שבת'));
+   p.append(weeklyEntry('שחרית','08:00',now));
+ } else if(day<=5 && (day===5 || isOrdinaryWeekday(now))) {
+   p.append(weeklyHeading('בית הכנסת אור וישועה','ימי חול'));
+   p.append(weeklyEntry('שחרית','07:10',now));
+   p.append(weeklyHeading('בית הכנסת רמב"ם','ימי חול'));
+   p.append(weeklyEntry('שחרית','07:00',now));
+   p.append(weeklyEntry('שחרית','08:00',now));
+ }
 }
 
 function updatePrayerOrder(now){
@@ -2935,7 +2948,7 @@ function renderWeeklyBoard() {
   const data=cloudEntry && cloudEntry.entry;
   const p=document.getElementById('weekly-prayers'), el=document.getElementById('weekly-elevators');
   p.replaceChildren();el.replaceChildren();
-  renderFixedShacharit(now);
+  renderFixedShacharit(now,data);
   renderNextElevatorWindows(now,data,cloudEntry?.old);
   if (!data) { board.hidden=p.childElementCount===0; updatePrayerOrder(now);requestRightFit();return; }
   if (cloudEntry.old) {const warning=weeklyHeading('⚠ זמנים מהעדכון האחרון','לא עודכנו לשבוע הנוכחי'); p.append(warning);}
