@@ -1,6 +1,6 @@
 // Public READ ONLY endpoint; Execute as me; Who has access: Anyone.
 // Its URL is public. Never implement writes in this project.
-const DATA_FILE_ID = 'REPLACE_WITH_DRIVE_FILE_ID';
+const DATA_FILE_ID = '1rL-LOkjaV0FWOTDm2fGopW04G2ROfuMM';
 function doGet(e) {
   const callback = String((e && e.parameter && e.parameter.callback) || '');
   if (!/^shabbatCloudCallback_[A-Za-z0-9_]{1,45}$/.test(callback))
