@@ -2969,9 +2969,11 @@ function renderNextElevatorWindows(now, data, old) {
   const grid=document.getElementById('elevator-next-rows');
   if(!panel || !grid || !window.ShabbatElevator)return;
   ShabbatElevator.prime(now); // Preload the simulated/real week's Havdalah cutoff when online.
-  const result=ShabbatElevator.display(now,old?null:data);
-  // Keep the elevator widget visible with its status even after the last slot.
-  if(![5,6].includes(now.getDay()) || old || !data) {panel.hidden=true;grid.replaceChildren();return;}
+  const result=ShabbatElevator.display(now,data);
+  // An older valid timetable remains visible when this week has no new elevator update.
+  const title=panel.querySelector('.elevator-next-title');
+  if(title)title.textContent='🛗 מעלית שבת · שלושת החלונות הקרובים'+(old?' · ⚠ עדכון קודם':'');
+  if(![5,6].includes(now.getDay()) || !data) {panel.hidden=true;grid.replaceChildren();return;}
   const upcoming=result.rows.filter(r=>r.b>result.minutes).slice(0,3);
   panel.hidden=false;grid.replaceChildren();
   if(!upcoming.length){
@@ -3060,7 +3062,10 @@ function renderWeeklyBoard() {
   const p=document.getElementById('weekly-prayers'), el=document.getElementById('weekly-elevators');
   p.replaceChildren();el.replaceChildren();
   renderFixedShacharit(now,data);
-  renderNextElevatorWindows(now,data,cloudEntry?.old);
+  // Prayer entries and elevator entries are independently versioned.
+  // A prayers-only update must not suppress the last saved elevator timetable.
+  const elevatorSelection=ShabbatUpdateStatus.elevatorSchedule(loadWeeklyStore(),getWeekKey(now));
+  renderNextElevatorWindows(now,elevatorSelection.entry,elevatorSelection.old);
   if (!data) { board.hidden=p.childElementCount===0; updatePrayerOrder(now);requestRightFit();return; }
   if (cloudEntry.old) {const warning=weeklyHeading('⚠ זמנים מהעדכון האחרון','לא עודכנו לשבוע הנוכחי'); p.append(warning);}
   const day=now.getDay(), rows=[];
