@@ -2875,10 +2875,10 @@ function fitLandscapeBoard(){
    app.style.setProperty('--landscape-board-width',(viewportWidth/scale).toFixed(2)+'px');
    app.style.setProperty('--landscape-board-height',(availableHeight/scale).toFixed(2)+'px');
    // Read unscaled overflow: transforms alone can conceal clipped content.
-   if(app.scrollHeight>app.clientHeight+2||app.scrollWidth>app.clientWidth+2)return false;
+   if(app.scrollHeight>app.clientHeight+1||app.scrollWidth>app.clientWidth+1)return false;
    for(const el of sections){
     if(!visible(el))continue;
-    if(el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)return false;
+    if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)return false;
     const r=el.getBoundingClientRect();
     if(r.top< -2||r.left< -2||r.bottom>availableHeight+2||r.right>viewportWidth+2)return false;
    }
@@ -2889,7 +2889,7 @@ function fitLandscapeBoard(){
      const r=el.getBoundingClientRect();
      if(r.top<outer.top-2||r.bottom>outer.bottom+2||
         r.left<outer.left-2||r.right>outer.right+2)return false;
-     if(el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)return false;
+     if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)return false;
     }
    }
    return true;
