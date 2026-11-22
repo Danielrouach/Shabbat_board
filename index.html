@@ -469,7 +469,7 @@
   }
   #qa-date:focus, #qa-time:focus { outline: none; border-color: var(--gold); }
   #qa-date { width: 110px; }
-  #qa-time { width: 62px; }
+  #qa-time { width: 116px; min-width: 116px; direction:ltr; text-align:center; unicode-bidi:plaintext; }
   .qa-btn {
     background: transparent; border: 1px solid var(--gold-dim);
     color: var(--gold-dim); padding: 2px 7px; border-radius: 4px;
@@ -962,10 +962,8 @@ html.light-theme #loading-overlay{background:#f7f9fc}
 /* Separate prayer and elevator update status in bottom-left footer. */
 #footer-right{display:flex;flex-direction:column;align-items:flex-start;text-align:right;gap:2px;min-width:220px;max-width:min(48vw,590px);line-height:1.35}
 #footer-right .feature-update-status{display:block;font:500 clamp(.62rem,.77vw,.85rem) Heebo,Arial,sans-serif;color:var(--text-sec);white-space:normal;overflow-wrap:anywhere}
-#footer-right .feature-update-status.stale{color:#ffbd68;font-weight:700;animation:feature-warning-pulse 1.7s ease-in-out infinite}
+#footer-right .feature-update-status.stale{color:#ffbd68;font-weight:700}
 html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
-@keyframes feature-warning-pulse{0%,100%{opacity:1}50%{opacity:.38}}
-@media(prefers-reduced-motion:reduce){#footer-right .feature-update-status.stale{animation:none}}
 @media(max-width:1024px){#footer-right{max-width:100%;width:100%;align-items:center;text-align:center}}
 
 /* Shared sunrise/sunset automatic appearance option, enabled by default */
@@ -1261,7 +1259,7 @@ html.light-theme .theme-auto-control{color:#40536b}
         <input id="qa-temp" type="number" placeholder="°C" title="טמפרטורה ידנית" oninput="qaSetTemp(this.value)"/>
         <span style="color:var(--text-dim);font-size:.65rem;margin:0 2px">|</span>
         <input id="qa-date" type="date" title="תאריך סימולציה"/>
-        <input id="qa-time" type="time" value="12:00" title="שעת סימולציה"/>
+        <input id="qa-time" type="time" lang="en-GB" step="60" value="12:00" title="שעת סימולציה (24 שעות)"/>
         <button class="qa-btn" id="qa-go-btn" onclick="qaSetDateTime()" title="הפעל סימולציה">▶ הפעל</button>
         <button class="qa-btn" id="qa-reset-btn" onclick="qaResetDateTime()" title="איפוס לזמן אמיתי">↺ איפוס</button>
       </span>
@@ -1472,9 +1470,9 @@ function todayISO() {
 
 // ── Clock tick ────────────────────────────────────────────────
 function tickClock() {
-  const now = getSimulatedNow ? getSimulatedNow() : new Date();
-  const real = qaDateOverride ? getSimulatedNow() : new Date(); // QA: show simulated time
-  const hh = pad2(real.getHours()), mm = pad2(real.getMinutes()), ss = pad2(real.getSeconds());
+  // Use one consistent clock source. QA day presets have simulated hours too.
+  const now = getSimulatedNow();
+  const hh = pad2(now.getHours()), mm = pad2(now.getMinutes()), ss = pad2(now.getSeconds());
   document.getElementById('ch').textContent = hh;
   document.getElementById('cm').textContent = mm;
   document.getElementById('cs').textContent = ss;
@@ -1494,7 +1492,7 @@ function tickClock() {
     fetchAllData();
   }
 
-  updateZmanimHighlight(real); // always highlight based on real time
+  updateZmanimHighlight(now); // use the same instant shown by the clock (including QA)
   updateShabbatMode(now);      // shabbat mode based on simulated time
   if(window.ShabbatTheme)ShabbatTheme.sync(now);
   maybeRenderOmer();
