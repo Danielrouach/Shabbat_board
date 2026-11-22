@@ -195,7 +195,10 @@ function render(){
  document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'תצוגה מקדימה · שבת הקרובה')+suffix;
  const saved=readStore();
  const selectedWeek=weekKey(p);
- const data=saved[selectedWeek];
+ // Use the most recent saved elevator timetable if the current week has none.
+ const elevatorSelection=ShabbatUpdateStatus.elevatorSchedule(saved,selectedWeek);
+ const data=elevatorSelection.entry;
+ const usingPrevious=elevatorSelection.old;
  const storedWeeks=Object.keys(saved).filter(k=>/^20\d{2}-\d{2}-\d{2}$/.test(k)).sort();
  const computed=ShabbatElevator.display(instant,data);
  const grid=document.getElementById('tiles'),empty=document.getElementById('empty'),status=document.getElementById('status');
@@ -213,7 +216,7 @@ function render(){
  if(!arr.length){
   grid.hidden=true;empty.hidden=false;
   if(computed.finished)empty.textContent='מעלית השבת סיימה את פעילותה (30 דקות לאחר צאת שבת)';
-  else if(!data)empty.textContent=cloudState==='error'?'לא ניתן להתחבר למקור הנתונים. ייתכן שיש בעיית רשת או הרשאת קריאה.':cloudState==='ready'?'לא נמצאו זמני מעלית לשבת הקרובה. יש לשמור אותם בפאנל הניהול.':'טוען את זמני מעלית שבת…';
+  else if(!data)empty.textContent=cloudState==='error'?'לא ניתן להתחבר למקור הנתונים, ואין זמני מעלית שמורים במכשיר.':cloudState==='ready'?'טרם נקלטו זמני מעלית שמורים.':'טוען את זמני מעלית שבת…';
   else empty.textContent='לא הוגדרו זמני מעלית לשבת זו.';
  }else{
   arr.forEach((r,i)=>{
@@ -230,11 +233,12 @@ function render(){
  status.classList.toggle('warning',computed.unknown);
  status.classList.toggle('error',cloudState==='error'&&!data);
  const description=preview?'תצוגה מקדימה של שישי ושבת הקרובים':'';
+ const reused=usingPrevious?' · ⚠ מוצגים זמני המעלית מהעדכון האחרון (ללא עדכון ייעודי לשבת הנוכחית)':'';
  const update=window.ShabbatUpdateStatus?ShabbatUpdateStatus.status(saved,'elevator',instant):null;
  status.classList.toggle('update-stale',!!update?.warning&&cloudState==='ready');
  const conn=cloudState==='error'?' · לא ניתן לרענן מהענן — נתונים שמורים מוצגים אם קיימים'
   :cloudState==='pending'?' · בודק נתונים בענן':cloudState==='ready'?' · '+(update?update.text:'נתוני הענן נבדקו'):'';
- status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+(!data?' · שבוע מבוקש: '+selectedWeek+(storedWeeks.length?' · שבועות שמורים: '+storedWeeks.slice(-3).join(', '):' · עדיין אין שבועות שמורים'):'')+conn+
+ status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+reused+(!data?' · שבוע מבוקש: '+selectedWeek+(storedWeeks.length?' · שבועות שמורים: '+storedWeeks.slice(-3).join(', '):' · עדיין אין שבועות שמורים'):'')+conn+
    (computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'')+
    (cloudError&&cloudState==='error'?' · '+cloudError:'');
 }
