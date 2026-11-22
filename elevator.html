@@ -86,6 +86,10 @@ html.light-theme #simFlag{color:#136b42}
 .date-block #theme-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 html.light-theme .date-block #theme-toggle{background:#fff7e6;color:#76500f;border-color:#a77d32}
 @media(max-height:680px){.date-block #theme-toggle{min-height:26px;padding:3px 9px;margin-top:3px}}
+
+.theme-auto-control{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font:500 clamp(.72rem,.92vw,1rem) Heebo,Arial,sans-serif;cursor:pointer;color:var(--muted)}
+.theme-auto-control input{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
+html.light-theme .theme-auto-control{color:#465c72}
 </style></head>
 <body><div id="frame">
 <header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div><button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button></div></header>
@@ -97,7 +101,7 @@ html.light-theme .date-block #theme-toggle{background:#fff7e6;color:#76500f;bord
   <span id="simFlag"></span>
 </div>
 <div id="tiles" hidden></div><div id="empty">טוען את זמני מעלית שבת…</div>
-<footer>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</footer>
+<footer><label class="theme-auto-control" title="מסומן: מצב אוטומטי לפי הנץ ושקיעה; שינוי ידני עד F5"><input type="checkbox" data-theme-auto checked> שנה מצב לוח לפי זריחה/שקיעה</label><span>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</span></footer>
 </div>
 <script>
 'use strict';
