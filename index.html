@@ -973,6 +973,74 @@ html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
 <link rel="stylesheet" href="responsive.css?v=20261122-mobile-v2">
+<!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
+<style>
+@media (max-width: 768px) {
+  #header {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "parasha location" "clock clock";
+    align-items: start;
+    gap: 6px 12px;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 10px;
+  }
+  #header #parasha-block {
+    grid-area: parasha;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+  #header #location-block {
+    grid-area: location;
+    min-width: 0;
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  #header #clock-block {
+    grid-area: clock;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+    justify-content: center;
+    align-items: center;
+  }
+  #header #parasha-name {
+    font-size: clamp(1.05rem, 4.3vw, 1.7rem);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+  #header #hebrew-date {
+    font-size: clamp(.95rem, 3.35vw, 1.3rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  #header #day-of-week-left { font-size: clamp(.95rem, 3.5vw, 1.35rem); }
+  #header #gregorian-date { font-size: clamp(.8rem, 2.85vw, 1.05rem); }
+  #header #location-name {
+    font-size: clamp(.72rem, 2.4vw, .9rem);
+    letter-spacing: 0;
+  }
+  #header #clock { font-size: clamp(2.2rem, 9vw, 3.6rem); }
+  #header #temp-display { grid-area: auto; margin-top: 2px; }
+  #header #shabbat-kodesh-block { grid-area: auto; }
+}
+@media (max-width: 360px) {
+  #header { column-gap: 8px; }
+  #header #parasha-name { font-size: 1.05rem; }
+  #header #hebrew-date { font-size: .95rem; }
+  #header #day-of-week-left { font-size: .95rem; }
+}
+</style>
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
 <script src="update-status.js"></script>
