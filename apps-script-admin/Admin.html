@@ -2,20 +2,20 @@
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ניהול | לוח שבת - משפחת רואש</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}
-body{font:16px Arial,sans-serif;background:#080c10;color:#eef2f8;max-width:850px;margin:22px auto;padding:15px;line-height:1.5}
+:root{color-scheme:dark}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:75px}
+body{font:16px Arial,sans-serif;background:#080c10;color:#eef2f8;max-width:850px;margin:22px auto;padding:15px;line-height:1.5;overflow-wrap:break-word}
 h1,h2{color:#c8a44a}h1{font-size:1.7rem}h2{font-size:1.25rem}
 section{background:#0d1520;border:1px solid #29394a;border-radius:10px;padding:18px;margin:16px 0}
 label{display:block;color:#c9d5e0;font-weight:bold;margin:12px 0 5px}
 input,textarea{font:inherit;background:#182536;color:#fff;border:1px solid #455b70;padding:10px;border-radius:6px;max-width:100%}
 textarea{width:100%;min-height:145px;resize:vertical;line-height:1.7}
-input[type=file]{width:100%}input[type=time]{width:100%;direction:ltr}
+input[type=file]{width:100%;font-size:16px;cursor:pointer}input[type=time]{width:100%;direction:ltr}input[type=date]{min-width:0;width:100%;max-width:330px;direction:ltr}input[type=time],input[type=date]{min-height:46px}
 button{padding:11px 20px;background:#c8a44a;color:#15110a;font-weight:bold;border:0;border-radius:6px;cursor:pointer;margin-top:12px}
-button:disabled{opacity:.4;cursor:not-allowed}
+button:disabled{opacity:.4;cursor:not-allowed}button{min-height:46px;touch-action:manipulation}button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #f3c96b;outline-offset:3px}
 .status{padding:10px 0;min-height:28px;white-space:pre-wrap}
 small,p{color:#aebdcc}
 #drop{border:2px dashed #7a5f28;padding:22px;border-radius:10px;text-align:center;background:#111d29;cursor:pointer}
-#drop.drag{background:#244057;border-color:#c8a44a}
+#drop.drag{background:#244057;border-color:#c8a44a}#drop b{display:block;margin-bottom:8px}#drop p{margin:4px 0 10px}#drop input{color:#eef2f8}
 #preview{display:none;max-width:100%;max-height:260px;object-fit:contain;margin:12px auto}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
 .fields label{margin:5px 0}
@@ -23,20 +23,35 @@ fieldset{border:1px solid #3d5064;border-radius:8px;margin:14px 0;padding:14px}
 legend{color:#c8a44a;font-weight:bold}
 .note{border-right:3px solid #d3a64c;padding:8px 12px;background:#25200f}
 #ocrRaw{min-height:85px;direction:auto}
-@media(max-width:560px){.fields{grid-template-columns:1fr}}
+.mobile-nav{display:flex;gap:8px;margin:14px 0 20px}.mobile-nav a{flex:1;text-align:center;text-decoration:none;color:#f8e6bc;border:1px solid #715b32;border-radius:9px;background:#172333;padding:12px 7px;font-weight:bold;min-height:46px;display:flex;align-items:center;justify-content:center}.mobile-nav a:active{background:#293b4f}.hint{font-size:.9rem}.status:not(:empty){border-radius:8px;padding:12px;background:#192c39;margin-top:10px;overflow-wrap:anywhere}
+@media(max-width:600px){
+ body{width:100%;max-width:none;margin:0 auto;padding:16px 12px calc(34px + env(safe-area-inset-bottom));font-size:16px}
+ h1{font-size:1.5rem;line-height:1.3;margin:8px 0}h2{font-size:1.19rem;line-height:1.4}
+ section{padding:16px 13px;margin:14px 0;border-radius:12px}
+ .fields{grid-template-columns:1fr;gap:11px}.fields label{display:flex;flex-direction:column;gap:6px}
+ input,textarea{font-size:16px;min-width:0}input[type=time]{max-width:none}input[type=date]{max-width:none}
+ button{width:100%;padding:13px 12px;font-size:16px;min-height:50px}
+ #drop{padding:16px 12px;min-height:120px}#preview{max-height:46vh}
+ fieldset{padding:12px 10px;margin:12px 0}
+ .mobile-nav{position:sticky;top:0;z-index:5;background:#080c10;padding:8px 0;margin:8px -2px 16px}
+ textarea{min-height:190px}#ocrRaw{min-height:100px}
+ .note{font-size:.91rem;line-height:1.55}
+}
+@media(max-width:360px){body{padding-inline:9px}section{padding:13px 10px}.mobile-nav a{font-size:14px;padding:10px 3px}}
 </style></head><body>
 <h1>ניהול לוח שבת - משפחת רואש</h1>
 <p>העלאת תמונת זמני תפילות והדבקת הודעת מעלית שבת. הנתונים נשמרים בענן עבור השבוע שבחרת, ללא קובצי JSON.</p>
-<section>
+<nav class="mobile-nav" aria-label="מעבר בין חלקי הניהול"><a href="#week-section">📅 שבוע</a><a href="#prayer-section">🕍 תפילות</a><a href="#elevator-section">🛗 מעלית</a></nav>
+<section id="week-section">
 <h2>תאריך השבוע</h2>
 <label for="weekDate">בחר יום כלשהו בשבוע המבוקש (למשל יום שישי)</label>
 <input type="date" id="weekDate" required>
 <p><small>שני סוגי הנתונים נשמרים באותו שבוע. ניתן לעדכן תפילות ומעלית בנפרד.</small></p>
 </section>
-<section>
+<section id="prayer-section">
 <h2>🕍 העלאת תמונת זמני התפילות</h2>
 <div id="drop" role="button" tabindex="0" aria-label="בחר או גרור תמונת זמני תפילות">
-<b>גרור לכאן קובץ JPG / PNG</b><p>או לחץ לבחירת תמונה</p>
+<b>בחר צילום של לוח התפילות</b><p class="hint">אפשר לשמור תמונה מ־WhatsApp או ממייל ולבחור אותה כאן, או לגרור קובץ במחשב.</p>
 <input type="file" accept="image/jpeg,image/png,image/webp" id="prayerFile">
 </div>
 <img alt="תצוגה מקדימה של התמונה" id="preview">
@@ -60,7 +75,7 @@ legend{color:#c8a44a;font-weight:bold}
 <button type="button" id="savePrayer">שמור זמני תפילות ב־Drive</button>
 <div id="prayerStatus" class="status" role="status"></div>
 </section>
-<section>
+<section id="elevator-section">
 <h2>🛗 זמני מעלית שבת</h2>
 <label for="elevator">הדבק את הודעת WhatsApp המלאה</label>
 <textarea id="elevator" placeholder="זמני מעלית לשבת:
@@ -69,7 +84,7 @@ legend{color:#c8a44a;font-weight:bold}
 07:30-08:15
 08:45-09:00
 ..."></textarea>
-<p><small>לפי פורמט ההודעה שלך: שני הטווחים הראשונים לערב שבת, והיתר לשבת. בדוק את סדר הטווחים.</small></p>
+<p><small>מהטלפון: העתק את הודעת WhatsApp והדבק כאן. שני הטווחים הראשונים לערב שבת, והיתר לשבת. בדוק את סדר הטווחים לפני שמירה.</small></p>
 <button type="button" id="saveElevator">שמור זמני מעלית ב־Drive</button>
 <div id="elevatorStatus" class="status" role="status"></div>
 </section>
