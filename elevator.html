@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="he" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>מעלית שבת | לוח שבת - משפחת רואש</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@600;700&display=swap" rel="stylesheet">
@@ -90,6 +92,10 @@ html.light-theme .date-block #theme-toggle{background:#fff7e6;color:#76500f;bord
 .theme-auto-control{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font:500 clamp(.72rem,.92vw,1rem) Heebo,Arial,sans-serif;cursor:pointer;color:var(--muted)}
 .theme-auto-control input{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
 html.light-theme .theme-auto-control{color:#465c72}
+#keep-awake-btn,#fullscreen-btn{border:1px solid var(--gold);background:transparent;color:var(--gold);font:600 clamp(.72rem,.92vw,.95rem) Heebo,Arial,sans-serif;padding:4px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
+#keep-awake-btn.active{border-color:var(--green);color:var(--green)}
+html.light-theme #keep-awake-btn,html.light-theme #fullscreen-btn{color:#805813;border-color:#bda374}
+html.light-theme #keep-awake-btn.active{color:#187548;border-color:#187548}
 </style></head>
 <body><div id="frame">
 <header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div><button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button></div></header>
@@ -101,7 +107,7 @@ html.light-theme .theme-auto-control{color:#465c72}
   <span id="simFlag"></span>
 </div>
 <div id="tiles" hidden></div><div id="empty">טוען את זמני מעלית שבת…</div>
-<footer><label class="theme-auto-control" title="מסומן: מצב אוטומטי לפי הנץ ושקיעה; שינוי ידני עד F5"><input type="checkbox" data-theme-auto checked> שנה מצב לוח לפי זריחה/שקיעה</label><span>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</span></footer>
+<footer><button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="שמירה אוטומטית על המסך דולק; לחיצה להפעלה מחדש או כיבוי">⚠ מסך פעיל: ממתין</button><button id="fullscreen-btn" type="button" onclick="toggleFullscreen()" aria-pressed="false">⛶ מסך מלא</button><label class="theme-auto-control" title="מסומן: מצב אוטומטי לפי הנץ ושקיעה; שינוי ידני עד F5"><input type="checkbox" data-theme-auto checked> שנה מצב לוח לפי זריחה/שקיעה</label><span>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</span></footer>
 </div>
 <script>
 'use strict';
@@ -284,4 +290,78 @@ render();setInterval(render,1000);refresh();setInterval(refresh,5*60*1000);
 ShabbatElevator.prime(new Date()).then(render);
 setInterval(()=>ShabbatElevator.prime(mockNow===null?new Date():new Date(mockNow)),60*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){refresh();ShabbatElevator.prime(mockNow===null?new Date():new Date(mockNow))}});
+
+/* Screen Wake Lock is enabled by default; devices may require a user tap. */
+let keepAwakeWanted=true;
+let keepAwakeSentinel=null;
+let wakeLockRequestRunning=false;
+function updateKeepAwakeButton(message){
+ const btn=document.getElementById('keep-awake-btn');
+ if(!btn)return;
+ const active=!!keepAwakeSentinel&&!keepAwakeSentinel.released;
+ btn.classList.toggle('active',active);
+ btn.textContent=message||(active?'● מסך פעיל: פועל':keepAwakeWanted?'⚠ מסך פעיל: ממתין':'◌ מסך פעיל: כבוי');
+ btn.setAttribute('aria-pressed',String(active));
+}
+async function requestKeepAwake(){
+ if(!keepAwakeWanted||wakeLockRequestRunning||document.visibilityState!=='visible')return;
+ if(keepAwakeSentinel&&!keepAwakeSentinel.released)return;
+ if(!('wakeLock' in navigator)){updateKeepAwakeButton('⚠ הדפדפן לא תומך');return;}
+ wakeLockRequestRunning=true;
+ try{
+  const sentinel=await navigator.wakeLock.request('screen');
+  if(!keepAwakeWanted){await sentinel.release();return;}
+  keepAwakeSentinel=sentinel;
+  sentinel.addEventListener('release',()=>{
+   if(keepAwakeSentinel===sentinel)keepAwakeSentinel=null;
+   updateKeepAwakeButton();
+  });
+  updateKeepAwakeButton();
+ }catch(e){updateKeepAwakeButton('⚠ לחץ להפעלה');}
+ finally{wakeLockRequestRunning=false;}
+}
+async function toggleKeepAwake(){
+ // When the startup request fails, a click retries rather than turning it off.
+ keepAwakeWanted=!(keepAwakeSentinel&&!keepAwakeSentinel.released);
+ if(keepAwakeWanted)await requestKeepAwake();
+ else{
+  const sentinel=keepAwakeSentinel;keepAwakeSentinel=null;
+  if(sentinel)try{await sentinel.release()}catch(e){}
+  updateKeepAwakeButton();
+ }
+}
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='visible'&&keepAwakeWanted)requestKeepAwake();
+});
+requestKeepAwake();
+
+/* User-initiated fullscreen: not all mobile browsers expose the Fullscreen API. */
+function fullscreenActive(){return !!(document.fullscreenElement||document.webkitFullscreenElement)}
+function updateFullscreenButton(){
+ const btn=document.getElementById('fullscreen-btn');
+ if(!btn)return;
+ btn.textContent=fullscreenActive()?'⤢ צא ממסך מלא':'⛶ מסך מלא';
+ btn.setAttribute('aria-pressed',String(fullscreenActive()));
+}
+async function toggleFullscreen(){
+ const el=document.documentElement;
+ try{
+  if(fullscreenActive()){
+   const exit=document.exitFullscreen||document.webkitExitFullscreen;
+   if(exit)await exit.call(document);
+  }else{
+   const enter=el.requestFullscreen||el.webkitRequestFullscreen;
+   if(!enter)throw new Error('not-supported');
+   await enter.call(el);
+  }
+ }catch(e){
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+  alert(ios?'הדפדפן אינו מאפשר להפעיל מסך מלא מהכפתור. ב-Safari: פתח את תפריט השיתוף, בחר ״הוסף למסך הבית״ ופתח את הלוח מהסמל שנוצר.':'הדפדפן או המכשיר אינם מאפשרים מסך מלא כרגע. נסה להשתמש באפשרות מסך מלא של הדפדפן (F11 במחשב).');
+ }
+ updateFullscreenButton();
+}
+document.addEventListener('fullscreenchange',updateFullscreenButton);
+document.addEventListener('webkitfullscreenchange',updateFullscreenButton);
+updateFullscreenButton();
+
 </script></body></html>
