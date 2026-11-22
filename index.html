@@ -798,7 +798,10 @@
 #left .zman-time {font-size:calc(19px * var(--zfit));line-height:1.16;flex-shrink:0;margin-right:4px}
 #center {--hfit:1;overflow:hidden !important;gap:calc(8px * var(--hfit));justify-content:space-around}
 #center .panel-title {font-size:calc(11px * var(--hfit));padding-bottom:calc(6px * var(--hfit));margin-bottom:calc(3px * var(--hfit))}
-#center .halacha-card {padding:calc(12px * var(--hfit)) calc(15px * var(--hfit));gap:calc(4px * var(--hfit));min-height:0;flex:0 1 auto}
+#center .halacha-card {padding:calc(12px * var(--hfit)) calc(15px * var(--hfit));gap:calc(4px * var(--hfit));min-width:0;min-height:max-content;flex:0 0 auto;overflow:visible}
+#center .halacha-value,#center .halacha-sub,#center .halacha-label {display:block;max-width:100%;min-width:0;white-space:normal;word-break:normal;overflow-wrap:break-word;hyphens:none}
+#center .halacha-value {text-wrap:pretty}
+#center .halacha-card::before {pointer-events:none}
 #center .halacha-label {font-size:calc(11px * var(--hfit));line-height:1.2}
 #center .halacha-value,
 #center #holiday-card .halacha-value,
@@ -2440,37 +2443,52 @@ let fittingPanel=false;
 function measurePanelFit(panelId,cssVar,minScale,maxScale){
  const panel=document.getElementById(panelId);
  if(!panel||panel.clientHeight<32||panel.clientWidth<60)return;
- const isVisible=el=>getComputedStyle(el).display!=='none';
- const content=Array.from(panel.children).filter(isVisible);
+ const visible=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
+ const content=Array.from(panel.children).filter(visible);
  if(!content.length)return;
- const rect=panel.getBoundingClientRect();
  const style=getComputedStyle(panel);
- const availableHeight=panel.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
- const availableWidth=panel.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
- if(availableHeight<=8||availableWidth<=8)return;
- // flex gap and vertical margins are included by measuring child bounding boxes.
+ const innerH=panel.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom);
+ const innerW=panel.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+ if(innerH<=8||innerW<=8)return;
+ // Check the actual inner content of EVERY card: flex shrink used to clip text while
+ // the parent scrollHeight still fit, so its parent-only size was not enough.
  const fits=scale=>{
   panel.style.setProperty(cssVar,scale.toFixed(4));
-  const children=content.filter(isVisible);
+  const children=content.filter(visible);
   if(!children.length)return true;
-  const bottom=Math.max(...children.map(el=>el.getBoundingClientRect().bottom));
-  const top=Math.min(...children.map(el=>el.getBoundingClientRect().top));
-  const calculatedHeight=bottom-top;
-  // scrollHeight covers children growing beyond the clipped panel;
-  // scrollWidth catches text that cannot fit the current column width.
-  return calculatedHeight<=availableHeight+1.5 &&
-    panel.scrollHeight<=panel.clientHeight+1.5 &&
-    panel.scrollWidth<=panel.clientWidth+1.5;
+  const panelBox=panel.getBoundingClientRect();
+  const topLimit=panelBox.top+parseFloat(getComputedStyle(panel).paddingTop);
+  const bottomLimit=panelBox.bottom-parseFloat(getComputedStyle(panel).paddingBottom);
+  const leftLimit=panelBox.left+parseFloat(getComputedStyle(panel).paddingLeft);
+  const rightLimit=panelBox.right-parseFloat(getComputedStyle(panel).paddingRight);
+  const tolerance=2;
+  for(const el of children){
+    const rect=el.getBoundingClientRect();
+    if(rect.top<topLimit-tolerance||rect.bottom>bottomLimit+tolerance ||
+       rect.left<leftLimit-tolerance||rect.right>rightLimit+tolerance)return false;
+    // Card/row can hide overflowing glyphs even while panel itself fits.
+    if(el.scrollHeight>el.clientHeight+tolerance||el.scrollWidth>el.clientWidth+tolerance)return false;
+    for(const child of el.querySelectorAll('.halacha-value,.halacha-label,.halacha-sub,.zman-name,.zman-sub,.zman-time')){
+      if(!visible(child))continue;
+      const r=child.getBoundingClientRect();
+      if(r.left<rect.left-tolerance||r.right>rect.right+tolerance||
+         r.bottom>rect.bottom+tolerance||r.top<rect.top-tolerance)return false;
+      if(child.scrollHeight>child.clientHeight+tolerance ||
+         child.scrollWidth>child.clientWidth+tolerance)return false;
+    }
+  }
+  return panel.scrollHeight<=panel.clientHeight+tolerance &&
+         panel.scrollWidth<=panel.clientWidth+tolerance;
  };
  let low=minScale,high=maxScale,best=minScale;
- // Always test smallest scale before searching upward.
  if(!fits(low)){
-   for(let i=0;i<7 && !fits(low);i++)low*=.8;
-   best=low;
+  // Some unusually short viewports need even smaller text; keep all words visible.
+  for(let i=0;i<9&&!fits(low);i++)low*=.8;
+  best=low;
  }
  for(let i=0;i<16;i++){
-   const mid=(low+high)/2;
-   if(fits(mid)){best=mid;low=mid}else{high=mid}
+  const mid=(low+high)/2;
+  if(fits(mid)){best=mid;low=mid}else{high=mid}
  }
  fits(best);
 }
