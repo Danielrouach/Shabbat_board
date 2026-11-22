@@ -743,7 +743,7 @@
 
 
   /* Screen wake lock status, opt-in before Shabbat */
-  #keep-awake-btn { background:transparent; border:1px solid var(--gold-dim); border-radius:5px; color:var(--gold); font:inherit; padding:3px 8px; cursor:pointer; }
+  #keep-awake-btn, #fullscreen-btn { background:transparent; border:1px solid var(--gold-dim); border-radius:5px; color:var(--gold); font:inherit; padding:3px 8px; cursor:pointer; }
   #keep-awake-btn.active { border-color:var(--green); color:var(--green); }
   #keep-awake-btn:focus-visible { outline:2px solid var(--blue); }
 
@@ -1204,7 +1204,8 @@ html.light-theme .theme-auto-control{color:#40536b}
       <a href="https://elevator.rouach.org/" data-elevator-link target="_blank" rel="noopener" style="display:inline-block;margin:0 8px;padding:4px 9px;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);font:700 .75rem Heebo,sans-serif;text-decoration:none" title="פתח את זמני המעלית במסך נפרד לפני שבת">🛗 מסך מעלית נפרד</a>
       <button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button>
       <label class="theme-auto-control" title="מסומן: שינוי אוטומטי בהנץ ובשקיעה. שינוי ידני נשמר עד F5"><input type="checkbox" data-theme-auto checked> שנה מצב לוח לפי זריחה/שקיעה</label>
-      <button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="הפעלה לפני שבת: בקשה מהדפדפן לשמור על המסך פעיל">◌ מסך פעיל: כבוי</button>
+      <button id="keep-awake-btn" type="button" onclick="toggleKeepAwake()" title="מנסה לשמור על המסך דולק; לחיצה להפעלה מחדש או כיבוי">⚠ מסך פעיל: ממתין</button>
+       <button id="fullscreen-btn" type="button" onclick="toggleFullscreen()" aria-pressed="false" title="הצג את לוח השבת במסך מלא">⛶ מסך מלא</button>
        <!-- QA dev controls — only visible when ?qa=1 -->
       <span id="qa-controls">
         <select id="qa-day" onchange="qaSetDay(this.value)" title="סימולציית יום">
@@ -3414,7 +3415,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // ── Optional Screen Wake Lock (requires a user gesture). ──
 // Wake Lock does NOT disable Windows automatic locking, screen savers, or power policies.
-let keepAwakeWanted = false;
+let keepAwakeWanted = true;
 let keepAwakeSentinel = null;
 let wakeLockRequestRunning = false;
 function updateKeepAwakeButton(message) {
@@ -3450,7 +3451,8 @@ async function requestKeepAwake() {
   } finally { wakeLockRequestRunning = false; }
 }
 async function toggleKeepAwake() {
-  keepAwakeWanted = !keepAwakeWanted;
+  // If startup was blocked, click retries with a user gesture.
+  keepAwakeWanted = !(keepAwakeSentinel && !keepAwakeSentinel.released);
   if (keepAwakeWanted) {
     updateKeepAwakeButton();
     await requestKeepAwake();
@@ -3464,6 +3466,37 @@ async function toggleKeepAwake() {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && keepAwakeWanted) requestKeepAwake();
 });
+requestKeepAwake();
+
+
+/* User-initiated fullscreen: not all mobile browsers expose the Fullscreen API. */
+function fullscreenActive(){return !!(document.fullscreenElement||document.webkitFullscreenElement)}
+function updateFullscreenButton(){
+ const btn=document.getElementById('fullscreen-btn');
+ if(!btn)return;
+ btn.textContent=fullscreenActive()?'⤢ צא ממסך מלא':'⛶ מסך מלא';
+ btn.setAttribute('aria-pressed',String(fullscreenActive()));
+}
+async function toggleFullscreen(){
+ const el=document.documentElement;
+ try{
+  if(fullscreenActive()){
+   const exit=document.exitFullscreen||document.webkitExitFullscreen;
+   if(exit)await exit.call(document);
+  }else{
+   const enter=el.requestFullscreen||el.webkitRequestFullscreen;
+   if(!enter)throw new Error('not-supported');
+   await enter.call(el);
+  }
+ }catch(e){
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+  alert(ios?'הדפדפן אינו מאפשר להפעיל מסך מלא מהכפתור. ב-Safari: פתח את תפריט השיתוף, בחר ״הוסף למסך הבית״ ופתח את הלוח מהסמל שנוצר.':'הדפדפן או המכשיר אינם מאפשרים מסך מלא כרגע. נסה להשתמש באפשרות מסך מלא של הדפדפן (F11 במחשב).');
+ }
+ updateFullscreenButton();
+}
+document.addEventListener('fullscreenchange',updateFullscreenButton);
+document.addEventListener('webkitfullscreenchange',updateFullscreenButton);
+updateFullscreenButton();
 
 </script>
 </body>
