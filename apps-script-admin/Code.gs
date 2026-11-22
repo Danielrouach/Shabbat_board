@@ -1,5 +1,5 @@
 // Private admin web app. Deploy: Execute as me; Who has access: Only myself.
-const DATA_FILE_ID = 'REPLACE_WITH_DRIVE_FILE_ID';
+const DATA_FILE_ID = '1rL-LOkjaV0FWOTDm2fGopW04G2ROfuMM';
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Admin').setTitle('ניהול לוח שארית ישראל');
 }
