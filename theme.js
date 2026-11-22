@@ -6,6 +6,7 @@
 const THEME_KEY='rouach_shabbat_theme_v1';
 const SOLAR_KEY='rouach_shabbat_solar_v1';
 const MANUAL_KEY='rouach_shabbat_theme_manual_v1';
+const AUTO_KEY='rouach_shabbat_theme_auto_v1';
 const GEO='294801'; // Haifa; same location as main Shabbat board
 const ZONE='Asia/Jerusalem';
 let solar={};
@@ -16,6 +17,7 @@ let lastMinute='';
 let overrideInstant=null;
 let lastApplied='';
 let lastPeriod='';
+function autoEnabled(){return safeGet(AUTO_KEY)!=='false'}
 function localDay(date){
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
  const p={};for(const x of parts)p[x.type]=x.value;
@@ -46,12 +48,11 @@ function manual(){
  }catch(_){return null}
 }
 function preferred(now){
- const p=phase(now),choice=manual();
- if(p){
-  if(choice&&choice.period===p.period)return {mode:choice.mode,period:p.period};
-  if(choice&&choice.period!==p.period)safeRemove(MANUAL_KEY);
-  return p;
- }
+ if(!autoEnabled())return {mode:safeGet(THEME_KEY)==='light'?'light':'dark',period:null};
+ const choice=manual();
+ if(choice)return {mode:choice.mode,period:'manual-until-refresh'};
+ const p=phase(now);
+ if(p)return p;
  // When offline with no exact solar data, preserve the last chosen appearance.
  const fromLink=new URLSearchParams(location.search).get('theme');
  return {mode:fromLink==='light'||fromLink==='dark'?fromLink:(safeGet(THEME_KEY)==='light'?'light':'dark'),period:null};
@@ -61,6 +62,11 @@ function apply(mode){
  const html=document.documentElement;
  html.classList.toggle('light-theme',light);
  html.style.colorScheme=light?'light':'dark';
+ const toggles=document.querySelectorAll('[data-theme-auto]');
+ for(const input of toggles){
+  input.checked=autoEnabled();
+  input.title=input.checked?'מעבר אוטומטי בהנץ ובשקיעה; בחירה ידנית עד רענון':'מצב ידני קבוע, ללא שינוי אוטומטי';
+ }
  const buttons=document.querySelectorAll('[data-theme-toggle]');
  for(const button of buttons){
   button.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
@@ -114,36 +120,48 @@ async function preload(date){
  }
 }
 function toggle(){
- const now=currentInstant(),p=phase(now);
  const mode=document.documentElement.classList.contains('light-theme')?'dark':'light';
- // A manual click stays until the NEXT actual sunrise/sunset boundary.
- if(p)safeSet(MANUAL_KEY,JSON.stringify({mode,period:p.period}));
- else safeSet(MANUAL_KEY,JSON.stringify({mode,period:null}));
+ // Automatic enabled: override shared between both screens, but ONLY until F5.
+ // Automatic disabled: persist chosen mode indefinitely.
+ if(autoEnabled())safeSet(MANUAL_KEY,JSON.stringify({mode}));
+ else safeRemove(MANUAL_KEY);
  safeSet(THEME_KEY,mode);
  const url=new URL(location.href);
  if(url.searchParams.has('theme')){
   url.searchParams.delete('theme');
   history.replaceState(null,'',url.pathname+url.search+url.hash);
  }
- apply(mode);
+ sync(undefined,true);
+}
+function setAuto(enabled){
+ const fixedMode=document.documentElement.classList.contains('light-theme')?'light':'dark';
+ safeSet(AUTO_KEY,enabled?'true':'false');
+ safeRemove(MANUAL_KEY);
+ if(!enabled)safeSet(THEME_KEY,fixedMode);
+ sync(undefined,true);
 }
 function setNow(date){overrideInstant=date instanceof Date?date:null;sync(undefined,true)}
 // Theme handoff is used only on first paint if solar times aren't available yet.
+// Reload/F5 always cancels temporary manual override; other open tabs are notified.
+try{
+ const navigation=performance.getEntriesByType('navigation')[0];
+ if(navigation?.type==='reload'&&autoEnabled())safeRemove(MANUAL_KEY);
+}catch(_){}
 const handed=new URLSearchParams(location.search).get('theme');
 if((handed==='light'||handed==='dark')&&!phase(new Date()))safeSet(THEME_KEY,handed);
 apply(preferred(new Date()).mode);
 document.addEventListener('DOMContentLoaded',()=>{
  sync(undefined,true);
  document.querySelectorAll('[data-theme-toggle]').forEach(button=>button.addEventListener('click',toggle));
+ document.querySelectorAll('[data-theme-auto]').forEach(box=>box.addEventListener('change',()=>setAuto(box.checked)));
 });
 window.addEventListener('storage',e=>{
  if(e.key===SOLAR_KEY){try{solar=JSON.parse(e.newValue||'{}')||{}}catch(_){}}
- if([THEME_KEY,SOLAR_KEY,MANUAL_KEY].includes(e.key)){
-  if(e.key===THEME_KEY && !phase(currentInstant()))apply(e.newValue==='light'?'light':'dark');
-  else sync(undefined,true);
+ if([THEME_KEY,SOLAR_KEY,MANUAL_KEY,AUTO_KEY].includes(e.key)){
+  sync(undefined,true);
  }
 });
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync(undefined,true)});
 setInterval(()=>sync(),15000);
-window.ShabbatTheme={toggle,apply,get:()=>document.documentElement.classList.contains('light-theme')?'light':'dark',sync,setTimes,setNow};
+window.ShabbatTheme={toggle,setAuto,autoEnabled,apply,get:()=>document.documentElement.classList.contains('light-theme')?'light':'dark',sync,setTimes,setNow};
 })();
