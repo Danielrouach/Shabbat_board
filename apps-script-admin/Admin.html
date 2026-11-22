@@ -178,9 +178,8 @@ async function readWeekdayTableTimes(worker, imageFile) {
   ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.imageSmoothingEnabled=true;
   ctx.drawImage(image,x,y,cw,ch,0,0,canvas.width,canvas.height);
-  const result=await worker.recognize(canvas,{rectangle:{left:0,top:0,width:canvas.width,height:canvas.height}},{
-    tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789:.'
-  });
+  await worker.setParameters({tessedit_pageseg_mode:'6',tessedit_char_whitelist:'0123456789:.'});
+  const result=await worker.recognize(canvas);
   const times=findClocks(result.data.text||'');
   return {mincha:times[0]||'',arvit:times[1]||'',raw:result.data.text||''};
  } finally {image.close()}
