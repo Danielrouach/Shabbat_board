@@ -6,6 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@600;700&display=swap" rel="stylesheet">
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
+<script src="theme.js"></script>
 <style>
 :root{--bg:#080c10;--panel:#0d1520;--line:#223344;--gold:#c8a44a;--green:#4adb8a;--muted:#9baabb}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:#eef2f8;overflow:hidden;font-family:Heebo,Arial,sans-serif}
@@ -46,6 +47,33 @@ h1{line-height:1.12;letter-spacing:.01em}
 #status{font-size:clamp(.7rem,.95vw,.9rem);min-height:0}
 @media(max-width:650px){header{gap:9px}h1{font-size:clamp(1.4rem,4.5vw,2rem)}#clock{font-size:clamp(1.25rem,4vw,2rem)}.date-range{font-size:clamp(.78rem,2.5vw,.95rem)}}
 @media(max-height:680px){.eyebrow{font-size:.7rem}.date-range{margin-top:0}#hebrewDate{font-size:1.2rem}}
+
+footer{display:flex;align-items:center;justify-content:center;gap:clamp(10px,2vw,22px);flex-wrap:wrap}
+#theme-toggle{border:1px solid var(--gold);background:transparent;color:var(--gold);font:700 clamp(.8rem,1vw,1rem) Heebo,Arial,sans-serif;padding:5px 13px;border-radius:6px;cursor:pointer;white-space:nowrap}
+#theme-toggle:hover,#theme-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+html.light-theme{--bg:#f7f9fc;--panel:#ffffff;--line:#dbe4ed;--gold:#906414;--green:#187548;--muted:#4d6177}
+html.light-theme,html.light-theme body{background:var(--bg);color:#172435}
+html.light-theme header{border-color:#d3dce6}
+html.light-theme h1,html.light-theme #hebrewDate{color:#936614}
+html.light-theme .eyebrow,html.light-theme .subtitle,html.light-theme #date,html.light-theme #status{color:#44596f}
+html.light-theme .date-range{color:#805813}
+html.light-theme #clock{color:#111827;text-shadow:none}
+html.light-theme .tile{background:#fff;border-color:#d6e0e9;box-shadow:0 2px 10px rgba(39,59,84,.04)}
+html.light-theme .time{color:#1e3045}
+html.light-theme .caption{color:#51667d}
+html.light-theme .tile.current{background:#e6f6ed;border-color:#218454;box-shadow:0 0 14px rgba(34,132,84,.12)}
+html.light-theme .tile.current .time,html.light-theme .tile.current .caption{color:#146b42}
+html.light-theme .tile.next{border-color:#b38b3c;background:#fffdf7}
+html.light-theme .tile.preview{border-color:#cdd9e7}
+html.light-theme .tile.past{opacity:.55}
+html.light-theme #empty{color:#5c7187}
+html.light-theme #status.error{color:#b83737}
+html.light-theme #status.warning{color:#9b6518}
+html.light-theme footer{border-color:#d7e0eb;color:#5b6f83}
+html.light-theme #theme-toggle{background:#fffaf0;color:#805813;border-color:#bda374}
+html.light-theme #qa-controls{background:#fff;border-color:#c1a16b;box-shadow:0 8px 32px rgba(42,68,94,.15)}
+html.light-theme #qa-controls input,html.light-theme #qa-controls button{background:#f5f8fc;color:#1c3147;border-color:#b9c9da}
+html.light-theme #simFlag{color:#136b42}
 </style></head>
 <body><div id="frame">
 <header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div></div></header>
@@ -57,7 +85,7 @@ h1{line-height:1.12;letter-spacing:.01em}
   <span id="simFlag"></span>
 </div>
 <div id="tiles" hidden></div><div id="empty">טוען את זמני מעלית שבת…</div>
-<footer>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</footer>
+<footer><button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button><span>לוח תצוגה אוטומטי · ללא צורך בגלילה או בלחיצות · הנתונים נשמרים בדפדפן</span></footer>
 </div>
 <script>
 'use strict';
