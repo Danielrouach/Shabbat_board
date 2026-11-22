@@ -736,3 +736,74 @@
     line-height: 1.1;
   }
 }
+
+/* Android Chrome recovery (Galaxy portrait).
+   Keep the app in normal document flow and avoid GPU compositing of the
+   whole grid. Do not alter desktop, tablet or other mobile browsers. */
+@media (orientation: portrait) and (max-width: 768px) {
+  html.android-board-recovery,
+  html.android-board-recovery body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.android-board-recovery #app {
+    position: relative !important;
+    inset: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    padding: 10px 10px 28px !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    contain: none !important;
+    content-visibility: visible !important;
+  }
+  html.android-board-recovery #app > #header,
+  html.android-board-recovery #app > #mobile-theme-controls,
+  html.android-board-recovery #app > #left,
+  html.android-board-recovery #app > #center,
+  html.android-board-recovery #app > #right,
+  html.android-board-recovery #app > #footer {
+    position: relative !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+    contain: none !important;
+    content-visibility: visible !important;
+  }
+  html.android-board-recovery #app > #header {
+    display: grid !important;
+    width: 100% !important;
+  }
+  html.android-board-recovery #app > #left,
+  html.android-board-recovery #app > #center,
+  html.android-board-recovery #app > #right {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+  html.android-board-recovery #app > #mobile-theme-controls {
+    display: flex !important;
+  }
+  html.android-board-recovery #copyright-bar {
+    position: relative !important;
+    height: auto !important;
+    min-height: 26px !important;
+  }
+}
