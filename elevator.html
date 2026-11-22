@@ -137,7 +137,10 @@ function render(){
  document.getElementById('parashaTitle').textContent=parasha?'זמני מעלית שבת לפרשת '+parasha:'זמני מעלית שבת';
  const suffix=mockNow===null?'':' · סימולציה';
  document.getElementById('dayLabel').textContent=(today===5?'ערב שבת · יום שישי':today===6?'שבת קודש':'תצוגה מקדימה · שבת הקרובה')+suffix;
- const data=readStore()[weekKey(p)];
+ const saved=readStore();
+ const selectedWeek=weekKey(p);
+ const data=saved[selectedWeek];
+ const storedWeeks=Object.keys(saved).filter(k=>/^20\d{2}-\d{2}-\d{2}$/.test(k)).sort();
  const computed=ShabbatElevator.display(instant,data);
  const grid=document.getElementById('tiles'),empty=document.getElementById('empty'),status=document.getElementById('status');
  const preview=today!==5&&today!==6;
@@ -173,7 +176,7 @@ function render(){
  const description=preview?'תצוגה מקדימה של שישי ושבת הקרובים':'';
  const conn=cloudState==='error'?' · לא ניתן לרענן מהענן — נתונים שמורים מוצגים אם קיימים'
   :cloudState==='pending'?' · בודק נתונים בענן':cloudState==='ready'?' · נתוני הענן נבדקו':'';
- status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+conn+
+ status.textContent=(arr.length?'מוצגים '+arr.length+' חלונות פעילות':'')+(description?' · '+description:'')+(!data?' · שבוע מבוקש: '+selectedWeek+(storedWeeks.length?' · שבועות שמורים: '+storedWeeks.slice(-3).join(', '):' · עדיין אין שבועות שמורים'):'')+conn+
    (computed.unknown?' · ⚠ זמן עצירה לא אומת — יש לטעון את הלוח לפני שבת':'')+
    (cloudError&&cloudState==='error'?' · '+cloudError:'');
 }
