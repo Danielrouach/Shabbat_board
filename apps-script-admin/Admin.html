@@ -49,7 +49,7 @@ legend{color:#c8a44a;font-weight:bold}
 <fieldset><legend>ערב שבת</legend><div class="fields">
 <label>מנחה גדולה <input id="fridayMinchaGedola" type="time"></label>
 <label>כניסת שבת / הדלקת נרות <input id="fridayCandles" type="time"></label>
-<label>מנחה, קבלת שבת וערבית — 15 דקות אחרי כניסת שבת <input id="fridayMinchaArvit" type="time" readonly title="מחושב אוטומטית מכניסת שבת"></label>
+<label>מנחה, קבלת שבת וערבית — 15 דקות אחרי כניסת שבת (הלוח מחשב אוטומטית) <input id="fridayMinchaArvit" type="time" readonly title="מחושב אוטומטית מכניסת שבת"></label>
 </div></fieldset>
 <fieldset><legend>שבת ומוצאי שבת</legend><div class="fields">
 <label>מנחה גדולה <input id="shabbatMinchaGedola" type="time"></label>
@@ -199,7 +199,7 @@ document.getElementById('savePrayer').onclick=()=>{
   const data={};
   for(const k of fields){const value=document.getElementById(k).value;if(value)data[k]=value}
   syncFridayPrayer();
-  if(document.getElementById('fridayCandles').value)data.fridayMinchaArvit=document.getElementById('fridayMinchaArvit').value;
+  data.fridayMinchaArvit='+15'; // Board derives from the correct week\'s Hebcal candle time when no manual time exists.
   if(!dateInput.value||Object.keys(data).length===0){document.getElementById('prayerStatus').textContent='בחר תאריך והזן לפחות זמן תפילה אחד';return}
   if(!confirm('בדקת את השעות בתמונה? לשמור '+Object.keys(data).length+' זמני תפילות לשבוע שבחרת?'))return;
   callServer('savePrayerTimes',[dateInput.value,data],'prayerStatus');
