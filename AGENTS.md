@@ -184,3 +184,7 @@ Each screen stores a merged weekly DB in localStorage. This is a **cache**, not 
 ---
 
 **Pointers:** See README.md for the current human-friendly overview and the brief original deployment story. Source code is authoritative for implementation details. If anything conflicts, inspect the latest code and update both docs accordingly.
+
+## Android blank-screen recovery
+
+For Android Chrome phones <=768px in portrait, the early inline head script adds `android-board-recovery` to `html`. The final rules in `responsive.css` force a safe, normal-flow vertical flex layout without whole-app transforms, fixed positioning, clipping or GPU compositing. The burn-in pixel-shift transform is disabled for those devices. This is intentionally a temporary **scrollable** safety fallback after a Galaxy screenshot showed an entirely blank board; do not claim the universal no-scroll requirement is met on Android. The fetch error handler also dismisses the loading overlay. Keep the cache-busting CSS query current and validate on an actual Galaxy before attempting another compact layout.

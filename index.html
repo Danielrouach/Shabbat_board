@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Early Android recovery: identify mobile Chrome before CSS is parsed. -->
+<script>
+(function(){
+  try {
+    if (/Android/i.test(navigator.userAgent) &&
+        window.matchMedia('(max-width: 768px)').matches) {
+      document.documentElement.classList.add('android-board-recovery');
+    }
+  } catch(e) {}
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -980,7 +991,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-landscape-fit-v7">
+<link rel="stylesheet" href="responsive.css?v=20261122-android-recovery-v9">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (orientation: portrait) and (max-width: 768px) {
@@ -1758,7 +1769,12 @@ async function fetchAllData() {
 
   } catch(e) {
     console.error('Fetch error:', e);
-    document.getElementById('last-updated').textContent = 'שגיאה בטעינה – מנסה שוב...';
+    const status = document.getElementById('last-updated');
+    if (status) status.textContent = 'שגיאה בטעינה – מנסה שוב...';
+    // Never leave an opaque fullscreen loader blocking the board when an
+    // Android browser cannot load remote data or render a response.
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.add('hidden');
     setTimeout(fetchAllData, 30000);
   }
 }
@@ -3050,6 +3066,9 @@ window.visualViewport?.addEventListener('resize',requestColumnFit);
     idx++;
   }
 
+  // Android Chrome sometimes loses the composited grid layer when a
+  // transform is applied to the entire #app. Never transform it on phones.
+  if (document.documentElement.classList.contains('android-board-recovery')) return;
   applyShift(); // apply immediately on load
   setInterval(applyShift, 3 * 60 * 1000); // shift every 3 minutes
 })();
