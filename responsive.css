@@ -1,0 +1,338 @@
+/* Responsive display for the Shabbat Board.
+   Keep the original fullscreen kiosk fit at desktop widths.
+   On tablets and phones, prioritize complete, readable content and page scrolling. */
+
+@media (max-width: 1024px) {
+  html, body {
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    overflow-x: clip;
+    overflow-y: auto;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  #app {
+    height: auto !important;
+    min-height: calc(100vh - 40px);
+    min-height: calc(100dvh - 40px);
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+    grid-auto-rows: auto;
+    grid-template-areas:
+      "header header"
+      "bday bday"
+      "right left"
+      "center center"
+      "footer footer";
+    align-content: start;
+    gap: clamp(10px, 1.7vw, 18px);
+    padding: max(12px, env(safe-area-inset-top))
+             max(12px, env(safe-area-inset-right))
+             12px
+             max(12px, env(safe-area-inset-left));
+    transform: none !important;
+  }
+
+  #app > *, #header > *, .panel > *, #footer > * { min-width: 0; }
+
+  #header {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "parasha location" "clock clock";
+    align-items: start;
+    justify-content: stretch;
+    gap: 8px 16px;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    padding-bottom: 12px;
+  }
+  #parasha-block {
+    grid-area: parasha;
+    width: 100%;
+    min-width: 0;
+    text-align: right;
+    gap: 2px;
+  }
+  #location-block {
+    grid-area: location;
+    width: 100%;
+    min-width: 0;
+    align-items: flex-start;
+    text-align: left;
+    overflow-wrap: break-word;
+  }
+  #clock-block {
+    grid-area: clock;
+    width: 100%;
+    min-width: 0;
+    flex: initial;
+    max-height: none;
+    overflow: visible;
+    align-items: center;
+  }
+  #bsd { margin: 0 0 2px; }
+  #parasha-name {
+    font-size: clamp(1.55rem, 3.7vw, 2.5rem);
+    line-height: 1.18;
+    overflow-wrap: break-word;
+  }
+  #hebrew-date { font-size: clamp(1.18rem, 2.6vw, 1.8rem); line-height: 1.3; }
+  #day-of-week-left { font-size: clamp(1.15rem, 2.7vw, 1.85rem); }
+  #gregorian-date { font-size: clamp(.9rem, 2vw, 1.25rem); }
+  #location-name { font-size: clamp(.75rem, 1.5vw, 1rem); letter-spacing: .02em; }
+  #clock { font-size: clamp(2.9rem, 7vw, 4.8rem); }
+  #shabbat-clock { font-size: clamp(1.25rem, 2.7vw, 2rem); }
+  #shabbat-kodesh-block { max-height: none; overflow: visible; }
+  #shabbat-combined-img, body.shabbat-day #shabbat-combined-img,
+  #shabbat-svg, body.shabbat-day #shabbat-svg {
+    height: clamp(105px, 16vw, 170px);
+    max-width: 100%;
+    object-fit: contain;
+  }
+  #temp-display { font-size: .93rem; }
+  .corner { display: none; }
+
+  #bday-row {
+    max-width: 100%;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px 14px;
+  }
+  #bday-who { font-size: clamp(1.25rem, 2.6vw, 1.8rem); }
+
+  /* The kiosk's height-aware shrinking must not clip text on touch devices. */
+  .panel {
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    overflow: visible !important;
+    padding: clamp(12px, 1.7vw, 20px);
+    gap: 8px;
+  }
+  .panel-title { font-size: .78rem; margin-bottom: 2px; padding-bottom: 7px; }
+  #left {
+    --zfit: 1 !important;
+    justify-content: flex-start;
+    gap: 0;
+    overflow: visible !important;
+  }
+  #left .panel-title { font-size: .78rem; }
+  #left .zman-row { padding: 8px 0; gap: 10px; min-height: 0; }
+  #left .zman-name { font-size: clamp(.88rem, 1.65vw, 1.08rem); line-height: 1.3; }
+  #left .zman-sub { font-size: .73rem; line-height: 1.3; }
+  #left .zman-time { font-size: clamp(1rem, 2vw, 1.28rem); margin: 0; }
+  #left .zman-row.passed { opacity: .65; }
+
+  #right {
+    --schedule-scale: 1 !important;
+    position: relative;
+    overflow: visible !important;
+    justify-content: flex-start !important;
+    gap: 7px;
+  }
+  #right #elevator-next-widget { position: static; top: auto; }
+  #right #weekly-board, #right #weekly-prayers { overflow: visible; }
+  #right .weekly-heading { font-size: 1rem; line-height: 1.3; }
+  #right .weekly-entry { padding: 6px 0; gap: 9px; align-items: center; }
+  #right .weekly-entry-label { font-size: .95rem; line-height: 1.35; }
+  #right .weekly-entry-time { font-size: 1.07rem; line-height: 1.3; }
+  #right .time-row { padding: 8px 0; gap: 10px; }
+  #right .time-label { font-size: .95rem; line-height: 1.3; }
+  #right .time-val { font-size: 1.23rem; line-height: 1.3; }
+  #right .time-val.secondary { font-size: 1.03rem; }
+  #right .shabbat-big-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.6rem);
+    overflow: visible;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  #right #shabbat-big { white-space: normal; overflow: visible; text-overflow: clip; }
+  #right .elevator-next-title { font-size: .95rem; }
+  #right .elevator-next-time { font-size: .87rem; }
+
+  #center {
+    --hfit: 1 !important;
+    overflow: visible !important;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    justify-content: stretch;
+    gap: 12px;
+  }
+  #center > .panel-title { grid-column: 1 / -1; font-size: .78rem; }
+  #center .halacha-card { min-width: 0; min-height: 0; padding: 12px 14px; gap: 5px; }
+  #center .halacha-label { font-size: .75rem; line-height: 1.35; }
+  #center .halacha-value,
+  #center #holiday-card .halacha-value,
+  #center #omer-card .halacha-value,
+  #center #tachanun-card.has-tachanun .halacha-value {
+    font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+    line-height: 1.3;
+    overflow-wrap: break-word;
+  }
+  #center .halacha-sub, #center #omer-card .halacha-sub { font-size: .9rem; line-height: 1.45; }
+
+  #footer {
+    max-height: none;
+    min-height: 0;
+    width: 100%;
+    overflow: visible;
+    padding: 14px 0 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    justify-content: stretch;
+  }
+  #footer-left {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    width: 100%;
+    min-width: 0;
+    flex: initial;
+    align-items: stretch;
+    justify-content: stretch;
+    letter-spacing: normal;
+  }
+  #footer-left > button,
+  #footer-left > a[data-elevator-link] {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    border-radius: 7px;
+    padding: 9px 10px;
+    margin: 0 !important;
+    text-align: center;
+    font-size: clamp(.77rem, 1.5vw, .96rem);
+    line-height: 1.3;
+    white-space: normal;
+  }
+  #footer-left > a[data-elevator-link] {
+    display: inline-flex !important;
+    justify-content: center;
+    align-items: center;
+  }
+  #footer-left #settings-btn { border-radius: 7px; }
+  #footer-left .theme-auto-control {
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    justify-content: center;
+    white-space: normal;
+    text-align: start;
+    line-height: 1.35;
+    font-size: clamp(.75rem, 1.4vw, .9rem);
+  }
+  #footer-left .theme-auto-control input { flex-shrink: 0; }
+  #footer-left #qa-controls.visible {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #footer-brand { grid-column: 1 / -1; text-align: center; font-size: .75rem; }
+  #footer-center { display: none; }
+  #footer-right {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    flex: initial;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    line-height: 1.5;
+  }
+  #footer-right .feature-update-status { font-size: .77rem; overflow-wrap: anywhere; }
+
+  #copyright-bar {
+    position: relative;
+    height: auto;
+    min-height: 40px;
+    padding: 8px max(12px, env(safe-area-inset-right))
+             max(9px, env(safe-area-inset-bottom))
+             max(12px, env(safe-area-inset-left));
+    text-align: center;
+    font-size: .7rem;
+    z-index: 1;
+  }
+  #settings-panel, #greg-conv-panel, .weekly-modal { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); }
+  #settings-box, .weekly-modal-box { max-height: 90dvh; max-width: 100%; }
+}
+
+@media (max-width: 768px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "bday"
+      "right"
+      "left"
+      "center"
+      "footer";
+    gap: 12px;
+  }
+  #header { gap: 8px 12px; }
+  #parasha-name { font-size: clamp(1.4rem, 5.3vw, 2rem); }
+  #hebrew-date { font-size: clamp(1.05rem, 3.65vw, 1.5rem); }
+  #day-of-week-left { font-size: clamp(1.05rem, 3.8vw, 1.55rem); }
+  #gregorian-date { font-size: clamp(.83rem, 2.8vw, 1.15rem); }
+  #location-name { font-size: clamp(.75rem, 2.5vw, .95rem); }
+  #clock { font-size: clamp(2.45rem, 10vw, 4rem); }
+  #shabbat-combined-img, body.shabbat-day #shabbat-combined-img,
+  #shabbat-svg, body.shabbat-day #shabbat-svg { height: clamp(95px, 26vw, 165px); }
+  #center { grid-template-columns: minmax(0, 1fr); }
+  #center .halacha-card { padding: 12px 14px; }
+  #center .halacha-value,
+  #center #holiday-card .halacha-value,
+  #center #omer-card .halacha-value,
+  #center #tachanun-card.has-tachanun .halacha-value { font-size: clamp(1.3rem, 4.7vw, 1.65rem); }
+  #left .zman-name { font-size: 1rem; }
+  #left .zman-time { font-size: 1.2rem; }
+  #right .weekly-entry-label { font-size: 1rem; }
+  #right .weekly-entry-time { font-size: 1.13rem; }
+  #right .time-label { font-size: 1rem; }
+  #right .time-val { font-size: 1.25rem; }
+  #right .shabbat-big-title { font-size: clamp(1.3rem, 4.5vw, 1.7rem); }
+  #footer-left > button, #footer-left > a[data-elevator-link] { font-size: .85rem; }
+  #bday-row .bday-text-block { min-width: 0; }
+  #bday-who { font-size: 1.45rem; }
+  .weekly-edit-grid { grid-template-columns: minmax(0, 1fr); }
+  .bday-entry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bday-entry .btn-remove { align-self: end; }
+  #settings-box { padding: 20px 16px; width: min(600px, 96vw); }
+  #settings-actions { flex-wrap: wrap; }
+  #settings-data-actions .btn-data { white-space: normal; }
+}
+
+@media (max-width: 430px) {
+  #app { gap: 11px; }
+  #header { column-gap: 9px; }
+  #parasha-label { font-size: .7rem; letter-spacing: .04em; }
+  #parasha-name { font-size: clamp(1.28rem, 5.25vw, 1.5rem); }
+  #hebrew-date { font-size: clamp(1rem, 3.9vw, 1.2rem); }
+  #day-of-week-left { font-size: clamp(1rem, 4vw, 1.2rem); }
+  #clock { font-size: clamp(2.25rem, 10.5vw, 3.2rem); }
+  #footer-left { grid-template-columns: minmax(0, 1fr); }
+  #footer-brand, #footer-left #qa-controls.visible { grid-column: 1; }
+  #footer-left > button, #footer-left > a[data-elevator-link],
+  #footer-left .theme-auto-control { min-height: 44px; }
+  #right .weekly-elevator-grid { column-gap: 6px; }
+  #right .weekly-entry-time { font-size: 1.02rem; }
+  #center .halacha-value { overflow-wrap: anywhere; }
+  .bday-entry { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Respect user motion preference on mobile without changing functional updates. */
+@media (max-width: 1024px) and (prefers-reduced-motion: reduce) {
+  #clock .sep { animation: none; opacity: .7; }
+  .flame-l, .flame-r { animation: none; }
+}
