@@ -1,4 +1,4 @@
-# Shabbat Board — לוח שארית ישראל
+# לוח שבת - משפחת רואש
 
 לוח תפילות ומעלית שבת; GitHub Pages לאתר, Google Drive לאחסון, Google Apps Script לשכבת קריאה ציבורית ולממשק ניהול פרטי.
 
