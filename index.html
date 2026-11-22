@@ -759,7 +759,8 @@
 #right .elevator-next-slot.is-active .elevator-next-time{color:var(--green)}
 #right .elevator-next-caption{font-size:.63rem;color:var(--text-sec)}
 #right .elevator-next-foot{font-size:.62rem;color:var(--text-dim);margin-top:3px;text-align:left}
-#right .elevator-next-foot span{color:var(--text-sec)}
+#right .elevator-next-foot .elevator-mini-link{display:inline-block;color:var(--gold);text-decoration:underline;text-underline-offset:2px;font:700 inherit;cursor:pointer}
+#right .elevator-next-foot .elevator-mini-link:hover,#right .elevator-next-foot .elevator-mini-link:focus-visible{color:var(--blue)}
 /* Keep the prayers and existing Shabbat metrics; full elevator list lives on its own screen */
 #weekly-elevators{display:none !important}
 
@@ -884,7 +885,8 @@ html.light-theme .elevator-next-title{color:#916414}
 html.light-theme .elevator-next-slot{background:#ffffff;border-color:#d6e0e9}
 html.light-theme .elevator-next-slot.is-active{background:#e1f4e7;border-color:#258054}
 html.light-theme .elevator-next-slot.is-active .elevator-next-time{color:#10643b}
-html.light-theme .elevator-next-caption,html.light-theme .elevator-next-foot,html.light-theme #elevator-display-url{color:#4e6177}
+html.light-theme .elevator-next-caption,html.light-theme .elevator-next-foot{color:#4e6177}
+html.light-theme #right .elevator-mini-link{color:#805813}
 html.light-theme #settings-panel,html.light-theme .weekly-modal{background:rgba(226,233,243,.93)}
 html.light-theme #settings-box,html.light-theme .weekly-modal-box{background:#fffefb;color:#172435;border-color:#d5deea;box-shadow:0 12px 45px rgba(36,58,82,.16)}
 html.light-theme #settings-box h2,html.light-theme .weekly-modal-top h2{color:#936515}
@@ -1078,7 +1080,7 @@ html.light-theme #loading-overlay{background:#f7f9fc}
     <div id="elevator-next-widget" hidden aria-live="off" aria-label="שלושת זמני מעלית השבת הקרובים">
       <div class="elevator-next-title">🛗 מעלית שבת · שלושת החלונות הקרובים</div>
       <div id="elevator-next-rows"></div>
-      <div class="elevator-next-foot">כל הזמנים: <span id="elevator-display-url">/Shabbat_board/elevator.html</span></div>
+      <div class="elevator-next-foot"><a class="elevator-mini-link" href="elevator.html" target="_blank" rel="noopener" aria-label="פתח מסך נפרד של זמני מעלית שבת">מסך נפרד</a></div>
     </div>
     <div class="panel-title" id="right-title" style="display:none">שבת קודש</div>
     <div id="shabbat-title-block">
