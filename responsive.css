@@ -704,10 +704,10 @@
   #footer-left > button, #footer-left > a[data-elevator-link] {
     width: auto;
     min-height: 22px;
-    padding: 2px 5px;
+    padding: 2px 5px !important;
     margin: 0 !important;
     border-radius: 4px;
-    font-size: 10px;
+    font-size: 10px !important;
     line-height: 1.1;
     white-space: nowrap;
   }
