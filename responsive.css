@@ -280,7 +280,37 @@
       "footer";
     gap: 12px;
   }
-  #header { gap: 8px 12px; }
+  /* Stacked phone header: date/location/weather, parasha, then clock/Shabbat art.
+     display:contents promotes the clock's children into the header grid on phones. */
+  #header {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "location"
+      "temperature"
+      "parasha"
+      "clock";
+    gap: 5px;
+  }
+  #location-block { text-align: right; align-items: flex-start; }
+  #clock-block { display: contents; }
+  #temp-display {
+    grid-area: temperature;
+    justify-self: start;
+    text-align: right;
+    margin-top: -2px;
+  }
+  #temp-display:empty { display: none; }
+  #parasha-block {
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  #clock {
+    grid-area: clock;
+    justify-self: center;
+    margin-top: 8px;
+  }
+  #shabbat-kodesh-block { grid-area: clock; justify-self: center; }
   #parasha-name { font-size: clamp(1.4rem, 5.3vw, 2rem); }
   #hebrew-date { font-size: clamp(1.05rem, 3.65vw, 1.5rem); }
   #day-of-week-left { font-size: clamp(1.05rem, 3.8vw, 1.55rem); }
@@ -315,7 +345,18 @@
 
 @media (max-width: 430px) {
   #app { gap: 11px; }
-  #header { column-gap: 9px; }
+  #header { row-gap: 5px; }
+  #right #elevator-next-rows { grid-template-columns: minmax(0, 1fr); }
+  #right .elevator-next-slot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    text-align: right;
+  }
+  #right .elevator-next-time { font-size: .98rem; white-space: nowrap; }
+  #right .elevator-next-caption { font-size: .75rem; }
   #parasha-label { font-size: .7rem; letter-spacing: .04em; }
   #parasha-name { font-size: clamp(1.28rem, 5.25vw, 1.5rem); }
   #hebrew-date { font-size: clamp(1rem, 3.9vw, 1.2rem); }
