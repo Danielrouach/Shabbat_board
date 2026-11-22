@@ -49,7 +49,7 @@ legend{color:#c8a44a;font-weight:bold}
 <fieldset><legend>ערב שבת</legend><div class="fields">
 <label>מנחה גדולה <input id="fridayMinchaGedola" type="time"></label>
 <label>כניסת שבת / הדלקת נרות <input id="fridayCandles" type="time"></label>
-<label>מנחה, קבלת שבת וערבית <input id="fridayMinchaArvit" type="time"></label>
+<label>מנחה, קבלת שבת וערבית — 15 דקות אחרי כניסת שבת <input id="fridayMinchaArvit" type="time" readonly title="מחושב אוטומטית מכניסת שבת"></label>
 </div></fieldset>
 <fieldset><legend>שבת ומוצאי שבת</legend><div class="fields">
 <label>מנחה גדולה <input id="shabbatMinchaGedola" type="time"></label>
@@ -83,33 +83,79 @@ drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0]) handleImage(e.dataTransfer.files[0])});
 fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleImage(fileInput.files[0])});
 drop.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===drop){e.preventDefault();fileInput.click()}});
-const clockRegex=/\b(?:[01]?\d|2[0-3])[:.][0-5]\d\b/g;
+const clockRegex=/(?:^|[^\d])((?:[01]?\d|2[0-3])[:.][0-5]\d)(?!\d)/g;
 function normClock(str){const [h,m]=str.replace('.',':').split(':').map(Number);return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')}
-function detectTimes(text){
-  // Conservative by design: a time is assigned only when the same OCR line has an unambiguous prayer label.
-  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const found={}, uncertain=[];
-  for(let i=0;i<lines.length;i++){
-    const line=lines[i], low=line.replace(/[׳״"']/g,'');
-    const times=[...line.matchAll(clockRegex)].map(m=>normClock(m[0]));
-    if(!times.length)continue;
-    if(times.length!==1){uncertain.push(line);continue}
-    let field=null;
-    if(/מנחה/.test(low) && /(חול|א[׳'].*ה[׳']|ראשון.*חמישי)/.test(low))field='weekdayMincha';
-    else if(/ערבית/.test(low) && /(חול|א[׳'].*ה[׳']|ראשון.*חמישי)/.test(low))field='weekdayArvit';
-    else if(/מנחה\s*גדולה/.test(low) && /(ערב|שישי)/.test(low))field='fridayMinchaGedola';
-    else if(/מנחה\s*גדולה/.test(low) && /שבת/.test(low))field='shabbatMinchaGedola';
-    else if(/מנחה\s*קטנה/.test(low))field='shabbatMinchaKetana';
-    else if(/ערבית/.test(low) && /(מוצאי|מוצש|מוצ"ש)/.test(low))field='shabbatArvit';
-    else if(/הדלקת|כניסת\s*שבת/.test(low))field='fridayCandles';
-    else if(/מנחה/.test(low) && /(קבלת|ערב\s*שבת|שישי)/.test(low))field='fridayMinchaArvit';
-    if(field) {
-      if(!found[field]) found[field]=times[0];
-      else if(found[field]!==times[0]){delete found[field];uncertain.push(line)}
-    } else uncertain.push(line);
-  }
-  for(const k of fields)document.getElementById(k).value=found[k]||'';
-  return {count:Object.keys(found).length,uncertain};
+function addMinutes(value,offset){
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(value||''))return '';
+ const [h,m]=value.split(':').map(Number), total=(h*60+m+offset)%(24*60);
+ return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+function syncFridayPrayer(){
+ const candles=document.getElementById('fridayCandles').value;
+ document.getElementById('fridayMinchaArvit').value=addMinutes(candles,15);
+}
+document.getElementById('fridayCandles').addEventListener('input',syncFridayPrayer);
+function findClocks(line){
+ return [...String(line).matchAll(clockRegex)].map(m=>normClock(m[1]));
+}
+function normalizedLabel(s) {
+ return String(s||'').normalize('NFKC')
+ .replace(/[׳״'"\u0060]/g,'').replace(/[\u200e\u200f]/g,'')
+ .replace(/[–—־]/g,'-').replace(/\s+/g,' ').trim();
+}
+function classifyPrayerLabel(text) {
+ const line=normalizedLabel(text);
+ const weekdays=/(?:ימי?\s*חול|ימים?\s*א\s*[-־]\s*ה|א\s*[-־]\s*ה|ראשון\s*(?:עד|[-־])\s*חמישי)/.test(line);
+ // Explicit weekday labels come first. OCR often reads "מנחה ימים א'-ה'" or "ערבית ימים א'-ה'".
+ if(weekdays && /מנחה/.test(line))return 'weekdayMincha';
+ if(weekdays && /ערבית/.test(line))return 'weekdayArvit';
+ if(/(?:הדלקת\s*נרות|כניסת\s*שבת)/.test(line))return 'fridayCandles';
+ if(/(?:ערבית|ערביח)/.test(line)&&/(?:מוצאי\s*שבת|מוצש)/.test(line))return 'shabbatArvit';
+ if(/מנחה\s*גדולה/.test(line)&&/(?:ערב\s*שבת|שישי)/.test(line))return 'fridayMinchaGedola';
+ if(/מנחה\s*גדולה/.test(line)&&/שבת/.test(line))return 'shabbatMinchaGedola';
+ if(/מנחה\s*קטנה/.test(line))return 'shabbatMinchaKetana';
+ // On the uploaded schedule the Friday mincha/kabbalat shabbat/arvit is calculated, never OCR guessed.
+ return null;
+}
+function detectTimes(text,ocrLines) {
+ const rawLines=String(text||'').split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
+ const lines=(Array.isArray(ocrLines)&&ocrLines.length?ocrLines.map(l=>({
+  text:String(l.text||''),box:l.bbox||null
+ })):rawLines.map(t=>({text:t,box:null}))).filter(l=>l.text.trim());
+ const candidates={};const uncertain=[];
+ const put=(field,time,source)=>{
+   if(!field||!time)return;
+   if(!candidates[field])candidates[field]=new Set();
+   candidates[field].add(time);
+ };
+ // Exact same-line labels first; then neighboring lines or same-row bounding boxes.
+ for(let i=0;i<lines.length;i++) {
+   const label=classifyPrayerLabel(lines[i].text);
+   if(!label)continue;
+   let options=findClocks(lines[i].text);
+   if(!options.length && lines[i].box) {
+     const a=lines[i].box,ay=(a.y0+a.y1)/2,ah=Math.max(1,a.y1-a.y0);
+     for(let j=0;j<lines.length;j++){
+       if(i===j||!lines[j].box)continue;
+       const t=lines[j].box,ty=(t.y0+t.y1)/2;
+       if(Math.abs(ay-ty)<=Math.max(ah,(t.y1-t.y0))*0.7) options.push(...findClocks(lines[j].text));
+     }
+   }
+   // OCR can separate the label from its clock into the next line.
+   if(!options.length && i+1<lines.length && !classifyPrayerLabel(lines[i+1].text))
+     options=findClocks(lines[i+1].text);
+   options=[...new Set(options)];
+   if(options.length===1)put(label,options[0],lines[i].text);
+   else uncertain.push(lines[i].text);
+ }
+ const found={};
+ for(const [key,values] of Object.entries(candidates)){
+  if(values.size===1)found[key]=[...values][0];
+  else uncertain.push(key+': '+[...values].join(', '));
+ }
+ for(const k of fields)document.getElementById(k).value=found[k]||'';
+ syncFridayPrayer();
+ return {count:Object.keys(found).length,uncertain};
 }
 function loadOCR(){
   if(window.Tesseract)return Promise.resolve(window.Tesseract);
@@ -138,8 +184,8 @@ async function handleImage(file) {
       const result=await worker.recognize(file);
       const text=result.data.text||'';
       document.getElementById('ocrRaw').value=text;
-      const detected=detectTimes(text);
-      status.textContent='זוהו '+detected.count+' שדות באופן חד-משמעי. בדוק והשלים את שאר השעות לפי התמונה לפני שמירה. אם מנחה של ימי חול ריקה, הזן אותה ידנית.';
+      const detected=detectTimes(text,result.data.lines);
+      status.textContent='זוהו '+detected.count+' שדות באופן חד-משמעי. בדוק והשלים את שאר השעות לפי התמונה לפני שמירה. אם מנחה או ערבית בימי חול ריקות, השלם לפי התמונה. מנחה–קבלת שבת–ערבית מחושבת אוטומטית כ־15 דקות אחרי כניסת שבת.';
     }finally{await worker.terminate()}
   }catch(err){status.textContent='זיהוי התמונה נכשל: '+err.message+' — ניתן למלא את השעות ידנית.'}
 }
@@ -152,6 +198,8 @@ function callServer(functionName, args, statusId){
 document.getElementById('savePrayer').onclick=()=>{
   const data={};
   for(const k of fields){const value=document.getElementById(k).value;if(value)data[k]=value}
+  syncFridayPrayer();
+  if(document.getElementById('fridayCandles').value)data.fridayMinchaArvit=document.getElementById('fridayMinchaArvit').value;
   if(!dateInput.value||Object.keys(data).length===0){document.getElementById('prayerStatus').textContent='בחר תאריך והזן לפחות זמן תפילה אחד';return}
   if(!confirm('בדקת את השעות בתמונה? לשמור '+Object.keys(data).length+' זמני תפילות לשבוע שבחרת?'))return;
   callServer('savePrayerTimes',[dateInput.value,data],'prayerStatus');
