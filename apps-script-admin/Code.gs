@@ -1,7 +1,7 @@
 // Private admin web app. Deploy: Execute as me; Who has access: Only myself.
 const DATA_FILE_ID = '1rL-LOkjaV0FWOTDm2fGopW04G2ROfuMM';
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Admin').setTitle('ניהול לוח שארית ישראל');
+  return HtmlService.createHtmlOutputFromFile('Admin').setTitle('ניהול לוח שבת - משפחת רואש');
 }
 
 const PRAYER_FIELDS = ['weekdayMincha','weekdayArvit','fridayMinchaGedola','fridayCandles','fridayMinchaArvit','shabbatMinchaGedola','shabbatMinchaKetana','shabbatArvit'];
