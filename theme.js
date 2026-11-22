@@ -1,51 +1,149 @@
-/* Shared theme selection for both Shabbat Board displays.
-   Persist per-browser and sync changes between open tabs/windows. */
+/* Sunrise/sunset driven appearance for the Rouach Shabbat Board.
+   The times are Haifa's Hebcal sunrise and sunset, NOT fixed clock hours.
+   The two screens use the same cached times and appearance preference. */
 (function(){
-  'use strict';
-  const KEY='rouach_shabbat_theme_v1';
-  function selected(){
-    // Explicit theme handoff when opening the elevator from the main board.
-    // Same-origin localStorage remains the default for direct visits/reloads.
-    const requested=new URLSearchParams(location.search).get('theme');
-    if(requested==='light'||requested==='dark'){
-      try{localStorage.setItem(KEY,requested)}catch(_){}
-      return requested;
-    }
-    try{return localStorage.getItem(KEY)==='light'?'light':'dark'}
-    catch(_){return 'dark'}
-  }
-  function apply(mode){
-    const light=mode==='light';
-    document.documentElement.classList.toggle('light-theme',light);
-    document.documentElement.style.colorScheme=light?'light':'dark';
-    const elevatorLinks=document.querySelectorAll('a[href^="elevator.html"]');
-    for(const link of elevatorLinks)link.href='elevator.html?theme='+(light?'light':'dark');
-    const buttons=document.querySelectorAll('[data-theme-toggle]');
-    for(const button of buttons){
-      button.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
-      button.setAttribute('aria-pressed',String(light));
-      button.title=light?'מעבר למצב כהה':'מעבר למצב בהיר';
-    }
-    if(typeof window.requestColumnFit==='function')window.requestColumnFit();
-  }
-  function toggle(){
-    const next=document.documentElement.classList.contains('light-theme')?'dark':'light';
-    try{localStorage.setItem(KEY,next)}catch(_){}
-    // A theme handoff query parameter is only for initial navigation, not
-    // a permanent override after the visitor changes theme on this page.
-    if(new URLSearchParams(location.search).has('theme')){
-      const url=new URL(location.href);
-      url.searchParams.delete('theme');
-      history.replaceState(null,'',url.pathname+url.search+url.hash);
-    }
-    apply(next);
-  }
-  // Install before first frame to avoid a light-to-dark flash.
-  apply(selected());
-  document.addEventListener('DOMContentLoaded',()=>{
-    apply(selected());
-    document.querySelectorAll('[data-theme-toggle]').forEach(b=>b.addEventListener('click',toggle));
-  });
-  window.addEventListener('storage',e=>{if(e.key===KEY)apply(selected())});
-  window.ShabbatTheme={toggle,apply,get:selected};
+'use strict';
+const THEME_KEY='rouach_shabbat_theme_v1';
+const SOLAR_KEY='rouach_shabbat_solar_v1';
+const MANUAL_KEY='rouach_shabbat_theme_manual_v1';
+const GEO='294801'; // Haifa; same location as main Shabbat board
+const ZONE='Asia/Jerusalem';
+let solar={};
+try{solar=JSON.parse(localStorage.getItem(SOLAR_KEY)||'{}')||{}}catch(_){}
+let lastRequestDate='';
+const inFlight=new Set();
+let lastMinute='';
+let overrideInstant=null;
+let lastApplied='';
+let lastPeriod='';
+function localDay(date){
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
+ const p={};for(const x of parts)p[x.type]=x.value;
+ return p.year+'-'+p.month+'-'+p.day;
+}
+function dayOffset(iso,n){
+ const [y,m,d]=iso.split('-').map(Number);
+ return new Date(Date.UTC(y,m-1,d+n,12)).toISOString().slice(0,10);
+}
+function safeGet(k){try{return localStorage.getItem(k)}catch(_){return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch(_){}}
+function safeRemove(k){try{localStorage.removeItem(k)}catch(_){}}
+function currentInstant(){return overrideInstant instanceof Date && Number.isFinite(+overrideInstant)?overrideInstant:new Date()}
+function phase(now){
+ const day=localDay(now),data=solar[day];
+ const sunrise=Date.parse(data?.sunrise||'');
+ const sunset=Date.parse(data?.sunset||'');
+ if(!Number.isFinite(sunrise)||!Number.isFinite(sunset)||sunrise>=sunset)return null;
+ const t=now.getTime();
+ if(t<sunrise)return {mode:'dark',period:day+':before-sunrise'};
+ if(t<sunset)return {mode:'light',period:day+':daylight'};
+ return {mode:'dark',period:day+':after-sunset'};
+}
+function manual(){
+ try{
+  const entry=JSON.parse(safeGet(MANUAL_KEY)||'null');
+  return entry&&['light','dark'].includes(entry.mode)?entry:null;
+ }catch(_){return null}
+}
+function preferred(now){
+ const p=phase(now),choice=manual();
+ if(p){
+  if(choice&&choice.period===p.period)return {mode:choice.mode,period:p.period};
+  if(choice&&choice.period!==p.period)safeRemove(MANUAL_KEY);
+  return p;
+ }
+ // When offline with no exact solar data, preserve the last chosen appearance.
+ const fromLink=new URLSearchParams(location.search).get('theme');
+ return {mode:fromLink==='light'||fromLink==='dark'?fromLink:(safeGet(THEME_KEY)==='light'?'light':'dark'),period:null};
+}
+function apply(mode){
+ const light=mode==='light';
+ const html=document.documentElement;
+ html.classList.toggle('light-theme',light);
+ html.style.colorScheme=light?'light':'dark';
+ const buttons=document.querySelectorAll('[data-theme-toggle]');
+ for(const button of buttons){
+  button.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
+  button.setAttribute('aria-pressed',String(light));
+  button.title=light?'מעבר למצב כהה (עד מעבר השמש הבא)':'מעבר למצב בהיר (עד מעבר השמש הבא)';
+ }
+ for(const link of document.querySelectorAll('a[href^="elevator.html"]')){
+  link.href='elevator.html?theme='+mode;
+ }
+ if(lastApplied!==mode){
+  lastApplied=mode;
+  if(typeof window.requestColumnFit==='function')window.requestColumnFit();
+ }
+}
+function sync(now,force){
+ const instant=now instanceof Date?now:currentInstant();
+ const minute=Math.floor(instant.getTime()/60000);
+ if(!force&&minute===lastMinute)return;
+ lastMinute=minute;
+ const v=preferred(instant);
+ lastPeriod=v.period;
+ apply(v.mode);
+ // Shared storage signals the second screen when it is open.
+ if(safeGet(THEME_KEY)!==v.mode)safeSet(THEME_KEY,v.mode);
+ const today=localDay(instant);
+ if(lastRequestDate!==today){lastRequestDate=today;preload(today)}
+}
+function setTimes(day,times){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!times)return;
+ const sunrise=times.sunrise,sunset=times.sunset;
+ const a=Date.parse(sunrise||''),b=Date.parse(sunset||'');
+ if(!Number.isFinite(a)||!Number.isFinite(b)||a>=b)return;
+ solar[day]={sunrise:new Date(a).toISOString(),sunset:new Date(b).toISOString()};
+ // Keep a modest offline cache; allows Saturday to work without internet.
+ const keys=Object.keys(solar).sort();
+ for(const key of keys.slice(0,Math.max(0,keys.length-20)))delete solar[key];
+ safeSet(SOLAR_KEY,JSON.stringify(solar));
+ sync(undefined,true);
+}
+async function preload(date){
+ // Today + two next days, so the upcoming Saturday works offline.
+ for(let i=0;i<3;i++){
+  const day=dayOffset(date,i);
+  if(solar[day]||inFlight.has(day))continue;
+  inFlight.add(day);
+  fetch('https://www.hebcal.com/zmanim?cfg=json&geonameid='+GEO+'&date='+day+'&sec=1')
+   .then(r=>{if(!r.ok)throw Error('Zmanim '+r.status);return r.json()})
+   .then(data=>setTimes(day,data.times||{}))
+   .catch(()=>{}) // Retain cached appearance when offline.
+   .finally(()=>inFlight.delete(day));
+ }
+}
+function toggle(){
+ const now=currentInstant(),p=phase(now);
+ const mode=document.documentElement.classList.contains('light-theme')?'dark':'light';
+ // A manual click stays until the NEXT actual sunrise/sunset boundary.
+ if(p)safeSet(MANUAL_KEY,JSON.stringify({mode,period:p.period}));
+ else safeSet(MANUAL_KEY,JSON.stringify({mode,period:null}));
+ safeSet(THEME_KEY,mode);
+ const url=new URL(location.href);
+ if(url.searchParams.has('theme')){
+  url.searchParams.delete('theme');
+  history.replaceState(null,'',url.pathname+url.search+url.hash);
+ }
+ apply(mode);
+}
+function setNow(date){overrideInstant=date instanceof Date?date:null;sync(undefined,true)}
+// Theme handoff is used only on first paint if solar times aren't available yet.
+const handed=new URLSearchParams(location.search).get('theme');
+if((handed==='light'||handed==='dark')&&!phase(new Date()))safeSet(THEME_KEY,handed);
+apply(preferred(new Date()).mode);
+document.addEventListener('DOMContentLoaded',()=>{
+ sync(undefined,true);
+ document.querySelectorAll('[data-theme-toggle]').forEach(button=>button.addEventListener('click',toggle));
+});
+window.addEventListener('storage',e=>{
+ if(e.key===SOLAR_KEY){try{solar=JSON.parse(e.newValue||'{}')||{}}catch(_){}}
+ if([THEME_KEY,SOLAR_KEY,MANUAL_KEY].includes(e.key)){
+  if(e.key===THEME_KEY && !phase(currentInstant()))apply(e.newValue==='light'?'light':'dark');
+  else sync(undefined,true);
+ }
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync(undefined,true)});
+setInterval(()=>sync(),15000);
+window.ShabbatTheme={toggle,apply,get:()=>document.documentElement.classList.contains('light-theme')?'light':'dark',sync,setTimes,setNow};
 })();
