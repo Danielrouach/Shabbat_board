@@ -1,1 +1,57 @@
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ניהול לוח תפילות</title><style>body{font:17px Arial;background:#0d1520;color:#eee;max-width:760px;margin:35px auto;padding:20px}textarea{width:100%;height:240px;background:#182536;color:white;padding:12px;box-sizing:border-box}button{padding:12px 25px;background:#c8a44a;color:#111;font-weight:bold;border:0;border-radius:6px}#status{padding:15px}</style></head><body><h1>ניהול פרטי — לוח שארית ישראל</h1><p>ערוך את הזמנים בקובץ editor.html המקומי, לחץ ״גיבוי שבועות״, והעלה כאן את קובץ ה-JSON. רק בעל החשבון המורשה יכול להשתמש במסך הזה.</p><input type="file" accept=".json,application/json" id="file"><p>או הדבק JSON:</p><textarea id="json"></textarea><p><button id="save">שמור ב-Google Drive</button></p><div id="status" role="status"></div><script>document.getElementById('file').onchange=async e=>{const f=e.target.files[0];if(f)document.getElementById('json').value=await f.text()};document.getElementById('save').onclick=()=>{const s=document.getElementById('status');s.textContent='שומר…';google.script.run.withSuccessHandler(x=>s.textContent='✅ '+x).withFailureHandler(e=>s.textContent='❌ '+e.message).writeSchedules(document.getElementById('json').value)};</script></body></html>
+<!doctype html>
+<html lang="he" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ניהול לוח שארית ישראל</title>
+<style>
+body{font:16px Arial,sans-serif;background:#080c10;color:#eef2f8;max-width:760px;margin:25px auto;padding:16px}
+h1,h2{color:#c8a44a}h1{font-size:1.8rem}
+section{background:#0d1520;border:1px solid #29394a;border-radius:9px;padding:18px;margin:18px 0}
+label{display:block;margin:12px 0 6px}textarea{width:100%;min-height:170px;background:#182536;color:white;border:1px solid #445;padding:12px;box-sizing:border-box;border-radius:5px;resize:vertical;line-height:1.5;direction:rtl}
+input[type=date],input[type=file]{background:#182536;color:#fff;border:1px solid #445;padding:10px;max-width:100%;border-radius:5px}
+button{padding:11px 22px;background:#c8a44a;color:#111;font-size:1rem;font-weight:bold;border:0;border-radius:6px;cursor:pointer;margin-top:12px}
+small,p{color:#a8b6c5;line-height:1.6}.status{min-height:25px;padding:8px;font-weight:bold}
+pre{white-space:pre-wrap;direction:ltr}
+</style></head><body>
+<h1>ניהול פרטי — לוח שארית ישראל</h1>
+<p>העדכונים נשמרים ב־Google Drive ומוצגים אוטומטית בלוח הציבורי. מסך זה מיועד לבעל החשבון בלבד.</p>
+<section>
+<h2>🛗 זמני מעלית שבת</h2>
+<label for="weekDate">בחר תאריך מתוך השבוע הרצוי (מומלץ: יום שישי)</label>
+<input type="date" id="weekDate">
+<label for="elevator">הדבק כאן את כל הודעת זמני המעלית מ־WhatsApp</label>
+<textarea id="elevator" placeholder="זמני מעלית לשבת:
+17:15-18:15
+19:30-20:30
+07:30-08:15
+08:45-09:00
+..."></textarea>
+<p><small>כאשר אין כותרות נפרדות, שני הטווחים הראשונים נחשבים לערב שבת וכל השאר לשבת. בדוק שהסדר נכון לפני השמירה. שמירת המעלית לא מוחקת זמני תפילות של אותו שבוע.</small></p>
+<button id="saveElevator">שמור זמני מעלית ב־Drive</button>
+<div class="status" id="elevatorStatus" role="status"></div>
+</section>
+<section>
+<h2>🕍 זמני תפילות — ייבוא JSON</h2>
+<p>בשלב זה, תמונת JPG מעובדת בעורך המקומי של הלוח, ולא ישירות בדף ניהול זה. לאחר בדיקה ותיקון השעות, ייצא קובץ JSON והעלה אותו כאן.</p>
+<label for="file">קובץ גיבוי JSON</label><input type="file" accept=".json,application/json" id="file">
+<label for="json">או הדבק את תוכן ה־JSON</label>
+<textarea id="json" placeholder='{"format":"halachic-weekly-v1","weeks":{}}'></textarea>
+<button id="saveJson">שמור JSON ב־Drive</button>
+<div class="status" id="jsonStatus" role="status"></div>
+</section>
+<script>
+document.getElementById('weekDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+document.getElementById('file').onchange=async e=>{const f=e.target.files[0];if(f)document.getElementById('json').value=await f.text()};
+document.getElementById('saveElevator').onclick=()=>{
+ const date=document.getElementById('weekDate').value,notice=document.getElementById('elevator').value;
+ const status=document.getElementById('elevatorStatus');
+ const ranges=[...notice.matchAll(/\d{1,2}[:.]\d{2}\s*[-–—]\s*\d{1,2}[:.]\d{2}/g)];
+ if(!date||ranges.length<3){status.textContent='בחר תאריך והדבק לפחות שלושה טווחי שעות';return;}
+ if(!confirm('לשמור '+ranges.length+' טווחים? שניים הראשונים לערב שבת והיתר לשבת.'))return;
+ status.textContent='שומר…';
+ google.script.run.withSuccessHandler(x=>status.textContent='✅ '+x).withFailureHandler(e=>status.textContent='❌ '+e.message).saveElevatorNotice(date,notice);
+};
+document.getElementById('saveJson').onclick=()=>{
+ const s=document.getElementById('jsonStatus');s.textContent='שומר…';
+ google.script.run.withSuccessHandler(x=>s.textContent='✅ '+x).withFailureHandler(e=>s.textContent='❌ '+e.message).writeSchedules(document.getElementById('json').value);
+};
+</script></body></html>
