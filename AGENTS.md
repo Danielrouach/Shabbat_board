@@ -13,7 +13,7 @@
 - **Critical:** changing apps-script-admin/Code.gs or apps-script-public/Code.gs *in GitHub does not redeploy Google Apps Script*. The owner must copy changes to the corresponding Apps Script project and deploy a **new version**. Browser code changes to main are published by GitHub Pages.
 - **Security:** public Apps Script is **read-only**, invoked by browsers with JSONP. Private admin alone writes to Google Drive. Never add public write routes or secrets to static code; schedules exposed by the public endpoint are public information.
 - **Current design principle:** a missing elevator schedule for the current week **reuses the most recent valid prior schedule** instead of showing a blank timetable. The update-warning text remains visible but **does not blink**.
-- **Language and layout:** Hebrew, RTL, kiosk-friendly (no scrolling during Shabbat), responsive on TV/tablet/iPad Safari/Galaxy, automatic light/dark theme, 24h clock.
+- **Language and layout:** Hebrew, RTL, no-scroll kiosk on wide displays; readable scrollable one-/two-column layout on phones/tablets (responsive.css), automatic light/dark theme, 24h clock.
 
 ## 1. Architecture & trust boundaries
 
@@ -42,7 +42,8 @@ The public reader uses a generated **shabbatCloudCallback_...** callback name an
 
 | File | Role / edit when... |
 |---|---|
-| **index.html** | Main Hebrew clock / Shabbat board, prayers, birthdays, Hebcal rendering, developer QA, responsive CSS, wake lock, fullscreen; also cloud read and footer update statuses. Large (~1 MB) due to embedded image assets. |
+| **index.html** | Main Hebrew clock / Shabbat board, prayers, birthdays, Hebcal rendering, developer QA, wake lock, fullscreen; also cloud read and footer update statuses. |
+| **responsive.css** | Responsive main-board overrides loaded after index.html's inline kiosk CSS. Two columns on tablets (up to 1024px), one column and stacked header on phones (up to 768px), touch-friendly controls and scrolling on narrow screens. |
 | **elevator/index.html** | Canonical separate elevator screen at /elevator/; its own UI and cloud refresh, shared modules; display and preview of all elevator time windows. |
 | **elevator.html** | Legacy direct URL to the elevator screen. Maintain behavior in BOTH elevator HTML files for any relevant screen change. |
 | **shabbat-elevator.js** | Shared time-zone-aware logic: Israel local time, Hebcal havdalah/parasha caching, elevator time windows including Saturday evening continuation, cutoff. |
@@ -126,7 +127,7 @@ Each screen stores a merged weekly DB in localStorage. This is a **cache**, not 
 - Main page includes fixed shacharit schedules, other calendrical widgets, birthdays, and Sh'erit Israel variable prayer times. Do not treat the fixed shacharit entries as cloud-edited.
 - Main board has a small widget for the **next three elevator activity windows**; elevator page displays the full daily schedule / preview. Preserve the distinction.
 - The public kiosk **must not expose editable prayer/elevator management controls**. Admin operates on its private Apps Script URL. User previously removed the settings button "ניהול זמני בית הכנסת ומעלית השבת"; do not reintroduce it.
-- Screens are designed to fit without scrolling, including iPad Safari. Main board uses adaptive footer flex-wrap and viewport height (100dvh when supported). Test that settings/footer controls are not clipped.
+- Wide-screen kiosk mode fits without scrolling; the main board intentionally scrolls at widths up to 1024px to avoid clipping on tablets and phones. It loads responsive.css after its inline kiosk rules; the auto-fit JavaScript runs only above 1024px. Test that settings/footer controls remain accessible, including in iPad Safari.
 - **theme.js:** automatic theme checkbox is checked by default; daylight between Hebcal sunrise and sunset = light, night = dark. When auto is on, a manual theme change holds until F5; with auto off, manual choice persists. Screens share localStorage preference when served under the main origin.
 - Wake Lock requests start enabled by default on both screens, can be denied by OS/browser, and retry under supported conditions. This **cannot** bypass OS screen lock, battery restrictions or forced updates. Fullscreen API may be unavailable in iOS Safari; home-screen standalone mode may be needed.
 - QA/developer mode: **Ctrl+Shift+Q** (main and elevator), or **?qa=1**; main also supports settings-button double-click. Date/time simulation must keep the visible clock, selected date, theme and highlighted current times consistent. Main supports preset-day dropdown and date/time override; resets back to actual time.
@@ -152,7 +153,7 @@ Each screen stores a merged weekly DB in localStorage. This is a **cache**, not 
 - **Offline:** after one successful load, schedules persist; havdalah cutoff uncertainty clearly indicated if Hebcal cutoff wasn't cached.
 - **Both themes:** check default auto on, manual-to-F5 behavior when on, persistent manual when off, cross-screen coordination.
 - **QA:** Ctrl+Shift+Q, select day preset, date/time pickers, start and reset; on-screen time must reflect the simulated instant with no mismatch.
-- **Device layout:** iPad Safari footer visible and buttons usable; no unwanted vertical scrolling in kiosk view; all Friday/Saturday elevator intervals fit.
+- **Device layout:** desktop kiosk has no unwanted scrolling; at 1024px/768px/430px and narrow phones, panels and footer remain readable via page scrolling, with no horizontal overflow. iPad Safari buttons remain usable; all Friday/Saturday elevator intervals fit.
 - **Safety:** no public write endpoint, no private admin buttons in public settings, no secrets committed, and no claim that Wake Lock is guaranteed.
 
 ## 8. External deployment / operations quick reference

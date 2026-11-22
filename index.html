@@ -971,6 +971,8 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 .theme-auto-control input{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
+<!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
+<link rel="stylesheet" href="responsive.css?v=20261122-mobile-v2">
 <script src="cloud-config.js"></script>
 <script src="shabbat-elevator.js"></script>
 <script src="update-status.js"></script>
@@ -1263,7 +1265,7 @@ html.light-theme .theme-auto-control{color:#40536b}
         <button class="qa-btn" id="qa-go-btn" onclick="qaSetDateTime()" title="הפעל סימולציה">▶ הפעל</button>
         <button class="qa-btn" id="qa-reset-btn" onclick="qaResetDateTime()" title="איפוס לזמן אמיתי">↺ איפוס</button>
       </span>
-      לוח שבת - משפחת רואש • חיפה
+      <span id="footer-brand">לוח שבת - משפחת רואש • חיפה</span>
     </span>
     <span id="footer-center"></span>
     <span id="footer-right" aria-live="polite">
@@ -2683,8 +2685,12 @@ function measurePanelFit(panelId,cssVar,minScale,maxScale){
  }
  fits(best);
 }
+function isCompactLayout(){
+ return window.matchMedia('(max-width: 1024px)').matches;
+}
 function fitZmanimFont(){
- if(fittingPanel)return;
+ // Touch layouts grow vertically; kiosk fitting would shrink text unnecessarily.
+ if(isCompactLayout()||fittingPanel)return;
  fittingPanel=true;
  try{
   measurePanelFit('left','--zfit',.28,4.25);
@@ -2704,6 +2710,7 @@ function requestColumnFit(){
 
 let rightFitQueued=false, rightFitBusy=false;
 function fitShabbatFont(){
+ if(isCompactLayout())return;
  const panel=document.getElementById('right');
  if(!panel||rightFitBusy||panel.clientHeight<40||panel.clientWidth<60)return;
  rightFitBusy=true;
