@@ -55,7 +55,21 @@ function status(weeks,feature,now=new Date()){
  const last=savedName?'עודכן בפרשת '+savedName:'עודכן לאחרונה';
  if(same)return {warning:false,text:last+' (עדכון אחרון: '+dateText+')',detail:dateText};
  const currentText=currentParasha?'פרשת '+currentParasha:'הפרשה הנוכחית';
- return {warning:true,text:'⚠ שים לב, לא עודכן מ'+currentText+' (עדכון אחרון: '+dateText+(savedName?' · פרשת '+savedName:'')+')',detail:dateText};
+ return {warning:true,text:'⚠ שים לב, לא עודכן עבור '+currentText+' (עדכון אחרון: '+dateText+(savedName?' · פרשת '+savedName:'')+')',detail:dateText};
 }
-global.ShabbatUpdateStatus={status,cycleSaturday};
+/* Get the latest saved elevator timetable at or before the selected week.
+   A prayers-only record must not hide an older elevator timetable. */
+function elevatorSchedule(weeks,selectedWeek){
+ const keys=Object.keys(weeks||{}).filter(key=>{
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(key)||key>selectedWeek)return false;
+  const item=weeks[key];
+  if(!item||typeof item!=='object')return false;
+  const validRange=row=>row&&/^([01]\d|2[0-3]):[0-5]\d$/.test(row.start||'')&&/^([01]\d|2[0-3]):[0-5]\d$/.test(row.end||'')&&row.end>row.start;
+  return [item.elevatorFriday,item.elevatorSaturday].some(ranges=>Array.isArray(ranges)&&ranges.some(validRange));
+ }).sort();
+ const sourceWeek=keys[keys.length-1]||null;
+ return {entry:sourceWeek?weeks[sourceWeek]:null,sourceWeek,old:!!sourceWeek&&sourceWeek!==selectedWeek};
+}
+
+global.ShabbatUpdateStatus={status,cycleSaturday,elevatorSchedule};
 })(window);
