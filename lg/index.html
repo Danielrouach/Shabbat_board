@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>לוח שבת · תצוגת LG</title>
+<style>
+/* Standalone old-webOS kiosk: plain pixel units, conservative flexbox and ES5.
+   No modern dashboard stylesheet or JavaScript is loaded. */
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#080c10;color:#eef2f8;font-family:Arial,'Frank Ruhl Libre',sans-serif}
+body{direction:rtl}
+#app{height:97%;padding:10px 16px 5px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
+#header{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;-webkit-flex:0 0 18%;flex:0 0 18%;min-height:0;border-bottom:1px solid #30455c;padding:0 8px 5px}
+#parasha-block,#location-block{-webkit-flex:0 0 31%;flex:0 0 31%;width:31%;min-width:0}
+#clock-block{-webkit-flex:0 0 38%;flex:0 0 38%;width:38%;text-align:center;min-width:0}
+#bsd{font-size:16px;color:#bba166}
+#parasha-label,#location-name{font-size:15px;color:#9baabb}
+#parasha-name{font-size:33px;color:#d2b16c;font-weight:bold}
+#hebrew-date{font-size:21px}
+#clock{font-size:60px;font-weight:bold;direction:ltr;white-space:nowrap}
+#clock .sep{color:#7c95b5}
+#location-block{text-align:left;direction:rtl}
+#day-of-week-left{font-size:25px;font-weight:bold}
+#gregorian-date{font-size:20px;color:#c5d0de}
+#shabbat-kodesh-block{display:none;text-align:center}
+#shabbat-kodesh-block img{max-height:105px;max-width:95%}
+#shabbat-clock{font-size:22px}
+#panels{display:-webkit-flex;display:flex;-webkit-flex:1 1 auto;flex:1 1 auto;width:100%;min-height:0;padding-top:6px}
+.panel{display:block;width:32.75%;min-width:0;margin-left:.45%;height:100%;padding:11px 13px;background:#0e1725;border:1px solid #243c53;overflow:hidden}
+#left{-webkit-order:1;order:1}#center{-webkit-order:2;order:2}#right{-webkit-order:3;order:3}
+.panel-title{font-size:22px;color:#ddbf72;font-weight:bold;border-bottom:1px solid #3b4c60;padding:0 0 7px;margin-bottom:7px}
+.zman-row,.time-row,.weekly-entry{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e3042;min-height:34px}
+.zman-name,.time-label,.weekly-entry-label{font-size:18px}
+.zman-sub{display:block;font-size:12px;color:#9eabb8}
+.zman-time,.time-val,.weekly-entry-time{font-size:22px;font-weight:bold;direction:ltr;white-space:nowrap;padding-right:8px;color:#e0bd74}
+.weekday-section-title{font-size:20px;margin-top:5px}
+.weekly-heading{font-size:17px;color:#aebed2;font-weight:bold;margin-top:9px}
+#shabbat-big{display:block;font-size:22px;font-weight:bold;color:#d3b26c;margin-bottom:7px}
+.halacha-card{width:100%;display:block;border:1px solid #233c55;background:#132238;padding:9px 12px;margin:0 0 8px}
+.halacha-label{font-size:14px;color:#a8b6c8}
+.halacha-value{font-size:23px;font-weight:bold;color:#e0c17a}
+.halacha-sub{font-size:13px;color:#9eafc0}
+[hidden],.halacha-card[hidden],.halacha-card[style*="display: none"],.halacha-card[style*="display:none"]{display:none!important}
+#elevator-next-widget{border:1px solid #385e69;padding:7px;margin-bottom:6px}
+.elevator-next-title{font-size:17px;font-weight:bold;color:#b6d0db}
+#elevator-next-rows{font-size:16px}
+#footer{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;-webkit-flex:0 0 10%;flex:0 0 10%;min-height:0;border-top:1px solid #2e4258;padding:4px 6px}
+#footer-left{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;width:58%}
+#footer-right{display:block;width:41%;font-size:14px;text-align:left;direction:rtl}
+#footer-right span{display:block;padding:2px 0}
+#footer button,#footer a{display:inline-block;margin:3px 4px;padding:5px 9px;background:#172940;color:#e0c17a;border:1px solid #977d44;border-radius:4px;font-size:15px;text-decoration:none;cursor:pointer}
+#footer .theme-auto-control{font-size:13px}
+#last-updated,#legacy-status{font-size:13px;color:#b4c9d8;padding:1px 4px}
+#legacy-status{color:#d9b279}
+#copyright-bar{height:3%;font-size:11px;text-align:center;color:#7f91a5;padding:3px;background:#080c10}
+html.light-theme,html.light-theme body{background:#f4f7fc;color:#162437}
+html.light-theme .panel{background:#fff;border-color:#c9d4e1}
+html.light-theme .halacha-card{background:#f2f6fa;border-color:#c9d4e1}
+html.light-theme .zman-time,html.light-theme .time-val,html.light-theme .weekly-entry-time{color:#805d16}
+html.light-theme #copyright-bar{background:#f4f7fc}
+@media(max-height:750px){#header{flex-basis:16%}#footer{flex-basis:12%}.zman-row,.time-row,.weekly-entry{padding:4px 0;min-height:28px}.panel{padding:7px 10px}.zman-name,.time-label,.weekly-entry-label{font-size:16px}.zman-time,.time-val,.weekly-entry-time{font-size:18px}.halacha-card{padding:6px 9px}.halacha-value{font-size:19px}.panel-title{font-size:18px}}
+</style>
+<script>
+(function(){
+ var agent=navigator.userAgent||'';
+ var legacy=/LG|webOS|Web0S|NetCast/i.test(agent);
+ try{new Function('return ({a:1})?.a;');legacy=false}catch(e){}
+ if(!legacy){
+   /* This route is a compatibility fallback, not the standard PC/mobile view. */
+ }
+})();
+</script>
+<script src="../cloud-config.js"></script>
+<script src="../lg-legacy.js?v=20261123-lg-standalone-v1"></script>
+</head>
+<body>
+<div id="app">
+ <header id="header">
+  <div id="parasha-block">
+   <div id="bsd">בס״ד</div>
+   <div id="parasha-label">פרשת השבוע</div>
+   <div id="parasha-name">טוען…</div>
+   <div id="hebrew-date"></div>
+  </div>
+  <div id="clock-block">
+   <div id="clock"><span id="ch">00</span><span class="sep">:</span><span id="cm">00</span><span class="sep">:</span><span id="cs">00</span></div>
+   <div id="shabbat-kodesh-block">
+    <img src="../assets/shabbat-shalom.png" alt="שבת שלום">
+   </div>
+  </div>
+  <div id="location-block">
+   <div id="day-of-week-left"></div>
+   <div id="gregorian-date"></div>
+   <div id="location-name">חיפה, ישראל</div>
+   <div id="shabbat-clock" style="display:none"></div>
+  </div>
+ </header>
+ <main id="panels">
+  <section class="panel" id="left">
+   <div class="panel-title">זמני היום</div>
+   <div class="zman-row" id="z-alot-90"><span class="zman-name">עלות השחר <small class="zman-sub">90 דקות לפני הנץ</small></span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-alot-72"><span class="zman-name">עלות השחר <small class="zman-sub">72 דקות לפני הנץ</small></span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-misheyakir"><span class="zman-name">זמן ציצית ותפילין</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-netz"><span class="zman-name">הנץ החמה</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-sof-shma"><span class="zman-name">סוף זמן ק״ש</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-chatzot"><span class="zman-name">חצות היום</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-shkia"><span class="zman-name">שקיעה</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-tzeit"><span class="zman-name">צאת הכוכבים</span><span class="zman-time">–</span></div>
+  </section>
+  <section class="panel" id="center">
+   <div class="panel-title">הלכה למעשה</div>
+   <div class="halacha-card" id="holiday-card" hidden style="display:none"><div class="halacha-label">חג / מועד</div><div class="halacha-value" id="holiday-value"></div></div>
+   <div class="halacha-card" id="tal-geshem-card"><div class="halacha-label">גשם / טל</div><div class="halacha-value" id="tal-geshem-value">טוען…</div><div class="halacha-sub" id="tal-geshem-sub"></div></div>
+   <div class="halacha-card" id="barech-card"><div class="halacha-label">ברכת השנים</div><div class="halacha-value" id="barech-value">טוען…</div><div class="halacha-sub" id="barech-sub"></div></div>
+   <div class="halacha-card" id="tachanun-card" hidden style="display:none"><div class="halacha-label">תחנון</div><div class="halacha-value" id="tachanun-value"></div><div class="halacha-sub" id="tachanun-reason"></div></div>
+   <div class="halacha-card" id="roshchodesh-card" hidden style="display:none"><div class="halacha-label">ראש חודש</div><div class="halacha-value" id="roshchodesh-value"></div></div>
+   <div class="halacha-card" id="omer-card" hidden style="display:none"><div class="halacha-label">ספירת העומר</div><div class="halacha-value" id="omer-day-num"></div></div>
+  </section>
+  <section class="panel" id="right">
+   <div id="elevator-next-widget" hidden style="display:none"><div class="elevator-next-title">מעלית שבת · החלונות הקרובים</div><div id="elevator-next-rows"></div></div>
+   <div class="panel-title weekday-section-title" id="prayer-times-heading">זמני תפילות</div>
+   <div id="weekly-board" hidden><div id="weekly-prayers"></div><div id="weekly-elevators"></div></div>
+   <div id="shabbat-title-block"><div id="shabbat-big"></div></div>
+   <div class="panel-title weekday-section-title" id="shabbat-times-heading">זמני השבת</div>
+   <div class="time-row" id="row-candles"><span class="time-label">כניסת השבת</span><span class="time-val" id="val-candles">–</span></div>
+   <div class="time-row" id="row-havdalah"><span class="time-label">צאת השבת</span><span class="time-val" id="val-havdalah">–</span></div>
+   <div class="time-row" id="row-rt"><span class="time-label">רבנו תם</span><span class="time-val" id="val-rt">–</span></div>
+  </section>
+ </main>
+ <footer id="footer">
+  <div id="footer-left">
+   <button id="theme-toggle" data-theme-toggle type="button">☀ מצב בהיר</button>
+   <label class="theme-auto-control"><input type="checkbox" data-theme-auto checked> אוטומטי לפי זריחה/שקיעה</label>
+   <button id="fullscreen-btn" type="button">⛶ מסך מלא</button>
+   <button id="keep-awake-btn" type="button">מסך פעיל</button>
+   <a data-elevator-link href="../elevator/">🛗 מסך מעלית</a>
+  </div>
+  <div id="footer-right">
+   <span id="prayers-update-status">זמני תפילות: בודק…</span>
+   <span id="elevator-update-status">זמני מעלית: בודק…</span>
+   <span id="last-updated"></span>
+   <span id="legacy-status">מנוע התאימות נטען…</span>
+  </div>
+ </footer>
+</div>
+<div id="copyright-bar">לוח שבת · משפחת רואש · תצוגה מותאמת לדפדפן LG ישן</div>
+<script>
+/* Independent fallback clock and diagnostic indicator, even if remote data fails. */
+(function(){
+ var status=document.getElementById('legacy-status');
+ function pad(n){return n<10?'0'+n:String(n)}
+ function fallbackClock(){
+   var now=new Date(), ids=['ch','cm','cs'], v=[now.getHours(),now.getMinutes(),now.getSeconds()];
+   for(var i=0;i<ids.length;i++){var n=document.getElementById(ids[i]);if(n)n.textContent=pad(v[i])}
+ }
+ fallbackClock();
+ setInterval(fallbackClock,1000);
+ if(status)status.textContent='תצוגת LG · ממתין לטעינת נתונים';
+ window.onerror=function(message){
+   if(status)status.textContent='⚠ תקלה בדפדפן LG: '+String(message).slice(0,95);
+   return false;
+ };
+})();
+</script>
+</body>
+</html>
