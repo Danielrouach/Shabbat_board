@@ -8,6 +8,12 @@
 (function(){
   try {
     if (/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent) && /TV|webOS|Web0S|NetCast/i.test(navigator.userAgent)) {
+      var lgLegacy = true;
+      try { new Function('return ({a:1})?.a;'); lgLegacy = false; } catch(ignore) {}
+      if (lgLegacy && location.pathname !== '/lg/' && location.pathname !== '/lg/index.html') {
+        location.replace('/lg/' + location.search + location.hash);
+        return;
+      }
       document.documentElement.classList.add('lg-tv-board');
     }
     if (/Android/i.test(navigator.userAgent) &&
