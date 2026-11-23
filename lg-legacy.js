@@ -321,6 +321,7 @@ w.SHABBAT_LEGACY_LOADED=true;
     }
     request(root+'zmanim?cfg=json&geonameid='+geo+'&date='+day+'&sec=1',function(data,err){
       if(data && data.times){
+        w.SHABBAT_LG_DATA_RECEIVED=true;
         renderZmanim(data.times);savePart('z',data.times);
         fallbackNote('זמני היום עודכנו: '+hour(new Date()));
       } else fallbackNote('⚠ זמני היום לא נטענו – יבוצע ניסיון חוזר');
