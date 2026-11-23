@@ -225,13 +225,29 @@ if(!window.SHABBAT_LEGACY_LOADED){
  function clear(e){while(e && e.firstChild)e.removeChild(e.firstChild);}
  function show(e,on){if(!e)return;if(on){e.removeAttribute('hidden');e.hidden=false;e.style.display='block';}else{e.hidden=true;e.style.display='none';}}
  function note(text){put('legacy-status',text);}
+ function readDayCache(date){
+   try{
+     var value=JSON.parse(localStorage.getItem('lg_tv_board_cache_v1')||'null');
+     return value&&value.date===date?value:null;
+   }catch(e){return null;}
+ }
+ function storeDayCache(kind,payload){
+   try{
+     var date=dayKey(new Date()),current=readDayCache(date)||{date:date};
+     if(kind==='זמני יום'&&payload.times)current.z=payload.times;
+     else if(kind==='שבת'&&payload.items)current.shabbat=payload.items;
+     else if(kind==='תאריך'&&payload.hy)current.heb=payload;
+     else if(kind==='לוח'&&payload.items)current.calendar=payload.items;
+     localStorage.setItem('lg_tv_board_cache_v1',JSON.stringify(current));
+   }catch(e){}
+ }
  function safeRequest(kind,url,onData){
    var finished=false,x=null;
    function finish(payload,error){
      if(finished)return;finished=true;
      if(payload) {
        done[kind]=true;
-       try{onData(payload);}catch(e){failures.push(kind+': שגיאת הצגה');}
+       try{onData(payload);storeDayCache(kind,payload);}catch(e){failures.push(kind+': שגיאת הצגה');}
      }else failures.push(kind+': '+(error||'תקשורת'));
      var count=0,key;
      for(key in done)if(done.hasOwnProperty(key))count++;
@@ -426,6 +442,16 @@ if(!window.SHABBAT_LEGACY_LOADED){
    note('מנוע התאוששות LG פעיל · טוען מידע');
    show(el('holiday-card'),false);show(el('roshchodesh-card'),false);show(el('tachanun-card'),false);show(el('omer-card'),false);
    onSchedule(localStore());
+   var cache=readDayCache(date);
+   if(cache){
+     try{
+       if(cache.z)onZmanim({times:cache.z});
+       if(cache.shabbat)onShabbat({items:cache.shabbat});
+       if(cache.heb)onHebrew(cache.heb);
+       if(cache.calendar)onCalendar({items:cache.calendar});
+       note('LG · מוצגים נתונים שמורים מהיום; בודק עדכונים');
+     }catch(cacheError){}
+   }
    safeRequest('זמני יום','https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date='+date+'&sec=1',onZmanim);
    safeRequest('שבת','https://www.hebcal.com/shabbat?cfg=json&geonameid=294801&m=18&b=18&M=on',onShabbat);
    safeRequest('תאריך','https://www.hebcal.com/converter?cfg=json&date='+date+'&g2h=1&strict=1',onHebrew);
