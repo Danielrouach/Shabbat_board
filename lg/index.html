@@ -72,7 +72,6 @@ html.light-theme #copyright-bar{background:#f4f7fc}
 })();
 </script>
 <script src="../cloud-config.js"></script>
-<script src="../lg-legacy.js?v=20261123-lg-standalone-v2"></script>
 </head>
 <body>
 <div id="app">
@@ -156,12 +155,48 @@ html.light-theme #copyright-bar{background:#f4f7fc}
  }
  fallbackClock();
  setInterval(fallbackClock,1000);
- if(status)status.textContent='תצוגת LG · ממתין לטעינת נתונים';
+ if(status)status.textContent='תצוגת LG · מפעיל את מנוע הנתונים';
+ /* Critical controls and civil date work even if the data module cannot load. */
+ var dateNode=document.getElementById('gregorian-date'),dayNode=document.getElementById('day-of-week-left');
+ var dow=['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','יום שבת'];
+ function civil(){
+   var v=new Date();
+   if(!window.SHABBAT_LEGACY_STARTED){
+     if(dateNode)dateNode.textContent=pad(v.getDate())+'/'+pad(v.getMonth()+1)+'/'+v.getFullYear();
+     if(dayNode)dayNode.textContent=dow[v.getDay()];
+   }
+ }
+ civil();setInterval(civil,30000);
+ var full=document.getElementById('fullscreen-btn');
+ if(full)full.onclick=function(){
+   var root=document.documentElement,go=root.requestFullscreen||root.webkitRequestFullscreen||root.webkitRequestFullScreen||root.msRequestFullscreen,
+       exit=document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen||document.msExitFullscreen;
+   try{
+     if(document.fullscreenElement||document.webkitFullscreenElement){if(exit)exit.call(document);}
+     else if(go)go.call(root);
+     else alert('נסה את סמל מסך מלא בסרגל הדפדפן של LG');
+   }catch(err){alert('לא ניתן להשלים מסך מלא דרך האתר; נסה את הכפתור בדפדפן LG.');}
+ };
+ var themeButton=document.getElementById('theme-toggle');
+ if(themeButton)themeButton.onclick=function(){
+   var doc=document.documentElement,light=(' '+doc.className+' ').indexOf(' light-theme ')<0;
+   doc.className=doc.className.replace(/\\s*light-theme/g,'')+(light?' light-theme':'');
+   themeButton.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
+   try{localStorage.setItem('rouach_shabbat_theme_v1',light?'light':'dark')}catch(err){}
+ };
  window.onerror=function(message){
    if(status)status.textContent='⚠ תקלה בדפדפן LG: '+String(message).slice(0,95);
    return false;
  };
 })();
+</script>
+<script>window.SHABBAT_FORCE_LEGACY=true;</script>
+<script src="../lg-legacy.js?v=20261124-lg-v3" onerror="document.getElementById('legacy-status').textContent='⚠ קובץ הנתונים של LG לא נטען';"></script>
+<script>
+if(!window.SHABBAT_LEGACY_LOADED){
+ var legacyNode=document.getElementById('legacy-status');
+ if(legacyNode)legacyNode.textContent='⚠ מנוע הנתונים של LG לא הופעל';
+}
 </script>
 </body>
 </html>
