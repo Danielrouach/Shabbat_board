@@ -35,8 +35,8 @@ function safeRemove(k){try{localStorage.removeItem(k)}catch(_){}}
 function currentInstant(){return overrideInstant instanceof Date && Number.isFinite(+overrideInstant)?overrideInstant:new Date()}
 function phase(now){
  const day=localDay(now),data=solar[day];
- const sunrise=Date.parse(data?.sunrise||'');
- const sunset=Date.parse(data?.sunset||'');
+ const sunrise=Date.parse((data && data.sunrise)||'');
+ const sunset=Date.parse((data && data.sunset)||'');
  if(!Number.isFinite(sunrise)||!Number.isFinite(sunset)||sunrise>=sunset)return null;
  const t=now.getTime();
  if(t<sunrise)return {mode:'dark',period:day+':before-sunrise'};
@@ -51,7 +51,7 @@ function manual(){
 }
 function preferred(now){
  if(!autoEnabled())return {mode:safeGet(THEME_KEY)==='light'?'light':'dark',period:null};
- const choice=manualOverride || manual()?.mode;
+ const choice=manualOverride || (manual() || {}).mode;
  if(choice)return {mode:typeof choice==='string'?choice:choice.mode,period:'manual-until-refresh'};
  const p=phase(now);
  if(p)return p;
@@ -156,7 +156,7 @@ function setNow(date){overrideInstant=date instanceof Date?date:null;sync(undefi
 // Reload/F5 always cancels temporary manual override; other open tabs are notified.
 try{
  const navigation=performance.getEntriesByType('navigation')[0];
- if(navigation?.type==='reload'&&autoEnabled())safeRemove(MANUAL_KEY);
+ if((navigation && navigation.type)==='reload'&&autoEnabled())safeRemove(MANUAL_KEY);
 }catch(_){}
 const handed=new URLSearchParams(location.search).get('theme');
 if((handed==='light'||handed==='dark')&&!phase(new Date()))safeSet(THEME_KEY,handed);
