@@ -204,5 +204,220 @@ if(!window.SHABBAT_LEGACY_LOADED){
  if(legacyNode)legacyNode.textContent='⚠ מנוע הנתונים של LG לא הופעל';
 }
 </script>
+
+<script>
+/* Minimal, self-contained ES5 data path for the 2016 LG browser.
+   Runs only if the external advanced LG runtime did not start. */
+(function(w,d) {
+ var initialized=false, done={}, failures=[], saved={};
+ var shabbatItems=[], calendarItems=[], solar={}, hebDate=null;
+ function el(id){return d.getElementById(id);}
+ function put(id,text){var n=el(id);if(n)n.textContent=text;}
+ function pad(n){return n<10?'0'+n:String(n);}
+ function dayKey(date){return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());}
+ function localDate(key){var p=key.split('-');return new Date(+p[0],+p[1]-1,+p[2],12);}
+ function dateObj(v){var d=new Date(v);return isNaN(d.getTime())?null:d;}
+ function clock(v){var d=dateObj(v);return d?pad(d.getHours())+':'+pad(d.getMinutes()):'–';}
+ function clear(e){while(e && e.firstChild)e.removeChild(e.firstChild);}
+ function show(e,on){if(!e)return;if(on){e.removeAttribute('hidden');e.hidden=false;e.style.display='block';}else{e.hidden=true;e.style.display='none';}}
+ function note(text){put('legacy-status',text);}
+ function safeRequest(kind,url,onData){
+   var finished=false,x=null;
+   function finish(payload,error){
+     if(finished)return;finished=true;
+     if(payload) {
+       done[kind]=true;
+       try{onData(payload);}catch(e){failures.push(kind+': שגיאת הצגה');}
+     }else failures.push(kind+': '+(error||'תקשורת'));
+     var count=0,key;
+     for(key in done)if(done.hasOwnProperty(key))count++;
+     note('LG · נתונים נטענו: '+count+'/4'+(failures.length?' · ⚠ '+failures.join(' | '):''));
+   }
+   try{
+     x=new XMLHttpRequest();
+     x.open('GET',url,true);
+     x.onreadystatechange=function(){
+       if(x.readyState!==4)return;
+       if(x.status>=200&&x.status<300){
+         try{finish(JSON.parse(x.responseText),null);}catch(err){finish(null,'JSON');}
+       }else finish(null,'HTTP '+x.status);
+     };
+     x.onerror=function(){finish(null,'רשת/CORS');};
+     x.send(null);
+     setTimeout(function(){finish(null,'זמן המתנה');},15000);
+   }catch(err){finish(null,'הדפדפן חסם בקשה');}
+ }
+ function dataTime(id,when){
+   var row=el(id);if(!row)return;
+   var cell=row.querySelector('.zman-time');
+   if(cell)cell.textContent=when?clock(when):'–';
+ }
+ function onZmanim(data){
+   var z=data.times||{};solar=z;
+   var rise=dateObj(z.sunrise),sunset=dateObj(z.sunset);
+   function shift(d,m){return d?new Date(d.getTime()+m*60000):null;}
+   dataTime('z-alot-90',shift(rise,-90));dataTime('z-alot-72',shift(rise,-72));
+   dataTime('z-misheyakir',z.misheyakir);
+   dataTime('z-netz',z.sunrise);
+   dataTime('z-sof-shma',z.sofZmanShma);
+   dataTime('z-chatzot',z.chatzot);
+   dataTime('z-shkia',z.sunset);
+   dataTime('z-tzeit',shift(sunset,18));
+   var manual = null;
+   try{manual=localStorage.getItem('rouach_shabbat_theme_v1');}catch(e){}
+   var auto=el('lg-auto-mode');
+   /* Only an unmodified automatic mode follows the daylight clock. */
+   if((!auto||auto.checked)&&manual!=='light'&&manual!=='dark'&&rise&&sunset){
+     var daylight=new Date()>=rise&&new Date()<sunset;
+     d.documentElement.className=d.documentElement.className.split('light-theme').join('')+(daylight?' light-theme':'');
+     put('theme-toggle',daylight?'☾ מצב כהה':'☀ מצב בהיר');
+   }
+ }
+ function numeral(n){
+   n=Number(n);if(!n||n<1)return String(n);
+   if(n===15)return 'ט״ו';if(n===16)return 'ט״ז';
+   var amount=[400,300,200,100,90,80,70,60,50,40,30,20,10,9,8,7,6,5,4,3,2,1];
+   var letters=['ת','ש','ר','ק','צ','פ','ע','ס','נ','מ','ל','כ','י','ט','ח','ז','ו','ה','ד','ג','ב','א'];
+   var i,out='';for(i=0;i<amount.length;i++)while(n>=amount[i]){out+=letters[i];n-=amount[i];}
+   return out.length===1?out+'׳':out.slice(0,-1)+'״'+out.slice(-1);
+ }
+ function year(n){n=Number(n);return n>=1000?numeral(Math.floor(n/1000))+numeral(n%1000):numeral(n);}
+ function onHebrew(v){
+   hebDate=v;if(!v.hy||!v.hd)return;
+   var months={Nisan:'ניסן',Iyyar:'אייר',Sivan:'סיון',Tamuz:'תמוז',Av:'אב',Elul:'אלול',Tishrei:'תשרי',Cheshvan:'חשוון',Kislev:'כסלו',Tevet:'טבת',Shvat:'שבט',Adar:'אדר','Adar I':'אדר א׳','Adar II':'אדר ב׳'};
+   var month=(v.heDateParts&&v.heDateParts.m)||months[v.hm]||v.hm;
+   put('hebrew-date',numeral(v.hd)+' ב'+month+' '+year(v.hy));
+   var names={Nisan:1,Iyyar:2,Sivan:3,Tamuz:4,Av:5,Elul:6,Tishrei:7,Cheshvan:8,Kislev:9,Tevet:10,Shvat:11,Adar:12,'Adar I':13,'Adar II':14};
+   var m=typeof v.hm==='number'?v.hm:names[v.hm],hd=+v.hd;
+   if(m&&hd){
+     var rain=(m===7&&hd>=22)||m===8||m===9||m===10||m===11||m===12||m===6||m===13||m===14||(m===1&&hd<=22);
+     put('tal-geshem-value',rain?'משיב הרוח ומוריד הגשם':'מוריד הטל');
+     var barech=(m===8&&hd>=7)||m===9||m===10||m===11||m===12||m===13||m===14||m===7||(m===1&&hd<15);
+     put('barech-value',barech?'ברך עלינו':'ברכנו');
+   }
+ }
+ function onShabbat(info){
+   shabbatItems=info.items||[];
+   var candles=null, havdalah=null,p='',i,e;
+   for(i=0;i<shabbatItems.length;i++){
+     e=shabbatItems[i];
+     if(e.category==='parashat')p=e.hebrew||e.title||'';
+     if(e.category==='candles')candles=e.date;
+     if(e.category==='havdalah')havdalah=e.date;
+   }
+   put('parasha-name',p||'–');
+   put('shabbat-big',p?'שבת '+p:'שבת קודש');
+   put('val-candles',candles?clock(candles):'–');
+   put('val-havdalah',havdalah?clock(havdalah):'–');
+   put('val-rt',havdalah?clock(new Date(dateObj(havdalah).getTime()+30*60000)):'–');
+ }
+ function onCalendar(data){
+   calendarItems=data.items||[];
+   var now=new Date(),today=dayKey(now),sun=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);
+   sun.setDate(sun.getDate()-sun.getDay());
+   var sat=new Date(sun);sat.setDate(sun.getDate()+6);
+   var first=dayKey(sun),last=dayKey(sat),h=null,rc=null,ev,i,date;
+   for(i=0;i<calendarItems.length;i++){
+     ev=calendarItems[i];date=String(ev.date||'').slice(0,10);
+     if(date<first||date>last)continue;
+     if(!h&&date>=today&&(ev.category==='holiday'||ev.category==='major'||ev.subcat==='major'))h=ev;
+     if(!rc&&(ev.category==='roshchodesh'||(ev.title&&ev.title.indexOf('Rosh Chodesh')===0)))rc=ev;
+   }
+   show(el('holiday-card'),!!h);
+   if(h)put('holiday-value',h.hebrew||h.title);
+   show(el('roshchodesh-card'),!!rc);
+   if(rc)put('roshchodesh-value',rc.hebrew||rc.title);
+   show(el('omer-card'),false);
+   /* Do not make unreliable Tachanun assumptions without complete calendar logic. */
+   show(el('tachanun-card'),false);
+ }
+ function localStore(){
+   try{var x=JSON.parse(localStorage.getItem('halachic_kiosk_weekly_v1')||'{}');return x&&typeof x==='object'?x:{};}catch(e){return {};}
+ }
+ function currentWeek(date){
+   var day=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12);
+   day.setDate(day.getDate()-day.getDay());return dayKey(day);
+ }
+ function latest(weeks,feature){
+   var k,best=0,t;
+   for(k in weeks)if(weeks.hasOwnProperty(k)&&weeks[k]&&weeks[k][feature]){
+     t=Date.parse(weeks[k][feature]);if(!isNaN(t)&&t>best)best=t;
+   }
+   if(!best)return 'אין תאריך עדכון מתועד';
+   var x=new Date(best);return pad(x.getDate())+'/'+pad(x.getMonth()+1)+'/'+x.getFullYear()+' '+clock(x);
+ }
+ function heading(name){
+   var node=d.createElement('div');node.className='weekly-heading';node.textContent=name;return node;
+ }
+ function entry(name,time){
+   var row=d.createElement('div'),a=d.createElement('span'),b=d.createElement('span');
+   row.className='weekly-entry';a.className='weekly-entry-label';b.className='weekly-entry-time';
+   a.textContent=name;b.textContent=time;row.appendChild(a);row.appendChild(b);return row;
+ }
+ function onSchedule(db){
+   saved=db;
+   put('prayers-update-status','תפילות: '+latest(db,'prayersUpdatedAt'));
+   put('elevator-update-status','מעלית: '+latest(db,'elevatorUpdatedAt'));
+   var current=currentWeek(new Date()),key=null,k,day=new Date().getDay(),item;
+   if(db[current])key=current;
+   else for(k in db)if(db.hasOwnProperty(k)&&/^20\d\d-\d\d-\d\d$/.test(k)&&k<current&&(!key||k>key))key=k;
+   var p=el('weekly-prayers'),box=el('weekly-board');if(!p||!box)return;
+   clear(p);
+   p.appendChild(heading('בית הכנסת אור וישועה'));
+   p.appendChild(entry('שחרית','07:10'));
+   p.appendChild(heading('בית הכנסת רמב״ם'));
+   p.appendChild(entry('שחרית','07:00'));
+   p.appendChild(entry('שחרית','08:00'));
+   if(key){
+     item=db[key]||{};
+     var rows=[];
+     if(day<=4){if(item.weekdayMincha)rows.push(['מנחה',item.weekdayMincha]);if(item.weekdayArvit)rows.push(['ערבית',item.weekdayArvit]);}
+     else if(day===5){if(item.fridayMinchaGedola)rows.push(['מנחה גדולה',item.fridayMinchaGedola]);}
+     else{if(item.shabbatMinchaGedola)rows.push(['מנחה גדולה',item.shabbatMinchaGedola]);if(item.shabbatArvit)rows.push(['ערבית',item.shabbatArvit]);}
+     if(rows.length)p.appendChild(heading('בית הכנסת שארית ישראל'));
+     for(var j=0;j<rows.length;j++)p.appendChild(entry(rows[j][0],rows[j][1]));
+     if(key!==current)p.appendChild(heading('⚠ נתונים מהשבוע הקודם'));
+   }
+   show(box,true);
+ }
+ function cloudRequest(){
+   var api=w.SHABBAT_CLOUD_READ_URL;
+   if(!api||api.indexOf('https://script.google.com/macros/s/')!==0){
+     note('⚠ כתובת ענן לא קיימת; מוצגים זמנים קבועים בלבד');
+     return;
+   }
+   var callback='shabbatCloudCallback_'+new Date().getTime()+Math.floor(Math.random()*10000);
+   var script=d.createElement('script'),finished=false;
+   function clearCb(){if(finished)return;finished=true;try{delete w[callback];}catch(e){w[callback]=null;}if(script.parentNode)script.parentNode.removeChild(script);}
+   w[callback]=function(payload){
+     if(payload&&payload.ok===true&&payload.data&&payload.data.format==='halachic-weekly-v1'&&payload.data.weeks){
+       var db=localStore(),x=payload.data.weeks,k;
+       for(k in x)if(x.hasOwnProperty(k)&&/^20\d\d-\d\d-\d\d$/.test(k)&&x[k])db[k]=x[k];
+       try{localStorage.setItem('halachic_kiosk_weekly_v1',JSON.stringify(db));}catch(err){}
+       onSchedule(db);put('legacy-status','LG · נתוני תפילות ומעלית התקבלו');
+     }else put('legacy-status','⚠ שירות התפילות החזיר נתונים לא תקינים');
+     clearCb();
+   };
+   script.onerror=function(){clearCb();put('legacy-status','⚠ בקשת תפילות ומעלית נכשלה');};
+   script.src=api+(api.indexOf('?')>=0?'&':'?')+'callback='+encodeURIComponent(callback)+'&t='+new Date().getTime();
+   (d.head||d.getElementsByTagName('head')[0]).appendChild(script);
+   setTimeout(function(){if(!finished){clearCb();put('legacy-status','⚠ שירות התפילות לא השיב');}},20000);
+ }
+ function start(){
+   if(initialized||w.SHABBAT_LEGACY_STARTED)return;
+   initialized=true;w.SHABBAT_LG_RECOVERY_ACTIVE=true;
+   var now=new Date(),date=dayKey(now);
+   note('מנוע התאוששות LG פעיל · טוען מידע');
+   show(el('holiday-card'),false);show(el('roshchodesh-card'),false);show(el('tachanun-card'),false);show(el('omer-card'),false);
+   onSchedule(localStore());
+   safeRequest('זמני יום','https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date='+date+'&sec=1',onZmanim);
+   safeRequest('שבת','https://www.hebcal.com/shabbat?cfg=json&geonameid=294801&m=18&b=18&M=on',onShabbat);
+   safeRequest('תאריך','https://www.hebcal.com/converter?cfg=json&date='+date+'&g2h=1&strict=1',onHebrew);
+   safeRequest('לוח','https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&mf=on&ss=on&year='+date.slice(0,4)+'&month='+date.slice(5,7)+'&geo=geoname&geonameid=294801&M=on',onCalendar);
+   cloudRequest();
+ }
+ setTimeout(start,1300);
+})(window,document);
+</script>
 </body>
 </html>
