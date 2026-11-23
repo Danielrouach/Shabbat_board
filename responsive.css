@@ -964,3 +964,121 @@
   html.android-board-recovery #center > .panel-title { grid-column: 1 / -1; }
   html.android-board-recovery #center .halacha-card { min-width: 0 !important; }
 }
+
+
+/* Legacy LG webOS/NetCast TV: some TV engines ignore CSS Grid, CSS variables,
+   clamp() and newer viewport units. Force a classic three-column flex layout.
+   This path is opt-in via the early UA check and never affects other devices. */
+html.lg-tv-board, html.lg-tv-board body {
+  width: 100% !important; height: 100% !important;
+  margin: 0 !important; padding: 0 !important;
+  overflow: hidden !important;
+  background: #080c10 !important; color: #eef2f8 !important;
+  -webkit-text-size-adjust: 100%;
+}
+html.lg-tv-board.light-theme, html.lg-tv-board.light-theme body {
+  background: #f3f6fc !important; color: #17263a !important;
+}
+html.lg-tv-board #app {
+  position: static !important;
+  display: -webkit-box !important;
+  display: -webkit-flex !important;
+  display: flex !important;
+  -webkit-flex-flow: row wrap !important;
+  flex-flow: row wrap !important;
+  -webkit-align-content: flex-start !important;
+  align-content: flex-start !important;
+  direction: ltr;
+  width: 100% !important; height: 96% !important;
+  min-height: 0 !important;
+  padding: 8px 14px 3px !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  zoom: 1 !important;
+  -webkit-transform: none !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+html.lg-tv-board #header {
+  display: -webkit-flex !important; display: flex !important;
+  -webkit-justify-content: space-between !important;
+  justify-content: space-between !important;
+  -webkit-align-items: center !important; align-items: center !important;
+  direction: rtl;
+  -webkit-flex: 0 0 100% !important; flex: 0 0 100% !important;
+  width: 100% !important; height: 15% !important;
+  max-height: none !important; min-height: 0 !important;
+  overflow: hidden !important; padding-bottom: 4px !important;
+}
+html.lg-tv-board #parasha-block,
+html.lg-tv-board #location-block {
+  width: 30% !important; min-width: 0 !important;
+}
+html.lg-tv-board #clock-block {
+  width: 40% !important; min-width: 0 !important;
+  -webkit-flex: 0 1 40% !important; flex: 0 1 40% !important;
+}
+html.lg-tv-board #clock { font-size: 62px !important; }
+html.lg-tv-board #parasha-name { font-size: 30px !important; }
+html.lg-tv-board #hebrew-date { font-size: 23px !important; }
+html.lg-tv-board #bday-row {
+  -webkit-flex: 0 0 100% !important; flex: 0 0 100% !important;
+  width: 100% !important; min-height: 0 !important;
+  max-height: 9% !important; overflow: hidden !important;
+}
+html.lg-tv-board #mobile-theme-controls { display: none !important; }
+html.lg-tv-board #left,
+html.lg-tv-board #center,
+html.lg-tv-board #right {
+  display: block !important;
+  direction: rtl;
+  -webkit-flex: 0 0 32.5% !important;
+  flex: 0 0 32.5% !important;
+  width: 32.5% !important;
+  max-width: 32.5% !important;
+  min-width: 0 !important;
+  height: 70% !important;
+  min-height: 0 !important;
+  margin: 0 .4% 0 0 !important;
+  overflow: hidden !important;
+  background: #0d1520;
+  border: 1px solid #1a2a3a;
+  padding: 10px !important;
+  font-size: 17px !important;
+}
+html.lg-tv-board.light-theme #left,
+html.lg-tv-board.light-theme #center,
+html.lg-tv-board.light-theme #right {
+  background: #ffffff !important; border-color: #c9d2df !important;
+}
+html.lg-tv-board #left { -webkit-order: 1; order: 1; }
+html.lg-tv-board #center { -webkit-order: 2; order: 2; }
+html.lg-tv-board #right { -webkit-order: 3; order: 3; }
+html.lg-tv-board #header { -webkit-order: 0; order: 0; }
+html.lg-tv-board #bday-row { -webkit-order: 0; order: 0; }
+html.lg-tv-board #footer {
+  direction: rtl; display: -webkit-flex !important; display: flex !important;
+  -webkit-flex: 0 0 100% !important; flex: 0 0 100% !important;
+  -webkit-order: 4; order: 4;
+  width: 100% !important; height: 6% !important;
+  max-height: none !important; min-height: 0 !important;
+  padding: 2px !important; overflow: hidden !important;
+}
+html.lg-tv-board #copyright-bar {
+  position: fixed !important; bottom: 0 !important;
+  left: 0 !important; right: 0 !important;
+  height: 22px !important; min-height: 22px !important;
+  background: #080c10 !important;
+}
+html.lg-tv-board #left .zman-name,
+html.lg-tv-board #right .weekly-entry-label,
+html.lg-tv-board #right .time-label { font-size: 15px !important; }
+html.lg-tv-board #left .zman-time,
+html.lg-tv-board #right .weekly-entry-time,
+html.lg-tv-board #right .time-val { font-size: 18px !important; }
+html.lg-tv-board #center .halacha-card {
+  display: inline-block !important; vertical-align: top !important;
+  width: 47% !important; min-height: 0 !important;
+  margin: 1% !important; padding: 8px !important;
+}
+html.lg-tv-board #center .halacha-value { font-size: 22px !important; }
