@@ -1,12 +1,31 @@
 <!doctype html>
 <html lang="he" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+(function(){
+  try{
+    if(/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent)&&/TV|webOS|Web0S|NetCast/i.test(navigator.userAgent)){
+      document.documentElement.className+=' lg-tv-board';
+    }
+  }catch(e){}
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>מעלית שבת | לוח שבת - משפחת רואש</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@600;700&display=swap" rel="stylesheet">
 <script src="../cloud-config.js"></script>
+<script>
+(function(){
+  if(document.documentElement.className.indexOf('lg-tv-board')<0)return;
+  var legacy=false;
+  try{new Function('var x={a:1};return x?.a;')}catch(e){legacy=true}
+  if(!legacy)return;
+  document.documentElement.className+=' lg-legacy-elevator';
+  document.write('<script src="../lg-elevator-legacy.js?v=20261123-elevator-v1"><\/script>');
+})();
+</script>
 <script src="../shabbat-elevator.js"></script>
 <script src="../update-status.js"></script>
 <script src="../theme.js"></script>
@@ -99,6 +118,91 @@ html.light-theme .theme-auto-control{color:#465c72}
 #keep-awake-btn.active{border-color:var(--green);color:var(--green)}
 html.light-theme #keep-awake-btn,html.light-theme #fullscreen-btn{color:#805813;border-color:#bda374}
 html.light-theme #keep-awake-btn.active{color:#187548;border-color:#187548}
+
+/* Isolated legacy webOS 3 TV elevator layout; other devices remain unchanged. */
+html.lg-legacy-elevator,html.lg-legacy-elevator body {
+ background:#080c10 !important;color:#eef2f8 !important;
+ height:100% !important;overflow:hidden !important;
+ font-family:Heebo,Arial,sans-serif !important;
+}
+html.lg-legacy-elevator.light-theme,html.lg-legacy-elevator.light-theme body {
+ background:#f7f9fc !important;color:#172435 !important;
+}
+html.lg-legacy-elevator #frame{
+ display:-webkit-flex !important;display:flex !important;
+ -webkit-flex-direction:column !important;flex-direction:column !important;
+ width:100% !important;height:100% !important;
+ padding:15px 22px !important;overflow:hidden !important;
+}
+html.lg-legacy-elevator header{
+ display:-webkit-flex !important;display:flex !important;
+ -webkit-justify-content:space-between !important;justify-content:space-between !important;
+ -webkit-align-items:center !important;align-items:center !important;
+ width:100% !important;-webkit-flex:0 0 24% !important;flex:0 0 24% !important;
+ min-height:0 !important;overflow:hidden !important;
+}
+html.lg-legacy-elevator header .masthead{width:65% !important}
+html.lg-legacy-elevator header .date-block{width:35% !important}
+html.lg-legacy-elevator h1{font-size:42px !important}
+html.lg-legacy-elevator #clock{font-size:42px !important}
+html.lg-legacy-elevator .date-range{font-size:22px !important}
+html.lg-legacy-elevator .subtitle{font-size:19px !important}
+html.lg-legacy-elevator #hebrewDate{font-size:23px !important}
+html.lg-legacy-elevator #date{font-size:19px !important}
+html.lg-legacy-elevator #status{display:block !important;font-size:18px !important;
+ -webkit-flex:0 0 8% !important;flex:0 0 8% !important;
+ min-height:0 !important;overflow:hidden !important;
+}
+html.lg-legacy-elevator #tiles {
+ -webkit-flex:1 1 auto !important;flex:1 1 auto !important;
+ display:-webkit-flex !important;display:flex !important;
+ -webkit-flex-flow:row wrap !important;flex-flow:row wrap !important;
+ -webkit-align-content:flex-start !important;align-content:flex-start !important;
+ width:100% !important;height:58% !important;min-height:0 !important;
+ overflow:hidden !important;gap:0 !important;direction:rtl;
+}
+html.lg-legacy-elevator #tiles[hidden] {display:none !important}
+html.lg-legacy-elevator .tile{
+ display:-webkit-flex !important;display:flex !important;
+ -webkit-flex-direction:column !important;flex-direction:column !important;
+ -webkit-justify-content:center !important;justify-content:center !important;
+ -webkit-align-items:center !important;align-items:center !important;
+ -webkit-flex:0 0 31.5% !important;flex:0 0 31.5% !important;
+ width:31.5% !important;min-width:0 !important;height:18% !important;
+ margin:.5% !important;padding:6px !important;
+ border:2px solid #223344 !important;border-radius:8px !important;
+ background:#0d1520 !important;
+}
+html.lg-legacy-elevator.light-theme .tile{background:#fff !important;border-color:#d6e0e9 !important}
+html.lg-legacy-elevator .tile.current{border-color:#4adb8a !important}
+html.lg-legacy-elevator .time{font-size:29px !important;line-height:1.2 !important}
+html.lg-legacy-elevator .caption{font-size:18px !important;line-height:1.3 !important}
+html.lg-legacy-elevator #empty{
+ -webkit-flex:1 1 auto !important;flex:1 1 auto !important;
+ display:-webkit-flex !important;display:flex !important;
+ -webkit-align-items:center !important;align-items:center !important;
+ -webkit-justify-content:center !important;justify-content:center !important;
+ font-size:28px !important;
+}
+html.lg-legacy-elevator #empty[hidden]{display:none !important}
+html.lg-legacy-elevator footer{
+ -webkit-flex:0 0 9% !important;flex:0 0 9% !important;
+ display:-webkit-flex !important;display:flex !important;
+ -webkit-align-items:center !important;align-items:center !important;
+ -webkit-justify-content:center !important;justify-content:center !important;
+ width:100% !important;min-height:0 !important;
+ font-size:16px !important;overflow:hidden !important;gap:10px !important;
+}
+html.lg-legacy-elevator button{
+ font-family:Heebo,Arial,sans-serif !important;font-size:17px !important;
+ min-height:30px !important;padding:5px 9px !important;color:#c8a44a !important;
+ border:1px solid #c8a44a !important;background:#152538 !important;
+}
+html.lg-legacy-elevator.light-theme button{
+ color:#805813 !important;background:#fff9eb !important;border-color:#bda374 !important;
+}
+html.lg-legacy-elevator .theme-auto-control{font-size:16px !important}
+html.lg-legacy-elevator #qa-controls{display:none !important}
 </style></head>
 <body><div id="frame">
 <header><div class="masthead"><div class="eyebrow">לוח שבת - משפחת רואש</div><h1>🛗 <span id="parashaTitle">זמני מעלית שבת</span></h1><div class="subtitle" id="dayLabel">לוח שבת</div><div class="date-range" id="weekRange">טוען תאריכי שבת…</div></div><div class="date-block"><div id="clock">--:--</div><div id="hebrewDate">—</div><div id="date">—</div><button id="theme-toggle" data-theme-toggle type="button" aria-pressed="false">☀ מצב בהיר</button></div></header>
