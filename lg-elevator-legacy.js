@@ -119,7 +119,7 @@ function loadCalendar(now){
 }
 function cloudRefresh(){
  var url=w.SHABBAT_CLOUD_READ_URL;if(!url||url.indexOf('https://script.google.com/macros/s/')!==0){cloud='error';render();return}
- var callback='lgElevatorCloud'+new Date().getTime()+Math.floor(Math.random()*10000),tag=d.createElement('script'),done=false;
+ var callback='shabbatCloudCallback_'+new Date().getTime()+Math.floor(Math.random()*10000),tag=d.createElement('script'),done=false;
  function clean(){if(done)return;done=true;try{delete w[callback]}catch(e){w[callback]=null}if(tag.parentNode)tag.parentNode.removeChild(tag)}
  w[callback]=function(result){
   if(result&&result.ok===true&&result.data&&result.data.format==='halachic-weekly-v1'&&result.data.weeks){
