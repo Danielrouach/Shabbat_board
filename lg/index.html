@@ -59,6 +59,9 @@ html.light-theme .panel{background:#fff;border-color:#c9d4e1}
 html.light-theme .halacha-card{background:#f2f6fa;border-color:#c9d4e1}
 html.light-theme .zman-time,html.light-theme .time-val,html.light-theme .weekly-entry-time{color:#805d16}
 html.light-theme #copyright-bar{background:#f4f7fc}
+#legacy-status{font-weight:bold;font-size:15px!important;color:#e7c777!important}
+html.light-theme #legacy-status{color:#684000!important}
+#last-updated{font-size:14px}
 @media(max-height:750px){#header{flex-basis:16%}#footer{flex-basis:12%}.zman-row,.time-row,.weekly-entry{padding:4px 0;min-height:28px}.panel{padding:7px 10px}.zman-name,.time-label,.weekly-entry-label{font-size:16px}.zman-time,.time-val,.weekly-entry-time{font-size:18px}.halacha-card{padding:6px 9px}.halacha-value{font-size:19px}.panel-title{font-size:18px}}
 </style>
 <script>
@@ -185,6 +188,7 @@ html.light-theme #copyright-bar{background:#f4f7fc}
  }
  var themeButton=document.getElementById('theme-toggle');
  if(themeButton)themeButton.onclick=function(){
+   window.SHABBAT_LG_THEME_TOUCHED=true;
    var doc=document.documentElement,light=(' '+doc.className+' ').indexOf(' light-theme ')<0;
    doc.className=doc.className.split('light-theme').join('').replace(/  +/g,' ')+(light?' light-theme':'');
    themeButton.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
@@ -263,11 +267,9 @@ if(!window.SHABBAT_LEGACY_LOADED){
    dataTime('z-chatzot',z.chatzot);
    dataTime('z-shkia',z.sunset);
    dataTime('z-tzeit',shift(sunset,18));
-   var manual = null;
-   try{manual=localStorage.getItem('rouach_shabbat_theme_v1');}catch(e){}
-   var auto=el('lg-auto-mode');
-   /* Only an unmodified automatic mode follows the daylight clock. */
-   if((!auto||auto.checked)&&manual!=='light'&&manual!=='dark'&&rise&&sunset){
+   var auto=d.querySelector('[data-theme-auto]');
+   /* Automatic mode follows daylight unless the user changed the mode manually. */
+   if((!auto||auto.checked)&&!w.SHABBAT_LG_THEME_TOUCHED&&rise&&sunset){
      var daylight=new Date()>=rise&&new Date()<sunset;
      d.documentElement.className=d.documentElement.className.split('light-theme').join('')+(daylight?' light-theme':'');
      put('theme-toggle',daylight?'☾ מצב כהה':'☀ מצב בהיר');
@@ -363,11 +365,16 @@ if(!window.SHABBAT_LEGACY_LOADED){
    else for(k in db)if(db.hasOwnProperty(k)&&/^20\d\d-\d\d-\d\d$/.test(k)&&k<current&&(!key||k>key))key=k;
    var p=el('weekly-prayers'),box=el('weekly-board');if(!p||!box)return;
    clear(p);
-   p.appendChild(heading('בית הכנסת אור וישועה'));
-   p.appendChild(entry('שחרית','07:10'));
-   p.appendChild(heading('בית הכנסת רמב״ם'));
-   p.appendChild(entry('שחרית','07:00'));
-   p.appendChild(entry('שחרית','08:00'));
+   if(day===6){
+     p.appendChild(heading('בית הכנסת הרב אליהו אבוחצרא · שבת'));
+     p.appendChild(entry('שחרית','08:00'));
+   }else{
+     p.appendChild(heading('בית הכנסת אור וישועה'));
+     p.appendChild(entry('שחרית','07:10'));
+     p.appendChild(heading('בית הכנסת רמב״ם'));
+     p.appendChild(entry('שחרית','07:00'));
+     p.appendChild(entry('שחרית','08:00'));
+   }
    if(key){
      item=db[key]||{};
      var rows=[];
@@ -404,7 +411,14 @@ if(!window.SHABBAT_LEGACY_LOADED){
    setTimeout(function(){if(!finished){clearCb();put('legacy-status','⚠ שירות התפילות לא השיב');}},20000);
  }
  function start(){
-   if(initialized||w.SHABBAT_LEGACY_STARTED)return;
+   if(initialized)return;
+   if(w.SHABBAT_LEGACY_STARTED){
+     /* The main engine may be alive but unable to retrieve remote data. */
+     var name=el('parasha-name'),z=el('z-netz');
+     var cell=z&&z.querySelector('.zman-time');
+     if(w.SHABBAT_LG_DATA_RECEIVED||(cell&&cell.textContent&&cell.textContent!=='–')||
+        (name&&name.textContent&&name.textContent!=='טוען…'&&name.textContent!=='–'))return;
+   }
    initialized=true;w.SHABBAT_LG_RECOVERY_ACTIVE=true;
    var now=new Date(),date=dayKey(now);
    note('מנוע התאוששות LG פעיל · טוען מידע');
@@ -416,7 +430,7 @@ if(!window.SHABBAT_LEGACY_LOADED){
    safeRequest('לוח','https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&mf=on&ss=on&year='+date.slice(0,4)+'&month='+date.slice(5,7)+'&geo=geoname&geonameid=294801&M=on',onCalendar);
    cloudRequest();
  }
- setTimeout(start,1300);
+ setTimeout(start,5500);
 })(window,document);
 </script>
 </body>
