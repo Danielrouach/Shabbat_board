@@ -301,8 +301,10 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
       c[k]=v;cacheSet('lg_tv_board_cache_v1',c);
     }
     request(root+'zmanim?cfg=json&geonameid='+geo+'&date='+day+'&sec=1',function(data,err){
-      if(data && data.times){renderZmanim(data.times);savePart('z',data.times);}
-      else fallbackNote('זמני היום לא נטענו – יבוצע ניסיון חוזר');
+      if(data && data.times){
+        renderZmanim(data.times);savePart('z',data.times);
+        fallbackNote('זמני היום עודכנו: '+hour(new Date()));
+      } else fallbackNote('⚠ זמני היום לא נטענו – יבוצע ניסיון חוזר');
     });
     request(root+'shabbat?cfg=json&geonameid='+geo+'&m=18&b=18&M=on',function(data,err){
       if(data && data.items){renderShabbat(data.items);savePart('shabbat',data.items);}
@@ -330,13 +332,17 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
         cacheSet(weeklyKey,schedule);
         prayerBoard(new Date());
         updateFeatureStatuses();
-      }
+        txt('legacy-status','נתוני הענן נטענו · תצוגת LG פעילה');
+      } else txt('legacy-status','⚠ שירות הנתונים החזיר תשובה לא תקינה');
       finish();
     };
-    sc.onerror=finish;
+    sc.onerror=function(){txt('legacy-status','⚠ לא ניתן להתחבר לשרת התפילות והמעלית');finish();};
     sc.src=url+(url.indexOf('?')>=0?'&':'?')+'callback='+encodeURIComponent(name)+'&t='+new Date().getTime();
     (d.head||d.getElementsByTagName('head')[0]).appendChild(sc);
-    setTimeout(finish,20000);
+    setTimeout(function(){
+      if(!done)txt('legacy-status','⚠ שרת הנתונים לא השיב; מוצגים נתונים שמורים בלבד');
+      finish();
+    },20000);
   }
   function applyTheme(){
     var auto=true;
@@ -385,20 +391,36 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
     hidden(logo,!shabbat);hidden(clock,shabbat);
     var small=el('shabbat-clock');hidden(small,!shabbat);
   }
+  function safeTick(){
+    try{tick();}catch(e){
+      var n=el('legacy-status');
+      if(n)n.textContent='⚠ שגיאת תצוגה: '+String(e.message||e).slice(0,65);
+    }
+  }
   function start(){
-    hidden(el('loading-overlay'),true);
-    hidden(el('settings-btn'),true);
-    hidden(el('weekly-open-btn'),true);
-    hidden(el('weekly-panel'),true);
-    hidden(el('omer-card'),true);
-    hidden(el('roshchodesh-card'),true);
-    hidden(el('holiday-card'),true);
-    hidden(el('tachanun-card'),true);
-    schedule=cacheGet(weeklyKey)||{};
-    initScreenButtons();bindTheme();applyTheme();tick();readAll();prayerBoard(new Date());updateFeatureStatuses();refreshCloud();
-    setInterval(tick,1000);
-    setInterval(function(){lastDay='';readAll();},30*60*1000);
-    setInterval(refreshCloud,15*60*1000);
+    /* Clock first; errors in initialization or data cannot stop the clock. */
+    safeTick();
+    setInterval(safeTick,1000);
+    try{
+      hidden(el('loading-overlay'),true);
+      hidden(el('settings-btn'),true);
+      hidden(el('weekly-open-btn'),true);
+      hidden(el('weekly-panel'),true);
+      hidden(el('omer-card'),true);
+      hidden(el('roshchodesh-card'),true);
+      hidden(el('holiday-card'),true);
+      hidden(el('tachanun-card'),true);
+      schedule=cacheGet(weeklyKey)||{};
+      initScreenButtons();bindTheme();applyTheme();
+      prayerBoard(new Date());updateFeatureStatuses();
+      txt('legacy-status','מנוע LG פעיל · בודק נתונים');
+    }catch(e){
+      txt('legacy-status','⚠ אתחול חלקי: '+String(e.message||e).slice(0,65));
+    }
+    try{readAll();}catch(e){txt('legacy-status','⚠ קריאת לוח נכשלה');}
+    try{refreshCloud();}catch(e){txt('legacy-status','⚠ קריאת ענן נכשלה');}
+    setInterval(function(){lastDay='';try{readAll();}catch(e){}},30*60*1000);
+    setInterval(function(){try{refreshCloud();}catch(e){}},15*60*1000);
   }
   if(d.readyState==='complete'||d.readyState==='interactive')setTimeout(start,0);
   else d.addEventListener('DOMContentLoaded',start,false);
