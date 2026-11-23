@@ -294,7 +294,7 @@
   function refreshCloud() {
     var url=w.SHABBAT_CLOUD_READ_URL;
     if(!url || url.indexOf('https://script.google.com/macros/s/')!==0)return;
-    var name='lgShabbatCloud'+String(new Date().getTime())+String(Math.floor(Math.random()*10000)), sc=d.createElement('script'), done=false;
+    var name='shabbatCloudCallback_'+String(new Date().getTime())+String(Math.floor(Math.random()*10000)), sc=d.createElement('script'), done=false;
     function finish(){if(done)return;done=true;try{delete w[name];}catch(e){w[name]=null;}if(sc.parentNode)sc.parentNode.removeChild(sc);}
     w[name]=function(result) {
       if(result && result.ok===true && result.data && result.data.format==='halachic-weekly-v1' && result.data.weeks && typeof result.data.weeks==='object'){
