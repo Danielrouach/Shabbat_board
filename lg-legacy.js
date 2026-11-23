@@ -3,6 +3,10 @@
  * Read-only: same Hebcal Haifa (294801) and cloud JSONP data source. */
 (function (w, d) {
   'use strict';
+/* This file is loaded normally for reliability, but runs only in obsolete LG TV engines. */
+if(!/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent))return;
+try{new Function('var x={a:1};return x?.a;');return;}catch(compatibilityError){}
+document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
   var geo = '294801', weeklyKey = 'halachic_kiosk_weekly_v1';
   var days = ['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','יום שבת'];
   var solar = {}, schedule = {}, heb = null, candles = null, havdalah = null, parasha = '', items = [], lastDay = '';
