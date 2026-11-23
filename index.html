@@ -3829,9 +3829,9 @@ function cloudFetchSchedules() {
   setTimeout(clear,20000);
 }
 document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('weekly-open-btn')?.remove();
+  var oldWeeklyButton = document.getElementById('weekly-open-btn'); if (oldWeeklyButton && oldWeeklyButton.parentNode) oldWeeklyButton.parentNode.removeChild(oldWeeklyButton);
   // Public kiosk never exposes import controls, even if source code is inspected.
-  document.getElementById('weekly-panel')?.remove();
+  var oldWeeklyPanel = document.getElementById('weekly-panel'); if (oldWeeklyPanel && oldWeeklyPanel.parentNode) oldWeeklyPanel.parentNode.removeChild(oldWeeklyPanel);
   cloudFetchSchedules();
   ShabbatElevator.prime(getSimulatedNow()).then(renderWeeklyBoard);
   ShabbatElevator.onChange(renderWeeklyBoard);
