@@ -2,6 +2,10 @@
    Read-only; never writes to the administration API. */
 (function(w,d){
 'use strict';
+/* This file is loaded normally for reliability, but runs only in obsolete LG TV engines. */
+if(!/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent))return;
+try{new Function('var x={a:1};return x?.a;');return;}catch(compatibilityError){}
+document.documentElement.className+=' lg-tv-board lg-legacy-elevator';
 var STORE='halachic_kiosk_weekly_v1', db={},parasha='',havdalah=null,solar={},cloud='pending',cloudErr='',lastDay='';
 function el(id){return d.getElementById(id)}
 function txt(id,s){var n=el(id);if(n)n.textContent=s}
@@ -14,6 +18,22 @@ function week(now){var n=new Date(now.getFullYear(),now.getMonth(),now.getDate()
 function save(){try{localStorage.setItem(STORE,JSON.stringify(db))}catch(e){}}
 function load(){try{return JSON.parse(localStorage.getItem(STORE)||'{}')||{}}catch(e){return {}}}
 function displayDate(x){return pad(x.getDate())+'/'+pad(x.getMonth()+1)+'/'+x.getFullYear()}
+function numeral(n){
+ n=+n;if(!n||n<1)return String(n);
+ if(n===15)return 'ט״ו';if(n===16)return 'ט״ז';
+ var nums=[400,300,200,100,90,80,70,60,50,40,30,20,10,9,8,7,6,5,4,3,2,1];
+ var chars=['ת','ש','ר','ק','צ','פ','ע','ס','נ','מ','ל','כ','י','ט','ח','ז','ו','ה','ד','ג','ב','א'];
+ var result='',i;
+ for(i=0;i<nums.length;i++)while(n>=nums[i]){result+=chars[i];n-=nums[i];}
+ return result.length===1?result+'׳':result.slice(0,-1)+'״'+result.slice(-1);
+}
+function hebrewYear(n){return numeral(Math.floor(+n/1000))+numeral(+n%1000)}
+var hebMonths={Nisan:'ניסן',Iyyar:'אייר',Sivan:'סיון',Tamuz:'תמוז',Av:'אב',Elul:'אלול',Tishrei:'תשרי',Cheshvan:'חשוון',Kislev:'כסלו',Tevet:'טבת',Shvat:'שבט',Adar:'אדר','Adar I':'אדר א׳','Adar II':'אדר ב׳'};
+function hebrewDateText(data){
+ var month=data.heDateParts&&data.heDateParts.m||hebMonths[data.hm]||data.hm;
+ return numeral(data.hd)+' ב'+month+' '+hebrewYear(data.hy);
+}
+
 function clear(e){while(e&&e.firstChild)e.removeChild(e.firstChild)}
 function hidden(e,v){if(e){e.hidden=!!v;e.style.display=v?'none':''}}
 function fetchJson(url,cb){
@@ -110,7 +130,7 @@ function loadCalendar(now){
   render();
  });
  fetchJson('https://www.hebcal.com/converter?cfg=json&date='+date+'&g2h=1&strict=1',function(data){
-  if(data&&data.hy){var m=data.heDateParts&&data.heDateParts.m||data.hm;txt('hebrewDate',data.hd+' '+m+' '+data.hy)}
+  if(data&&data.hy)txt('hebrewDate',hebrewDateText(data))
  });
  fetchJson('https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date='+date+'&sec=1',function(data){
   if(data&&data.times)solar=data.times;
