@@ -177,10 +177,16 @@ html.light-theme #copyright-bar{background:#f4f7fc}
      else alert('נסה את סמל מסך מלא בסרגל הדפדפן של LG');
    }catch(err){alert('לא ניתן להשלים מסך מלא דרך האתר; נסה את הכפתור בדפדפן LG.');}
  };
+ var keepAwake=document.getElementById('keep-awake-btn');
+ if(keepAwake){
+   keepAwake.textContent='⚠ מסך פעיל: לא נתמך ב-LG';
+   keepAwake.title='לא ניתן למנוע שומר מסך דרך Screen Wake Lock בדפדפן זה';
+   keepAwake.onclick=function(){alert('דפדפן LG webOS 3 אינו מספק Screen Wake Lock. השאר את הטלוויזיה דולקת באמצעות ביטול טיימר שינה או כיבוי אוטומטי בהגדרות הטלוויזיה.');};
+ }
  var themeButton=document.getElementById('theme-toggle');
  if(themeButton)themeButton.onclick=function(){
    var doc=document.documentElement,light=(' '+doc.className+' ').indexOf(' light-theme ')<0;
-   doc.className=doc.className.replace(/\\s*light-theme/g,'')+(light?' light-theme':'');
+   doc.className=doc.className.split('light-theme').join('').replace(/  +/g,' ')+(light?' light-theme':'');
    themeButton.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
    try{localStorage.setItem('rouach_shabbat_theme_v1',light?'light':'dark')}catch(err){}
  };
