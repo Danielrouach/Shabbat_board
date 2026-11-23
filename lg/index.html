@@ -72,6 +72,59 @@ html.light-theme #footer button,html.light-theme #footer a{
 html.light-theme #legacy-status{color:#684000!important}
 #last-updated{font-size:14px}
 @media(max-height:750px){#header{flex-basis:16%}#footer{flex-basis:12%}.zman-row,.time-row,.weekly-entry{padding:4px 0;min-height:28px}.panel{padding:7px 10px}.zman-name,.time-label,.weekly-entry-label{font-size:16px}.zman-time,.time-val,.weekly-entry-time{font-size:18px}.halacha-card{padding:6px 9px}.halacha-value{font-size:19px}.panel-title{font-size:18px}}
+
+/* LG living-room readability enhancement. All rules remain on /lg/ only.
+   JS below measures actual boxes and reduces sizes if needed: no scrolling. */
+#app{padding:12px 22px 9px;}
+#header{-webkit-flex:0 0 25%;flex:0 0 25%;padding:2px 12px 8px;}
+#parasha-block,#location-block{-webkit-flex:0 0 26%;flex:0 0 26%;width:26%;}
+#clock-block{-webkit-flex:0 0 48%;flex:0 0 48%;width:48%;overflow:visible;}
+#clock{font-family:Arial,sans-serif;font-size:140px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em;}
+#parasha-name{font-size:42px;line-height:1.13;}
+#hebrew-date{font-size:27px;line-height:1.25;}
+#day-of-week-left{font-size:30px;}
+#gregorian-date{font-size:24px;}
+#location-name{font-size:19px;}
+#panels{padding-top:8px;}
+.panel{padding:13px 17px;}
+.panel-title{font-size:29px;padding-bottom:9px;margin-bottom:9px;}
+.zman-row,.time-row,.weekly-entry{min-height:42px;padding:7px 0;}
+.zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time{font-size:26px;line-height:1.15;}
+.zman-sub{font-size:15px;line-height:1.05;}
+.zman-time,.time-val,.weekly-entry-time{padding-right:15px;}
+.zman-name,.time-label,.weekly-entry-label{min-width:0;max-width:64%;}
+.zman-time,.time-val,.weekly-entry-time{min-width:0;max-width:36%;text-align:left;}
+.time-row .time-label,.time-row .time-val{font-weight:bold;font-size:27px;}
+.time-row .time-val{padding-right:20px;}
+.weekday-section-title{font-size:25px;}
+.weekly-heading{font-size:22px;margin-top:10px;}
+#shabbat-big{font-size:28px;}
+.halacha-card{padding:11px 14px;margin-bottom:9px;}
+.halacha-label{font-size:19px;}
+.halacha-value{font-size:29px;}
+.halacha-sub{font-size:16px;}
+.elevator-next-title{font-size:23px;}
+#footer{-webkit-flex:0 0 12%;flex:0 0 12%;}
+#footer button,#footer a{font-size:17px;padding:6px 10px;}
+#footer-right{font-size:16px;}
+#copyright-bar{height:3%;font-size:12px;}
+/* A minimum of 5px safe space accommodates the subtle pixel movement. */
+#app{padding-left:24px;padding-right:24px;}
+@media(max-height:750px){
+ #header{-webkit-flex-basis:23%;flex-basis:23%;}
+ #footer{-webkit-flex-basis:13%;flex-basis:13%;}
+ .panel{padding:8px 11px;}
+ .zman-row,.time-row,.weekly-entry{min-height:33px;padding:4px 0;}
+ .zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time{font-size:22px;}
+ .time-row .time-label,.time-row .time-val{font-size:23px;}
+ .halacha-card{padding:7px 10px;}
+ .halacha-value{font-size:23px;}
+ .panel-title{font-size:24px;margin-bottom:5px;padding-bottom:5px;}
+ .weekday-section-title{font-size:21px;}
+ .weekly-heading{font-size:19px;margin-top:6px;}
+ #footer button,#footer a{font-size:15px;padding:4px 7px;}
+}
+
 </style>
 <script>
 (function(){
@@ -469,6 +522,98 @@ if(!window.SHABBAT_LEGACY_LOADED){
  }
  setTimeout(start,5500);
 })(window,document);
+</script>
+
+<script>
+/* LG-only screen-fitting typography and bounded 30-minute pixel shift.
+   ES5 compatible with webOS 3.0. Does not alter time / schedule / cloud data. */
+(function(d,w){
+ var app=d.getElementById('app'),clock=d.getElementById('clock');
+ if(!app||!clock)return;
+ var groups=[
+  {selectors:'.panel-title',base:29,min:19},
+  {selectors:'.zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time',base:26,min:17},
+  {selectors:'.time-row .time-label,.time-row .time-val',base:27,min:17},
+  {selectors:'.zman-sub',base:15,min:11},
+  {selectors:'.weekly-heading',base:22,min:15},
+  {selectors:'.halacha-label',base:19,min:13},
+  {selectors:'.halacha-value',base:29,min:19},
+  {selectors:'.halacha-sub',base:16,min:12},
+  {selectors:'#shabbat-big',base:28,min:18}
+ ];
+ function clamp(value,lo,hi){return Math.max(lo,Math.min(hi,value));}
+ function setFont(selector,size){
+  var nodes=d.querySelectorAll(selector),i;
+  for(i=0;i<nodes.length;i++)nodes[i].style.fontSize=size+'px';
+ }
+ function panelOverflow(){
+  var ids=['left','center','right'],i,n;
+  for(i=0;i<ids.length;i++){
+   n=d.getElementById(ids[i]);
+   if(n&&n.scrollHeight>n.clientHeight+2)return true;
+  }
+  return false;
+ }
+ function fitTypography(){
+  var panels=d.getElementById('panels');
+  if(!panels||!panels.clientHeight)return;
+  var n=panels.clientHeight,step=0,g,i,size;
+  /* Reset text scales, then shrink only if current content exceeds its column.
+     This keeps the existing no-scroll guarantee when more prayer rows appear. */
+  for(i=0;i<groups.length;i++)setFont(groups[i].selectors,groups[i].base);
+  for(step=0;step<12&&panelOverflow();step++){
+   for(i=0;i<groups.length;i++){
+    g=groups[i];
+    size=clamp(g.base-step*1.2,g.min,g.base);
+    setFont(g.selectors,size);
+   }
+  }
+  var header=d.getElementById('header'),block=d.getElementById('clock-block');
+  if(header&&block){
+   var width=block.clientWidth-8,height=header.clientHeight*0.79;
+   var font=240;
+   /* Desired size is 4x the old 60px. Fit to actual TV viewport instead of
+      clipping the clock or reducing other columns to illegibility. */
+   clock.style.fontSize=font+'px';
+   for(i=0;i<35&&font>55;i++){
+     if(clock.scrollWidth<=width+1&&clock.scrollHeight<=height+1)break;
+     font-=5;clock.style.fontSize=font+'px';
+   }
+  }
+ }
+ function debounceFit(){
+  if(w.SHABBAT_LG_LAYOUT_PENDING)return;
+  w.SHABBAT_LG_LAYOUT_PENDING=true;
+  setTimeout(function(){w.SHABBAT_LG_LAYOUT_PENDING=false;fitTypography();},120);
+ }
+ /* Tiny 2px maximum offsets distribute static edges across neighboring pixels.
+    This is mitigation, NOT a guarantee against image retention or burn-in. */
+ var offsets=[[0,0],[2,0],[2,2],[0,2],[-2,2],[-2,0],[-2,-2],[0,-2],[2,-2]];
+ var index=-1;
+ function pixelShift(){
+  index=(index+1)%offsets.length;
+  var xy=offsets[index],v='translate('+xy[0]+'px,'+xy[1]+'px)';
+  app.style.webkitTransform=v;
+  app.style.transform=v;
+  app.style.webkitBackfaceVisibility='hidden';
+  app.style.backfaceVisibility='hidden';
+ }
+ /* Align changes to half-hour boundaries and never shift more often. */
+ function scheduleShift(){
+  pixelShift();
+  var now=new Date();
+  var elapsed=(now.getMinutes()%30)*60000+now.getSeconds()*1000+now.getMilliseconds();
+  var remain=1800000-elapsed;
+  setTimeout(scheduleShift,remain);
+ }
+ fitTypography();
+ scheduleShift();
+ if(w.addEventListener)w.addEventListener('resize',debounceFit,false);
+ /* The schedule is populated asynchronously; adapt after it arrives, and
+    periodically account for prayer/Shabbat mode changes without reloading. */
+ setTimeout(fitTypography,7500);
+ setInterval(fitTypography,60000);
+})(document,window);
 </script>
 </body>
 </html>
