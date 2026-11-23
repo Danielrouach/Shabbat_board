@@ -251,7 +251,7 @@ if(!window.SHABBAT_LEGACY_LOADED){
      }else failures.push(kind+': '+(error||'תקשורת'));
      var count=0,key;
      for(key in done)if(done.hasOwnProperty(key))count++;
-     note('LG · נתונים נטענו: '+count+'/4'+(failures.length?' · ⚠ '+failures.join(' | '):''));
+     put('last-updated','מקורות זמן: '+count+'/4'+(failures.length?' · ⚠ '+failures.join(' | '):''));
    }
    try{
      x=new XMLHttpRequest();
@@ -449,7 +449,7 @@ if(!window.SHABBAT_LEGACY_LOADED){
        if(cache.shabbat)onShabbat({items:cache.shabbat});
        if(cache.heb)onHebrew(cache.heb);
        if(cache.calendar)onCalendar({items:cache.calendar});
-       note('LG · מוצגים נתונים שמורים מהיום; בודק עדכונים');
+       put('last-updated','LG · נתונים שמורים מהיום; בודק עדכונים');
      }catch(cacheError){}
    }
    safeRequest('זמני יום','https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date='+date+'&sec=1',onZmanim);
