@@ -256,6 +256,35 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
     txt('tachanun-value',reason?'אין תחנון':'יש תחנון');
     txt('tachanun-reason',reason);
   }
+  function renderWeeklyCalendarCards(events,day) {
+    // Same selection windows as the modern board: Sunday through Saturday,
+    // with upcoming holidays only and Rosh Chodesh anywhere in that week.
+    var now=localDate(day),sun=new Date(now.getTime()),sat,holidayToday=null,
+        holidayUpcoming=null,rcToday=null,rcWeek=null,i,ev,key,cat,rc,major;
+    sun.setDate(sun.getDate()-sun.getDay());
+    sat=new Date(sun.getTime());sat.setDate(sat.getDate()+6);
+    var from=iso(sun),until=iso(sat);
+    for(i=0;i<events.length;i++){
+      ev=events[i];
+      if(!ev||!ev.date)continue;
+      key=String(ev.date).slice(0,10);
+      if(key<from||key>until)continue;
+      cat=ev.category||'';
+      major=cat==='holiday'||cat==='major'||ev.subcat==='major';
+      rc=cat==='roshchodesh'||!!(ev.title&&ev.title.indexOf('Rosh Chodesh')===0);
+      if(major&&key===day&&!holidayToday)holidayToday=ev;
+      if((cat==='holiday'||cat==='major')&&key>=day&&!holidayUpcoming)holidayUpcoming=ev;
+      if(rc&&key===day&&!rcToday)rcToday=ev;
+      if(rc&&!rcWeek)rcWeek=ev;
+    }
+    var holiday=holidayToday||holidayUpcoming,rosh=rcToday||rcWeek;
+    var hlabel=holiday&&(holiday.hebrew||holiday.title);
+    var rlabel=rosh&&(rosh.hebrew||rosh.title);
+    hidden(el('holiday-card'),!hlabel);
+    if(hlabel)txt('holiday-value',hlabel);
+    hidden(el('roshchodesh-card'),!rlabel);
+    if(rlabel)txt('roshchodesh-value',rlabel);
+  }
   function readAll() {
     var day = iso(new Date()), root='https://www.hebcal.com/';
     if (lastDay===day) return;
@@ -283,16 +312,10 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
     });
     request(root+'hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&mf=on&ss=on&year='+day.slice(0,4)+'&month='+day.slice(5,7)+'&geo=geoname&geonameid='+geo+'&M=on',function(data,err){
       if(!data || !data.items)return;
-      items=items.concat(data.items);
+      items=data.items;
       calendarVerified=true;
       updateTachanun();
-      var now=day, event=null;
-      for(var i=0;i<data.items.length;i++){
-        var ev=data.items[i];
-        if(ev.date && ev.date.slice(0,10)===now && (ev.category==='holiday'||ev.yomtov===true)){event=ev;break;}
-      }
-      if(event){hidden(el('holiday-card'),false);txt('holiday-value',event.hebrew||event.title);}
-      else hidden(el('holiday-card'),true);
+      renderWeeklyCalendarCards(data.items,day);
     });
   }
   function refreshCloud() {
