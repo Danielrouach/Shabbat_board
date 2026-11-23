@@ -214,6 +214,15 @@ Android <=1024px is routed to `fitAndroidBoard()` ahead of the legacy landscape 
 - Both legacy scripts were syntax checked for ES5-only constructs. **No physical LG test or end-to-end browser test was performed**; verify on UH617Y firmware 05.70.50 and modern clients before claiming complete parity.
 
 
+## LG UH617Y: standalone Shabbat board route (2026-11-23)
+
+- **New authoritative legacy UI:** `/lg/index.html`, available at `https://shabbat.rouach.org/lg/`. It is a small independent ES5/flexbox kiosk containing the main board's clock, Haifa zmanim, holiday/halacha cards, prayers, upcoming elevator windows, theme and status indicators. It intentionally does **not** load the ~176 KB modern index page's scripts, theme.js, update-status.js or responsive.css. This avoids obsolete webOS 3 syntax failures which had repeatedly left the clock at 00:00:00 even after patching modern page.
+- Root `index.html` now runs a tiny early UA/feature check and redirects **only** old LG webOS engines to `/lg/` before modern JS and CSS load. Other browsers, including Android, continue on the unchanged modern route; newer LG engines that support optional chaining are not redirected. The direct `/lg/` URL is the fallback if the TV caches an older root page.
+- `lg/index.html` has a tiny inline seconds clock separate from `lg-legacy.js` plus a readable `#legacy-status` diagnostic indicator. The ES5 runtime initializes the clock and interval first and catches other initialization errors, so a failed cloud/halachic request does not freeze the clock. Expected IDs include `#ch/#cm/#cs`, panels `#left/#center/#right`, prayer board and both update badges. The optional legacy admin IDs are absent, intentionally.
+- On public data success, the ES5 runtime updates the last-updated text and statuses. On failed cloud JSONP, it displays a visible warning; it continues to use last known valid schedule cache, never invented times.
+- Use `lg/index.html` for any further changes to the main TV layout; retain old `lg-legacy.js` as an independent ES5 runtime also used by the route. When changing it, update the script URL version in `lg/index.html`. The standalone URL is a static GitHub Pages path, not an extra deployment.
+- Local JS mock checks: ES5 script executed with simulated LG browser globals and populated live clock digits and footer controls; new standalone page required IDs were checked. Actual old LG device and HTTPS/CORS were **not** tested; verify on the user's UH617Y 05.70.50 after GitHub Pages propagation.
+
 ## LG follow-up: 2026-11-23 (calendar visibility, JSONP and bootstrap)
 
 - Diagnosis: The public Apps Script reader in `apps-script-public/Code.gs` strictly accepts callbacks matching `^shabbatCloudCallback_[A-Za-z0-9_]{1,45}$`. Previously the legacy scripts sent `lgShabbatCloud...` / `lgElevatorCloud...`, so live schedules failed. Both `lg-legacy.js` and `lg-elevator-legacy.js` now use `shabbatCloudCallback_...`. The live Apps Script was not changed or redeployed.
