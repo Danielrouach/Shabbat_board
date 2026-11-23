@@ -7,6 +7,9 @@
 <script>
 (function(){
   try {
+    if (/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent) && /TV|webOS|Web0S|NetCast/i.test(navigator.userAgent)) {
+      document.documentElement.classList.add('lg-tv-board');
+    }
     if (/Android/i.test(navigator.userAgent) &&
         window.matchMedia('(max-width: 1024px)').matches) {
       document.documentElement.classList.add('android-board-recovery');
@@ -991,7 +994,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261122-halacha-bottom-v11">
+<link rel="stylesheet" href="responsive.css?v=20261123-lg-webos-v12">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (orientation: portrait) and (max-width: 768px) {
@@ -2148,7 +2151,7 @@ function renderTachanun() {
   );
   if (hasYomTov && !noTachanun) {
     noTachanun = true;
-    reason = todayEvs.find(e => ['holiday','major'].includes(e.category))?.hebrew || 'יום טוב';
+    reason = (todayEvs.find(e => ['holiday','major'].includes(e.category)) || {}).hebrew || 'יום טוב';
   }
 
   const card    = document.getElementById('tachanun-card');
@@ -2239,7 +2242,7 @@ async function fetchTemperature() {
     const url = 'https://api.open-meteo.com/v1/forecast?latitude=32.8156&longitude=34.9895&current_weather=true';
     const res  = await fetch(url);
     const data = await res.json();
-    const temp = data?.current_weather?.temperature;
+    const temp = (data && data.current_weather ? data.current_weather.temperature : undefined);
     if (temp !== undefined) renderTemperature(Math.round(temp));
   } catch(e) { /* silent fail */ }
 }
@@ -2791,7 +2794,7 @@ async function convertGregToHeb() {
         'Kislev':'כסלו','Tevet':'טבת','Shvat':'שבט',
         'Adar':'אדר','Adar I':'אדר א׳','Adar II':'אדר ב׳'
       };
-      const monthHeb = data.heDateParts?.m
+      const monthHeb = (data.heDateParts && data.heDateParts.m)
         || MONTH_EN_TO_HEB[data.hm]
         || data.hm;
       // Year as gematriya (full with millennium)
@@ -2876,10 +2879,10 @@ function fitAndroidBoard(){
  if(!app)return;
  androidFitBusy=true;
  try{
-  const vw=Math.max(1,Math.floor(window.visualViewport?.width||window.innerWidth));
-  const vh=Math.max(1,Math.floor(window.visualViewport?.height||window.innerHeight));
+  const vw=Math.max(1,Math.floor((window.visualViewport && window.visualViewport.width)||window.innerWidth));
+  const vh=Math.max(1,Math.floor((window.visualViewport && window.visualViewport.height)||window.innerHeight));
   const bar=document.getElementById('copyright-bar');
-  const barHeight=bar?.getBoundingClientRect().height||18;
+  const barHeight=(bar && bar.getBoundingClientRect().height)||18;
   const available=Math.max(1,vh-barHeight-2);
   const panels=['left','center','right'].map(id=>document.getElementById(id)).filter(Boolean);
   const parts=['header','mobile-theme-controls','bday-row','left','center','right','footer']
@@ -2945,10 +2948,10 @@ function fitLandscapeBoard(){
  if(!app)return;
  landscapeFitBusy=true;
  try{
-  const viewportWidth=Math.max(1,Math.floor(window.visualViewport?.width||window.innerWidth));
-  const viewportHeight=Math.max(1,Math.floor(window.visualViewport?.height||window.innerHeight));
+  const viewportWidth=Math.max(1,Math.floor((window.visualViewport && window.visualViewport.width)||window.innerWidth));
+  const viewportHeight=Math.max(1,Math.floor((window.visualViewport && window.visualViewport.height)||window.innerHeight));
   const bar=document.getElementById('copyright-bar');
-  const barHeight=bar?.getBoundingClientRect().height||18;
+  const barHeight=(bar && bar.getBoundingClientRect().height)||18;
   const availableHeight=Math.max(1,viewportHeight-barHeight-2);
   const ids=['header','mobile-theme-controls','bday-row','left','center','right','footer'];
   const sections=ids.map(id=>document.getElementById(id)).filter(Boolean);
@@ -3092,27 +3095,27 @@ function requestRightFit(){
   requestAnimationFrame(()=>{rightFitQueued=false;fitShabbatFont()});
 }
 // Re-fit on any size change — covers window resize AND bday-row appearing
-const _fitObserver = new ResizeObserver(requestColumnFit);
+const _fitObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(requestColumnFit) : null;
 document.addEventListener('DOMContentLoaded', () => {
   const left  = document.getElementById('left');
   const right = document.getElementById('right');
   const center = document.getElementById('center');
-  if (left) _fitObserver.observe(left);
-  if (right) _fitObserver.observe(right);
-  if (center) _fitObserver.observe(center);
+  if (left && _fitObserver) _fitObserver.observe(left);
+  if (right && _fitObserver) _fitObserver.observe(right);
+  if (center && _fitObserver) _fitObserver.observe(center);
   // Content outside the panels can also change the available height.
   for(const id of ['header','bday-row','footer']){
     const el=document.getElementById(id);
-    if(el)_fitObserver.observe(el);
+    if(el && _fitObserver)_fitObserver.observe(el);
   }
-  document.fonts?.ready.then(requestColumnFit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestColumnFit);
   requestColumnFit();
 });
 window.addEventListener('resize',requestColumnFit);
 window.addEventListener('orientationchange',requestColumnFit);
 window.addEventListener('load',requestColumnFit);
 document.addEventListener('fullscreenchange',requestColumnFit);
-window.visualViewport?.addEventListener('resize',requestColumnFit);
+if (window.visualViewport) window.visualViewport.addEventListener('resize',requestColumnFit);
 
 // ── Burn-in / pixel-shift protection ─────────────────────────
 // Slowly drifts the entire #app by up to ±2px every 3 minutes.
@@ -3396,7 +3399,7 @@ function updatePrayerOrder(now,data){
   const prayers=document.getElementById('weekly-prayers');
   const prayerHeading=document.getElementById('prayer-times-heading');
   const shabbatHeading=document.getElementById('shabbat-times-heading');
-  if(prayerHeading)prayerHeading.hidden=!weekday || !prayers?.childElementCount;
+  if(prayerHeading)prayerHeading.hidden=!weekday || !(prayers && prayers.childElementCount);
   if(shabbatHeading)shabbatHeading.hidden=!weekday;
   // Flex order changes only the visual order; no schedule data is modified.
 }
