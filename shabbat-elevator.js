@@ -70,11 +70,11 @@ function display(d,data){
  const cycle=day===5?'friday':day===6?'saturday':null;
  if(!cycle)return {rows:[],cutoff:until,unknown:false};
  if(cycle==='saturday'&&until!==null&&d.getTime()>=until)return {rows:[],cutoff:until,unknown:false,finished:true};
- let source=cycle==='friday'?data?.elevatorFriday:data?.elevatorSaturday;
+ let source=cycle==='friday'?(data && data.elevatorFriday):(data && data.elevatorSaturday);
  let rows=Array.isArray(source)?source.filter(valid).map(r=>({start:r.start,end:r.end,a:tm(r.start),b:tm(r.end),repeated:false})): [];
  if(day===6){
   // The Friday evening windows recur on Saturday evening until the elevator is stopped.
-  const evening=Array.isArray(data?.elevatorFriday)?data.elevatorFriday.filter(valid):[];
+  const evening=Array.isArray((data && data.elevatorFriday))?data.elevatorFriday.filter(valid):[];
   for(const r of evening){
    const a=tm(r.start),b=tm(r.end);
    // Stop at Havdalah +30. If no cached Havdalah, expose "unverified" status.
