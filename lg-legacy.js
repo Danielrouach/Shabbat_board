@@ -207,11 +207,26 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
     txt('val-rt',havdalah ? hour(new Date(havdalah.getTime()+30*60000)) : '–');
     prayerBoard(new Date());
   }
+  function hebrewNumeral(n) {
+    n=Number(n);
+    if(!n||n<1)return String(n);
+    if(n===15)return 'ט״ו';
+    if(n===16)return 'ט״ז';
+    var vals=[400,300,200,100,90,80,70,60,50,40,30,20,10,9,8,7,6,5,4,3,2,1];
+    var letters=['ת','ש','ר','ק','צ','פ','ע','ס','נ','מ','ל','כ','י','ט','ח','ז','ו','ה','ד','ג','ב','א'];
+    var out='',i;
+    for(i=0;i<vals.length;i++)while(n>=vals[i]){out+=letters[i];n-=vals[i];}
+    return out.length===1?out+'׳':out.slice(0,-1)+'״'+out.slice(-1);
+  }
+  function hebrewYear(n) {
+    n=Number(n);
+    return n>=1000?hebrewNumeral(Math.floor(n/1000))+hebrewNumeral(n%1000):hebrewNumeral(n);
+  }
   function setHebDate(data) {
     heb=data;if(!data)return;
     var months={Nisan:'ניסן',Iyyar:'אייר',Sivan:'סיון',Tamuz:'תמוז',Av:'אב',Elul:'אלול',Tishrei:'תשרי',Cheshvan:'חשוון',Kislev:'כסלו',Tevet:'טבת',Shvat:'שבט',Adar:'אדר','Adar I':'אדר א׳','Adar II':'אדר ב׳'};
     var month = data.heDateParts && data.heDateParts.m || months[data.hm] || data.hm;
-    txt('hebrew-date',(data.heDateParts && data.heDateParts.d || data.hd) + ' ' + month + ' ' + (data.heDateParts && data.heDateParts.y || data.hy));
+    txt('hebrew-date',hebrewNumeral(data.hd)+' ב'+month+' '+hebrewYear(data.hy));
     var monthNums={Nisan:1,Iyyar:2,Sivan:3,Tamuz:4,Av:5,Elul:6,Tishrei:7,Cheshvan:8,Kislev:9,Tevet:10,Shvat:11,Adar:12,'Adar I':13,'Adar II':14};
     var m=typeof data.hm==='number'?data.hm:(monthNums[data.hm]||0),n=+data.hd;
     if(!m || !n){hidden(el('tal-geshem-card'),true);hidden(el('barech-card'),true);return;}
