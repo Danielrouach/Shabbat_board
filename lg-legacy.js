@@ -3,10 +3,15 @@
  * Read-only: same Hebcal Haifa (294801) and cloud JSONP data source. */
 (function (w, d) {
   'use strict';
-/* This file is loaded normally for reliability, but runs only in obsolete LG TV engines. */
-if(!/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent))return;
-try{new Function('var x={a:1};return x?.a;');return;}catch(compatibilityError){}
-document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
+/* Standalone /lg/ explicitly opts in. Do not rely on unreliable LG user-agent
+   strings or new Function() detection for the dedicated board. */
+if(!w.SHABBAT_FORCE_LEGACY){
+  if(!/LG|webOS|Web0S|NetCast/i.test(navigator.userAgent))return;
+  try{new Function('var x={a:1};return x?.a;');return;}catch(compatibilityError){}
+}
+if(d.documentElement.className.indexOf('lg-legacy-runtime')<0)
+  d.documentElement.className+=' lg-tv-board lg-legacy-runtime';
+w.SHABBAT_LEGACY_LOADED=true;
   var geo = '294801', weeklyKey = 'halachic_kiosk_weekly_v1';
   var days = ['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','יום שבת'];
   var solar = {}, schedule = {}, heb = null, candles = null, havdalah = null, parasha = '', items = [], lastDay = '';
@@ -87,15 +92,14 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
     if(full){
       full.textContent='⛶ מסך מלא';
       full.onclick=function(){
-        var root=d.documentElement;
-        var enter=root.requestFullscreen||root.webkitRequestFullscreen||root.webkitRequestFullScreen||root.msRequestFullscreen;
+        /* Same fullscreen mechanism used by the working LG elevator board. */
+        var root=d.documentElement,go=root.requestFullscreen||root.webkitRequestFullscreen||root.webkitRequestFullScreen||root.msRequestFullscreen;
         var exit=d.exitFullscreen||d.webkitExitFullscreen||d.webkitCancelFullScreen||d.msExitFullscreen;
         try{
-          if(d.fullscreenElement||d.webkitFullscreenElement){
-            if(exit)exit.call(d);
-          }else if(enter)enter.call(root);
-          else w.alert('דפדפן LG אינו מאפשר מעבר למסך מלא דרך האתר. ניתן להשתמש בכפתור המסך המלא של דפדפן הטלוויזיה.');
-        }catch(e){w.alert('בקשת המסך המלא לא נתמכה בטלוויזיה.');}
+          if(d.fullscreenElement||d.webkitFullscreenElement){if(exit)exit.call(d);}
+          else if(go)go.call(root);
+          else w.alert('אם הדפדפן אינו מאפשר מסך מלא דרך האתר, השתמש בכפתור מסך מלא בסרגל LG.');
+        }catch(e){w.alert('בקשת מסך מלא נכשלה. נסה את סמל המסך המלא בדפדפן LG.');}
       };
       function fullLabel(){full.textContent=d.fullscreenElement||d.webkitFullscreenElement?'⤢ צא ממסך מלא':'⛶ מסך מלא';}
       d.addEventListener('fullscreenchange',fullLabel,false);
@@ -413,6 +417,7 @@ document.documentElement.className+=' lg-tv-board lg-legacy-runtime';
     }
   }
   function start(){
+    w.SHABBAT_LEGACY_STARTED=true;
     /* Clock first; errors in initialization or data cannot stop the clock. */
     safeTick();
     setInterval(safeTick,1000);
