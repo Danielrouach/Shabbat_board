@@ -416,7 +416,10 @@ w.SHABBAT_LEGACY_LOADED=true;
       if(n)n.textContent='⚠ שגיאת תצוגה: '+String(e.message||e).slice(0,65);
     }
   }
+  var started=false;
   function start(){
+    if(started)return;
+    started=true;
     w.SHABBAT_LEGACY_STARTED=true;
     /* Clock first; errors in initialization or data cannot stop the clock. */
     safeTick();
@@ -442,6 +445,9 @@ w.SHABBAT_LEGACY_LOADED=true;
     setInterval(function(){lastDay='';try{readAll();}catch(e){}},30*60*1000);
     setInterval(function(){try{refreshCloud();}catch(e){}},15*60*1000);
   }
-  if(d.readyState==='complete'||d.readyState==='interactive')setTimeout(start,0);
+  /* The /lg/ script is placed after the entire board markup; the async
+     callback avoids reliance on old webOS DOMContentLoaded event behavior. */
+  if(w.SHABBAT_FORCE_LEGACY || d.readyState==='complete'||d.readyState==='interactive')
+    setTimeout(start,0);
   else d.addEventListener('DOMContentLoaded',start,false);
 })(window,document);
