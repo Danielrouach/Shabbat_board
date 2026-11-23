@@ -1112,3 +1112,45 @@ html.lg-tv-board.lg-legacy-runtime #right .time-row {
   padding: 5px 0 !important;
 }
 html.lg-tv-board.lg-legacy-runtime #right #shabbat-big { font-size: 22px !important; }
+
+
+/* LG TV: restore the same physical column order as desktop.
+   The app's RTL flex direction places #left (zmanim) on the RIGHT,
+   #center in the middle, and #right (prayers) on the LEFT. */
+html.lg-tv-board #app { direction: rtl !important; }
+html.lg-tv-board #footer { width: 100% !important; }
+html.lg-tv-board #footer-left {
+ display: -webkit-flex !important; display: flex !important;
+ -webkit-align-items: center !important; align-items: center !important;
+ -webkit-justify-content: center !important; justify-content: center !important;
+ -webkit-flex-wrap: wrap !important; flex-wrap: wrap !important;
+ width: 100% !important; min-width: 0 !important; gap: 6px !important;
+}
+html.lg-tv-board #footer-left button,
+html.lg-tv-board #footer-left a[data-elevator-link] {
+ display: inline-block !important; min-width:0 !important;
+ min-height: 29px !important; margin: 2px 4px !important;
+ padding: 4px 9px !important; border: 1px solid #8d7135 !important;
+ border-radius: 5px !important; background:#16263a !important;
+ color:#e5c779 !important; font: 700 15px Heebo,Arial,sans-serif !important;
+ white-space:nowrap !important; cursor:pointer !important;
+}
+html.lg-tv-board.light-theme #footer-left button,
+html.lg-tv-board.light-theme #footer-left a[data-elevator-link] {
+ background:#fff9e9 !important;color:#805813 !important;
+}
+html.lg-tv-board #footer-left #settings-btn,
+html.lg-tv-board #footer-left #weekly-open-btn { display:none !important; }
+html.lg-tv-board #footer-right {
+ display: -webkit-flex !important; display:flex !important;
+ -webkit-flex-direction:column !important;flex-direction:column !important;
+ -webkit-align-items:flex-start !important;align-items:flex-start !important;
+ width:100% !important; max-width:100% !important; min-width:0 !important;
+ text-align:right !important;
+}
+html.lg-tv-board #footer-right .feature-update-status {
+ display:block !important; font: 500 13px Heebo,Arial,sans-serif !important;
+ line-height: 1.2 !important; white-space:normal !important;
+}
+html.lg-tv-board #footer { height:10% !important; }
+html.lg-tv-board #left,html.lg-tv-board #center,html.lg-tv-board #right { height:65% !important; }
