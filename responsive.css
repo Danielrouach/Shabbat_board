@@ -1154,3 +1154,11 @@ html.lg-tv-board #footer-right .feature-update-status {
 }
 html.lg-tv-board #footer { height:10% !important; }
 html.lg-tv-board #left,html.lg-tv-board #center,html.lg-tv-board #right { height:65% !important; }
+
+/* WebOS ES5: visibility has priority over the forced legacy inline-block cards.
+   The old browser does not reliably honor [hidden] without explicit selectors. */
+html.lg-tv-board.lg-legacy-runtime #center .halacha-card[hidden],
+html.lg-tv-board.lg-legacy-runtime #center .halacha-card[style*="display: none"],
+html.lg-tv-board.lg-legacy-runtime #center .halacha-card[style*="display:none"] {
+  display: none !important;
+}
