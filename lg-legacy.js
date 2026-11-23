@@ -162,13 +162,43 @@
     var months={Nisan:'ניסן',Iyyar:'אייר',Sivan:'סיון',Tamuz:'תמוז',Av:'אב',Elul:'אלול',Tishrei:'תשרי',Cheshvan:'חשוון',Kislev:'כסלו',Tevet:'טבת',Shvat:'שבט',Adar:'אדר','Adar I':'אדר א׳','Adar II':'אדר ב׳'};
     var month = data.heDateParts && data.heDateParts.m || months[data.hm] || data.hm;
     txt('hebrew-date',(data.heDateParts && data.heDateParts.d || data.hd) + ' ' + month + ' ' + (data.heDateParts && data.heDateParts.y || data.hy));
-    var m=data.hm,n=data.hd, rain = m===7 ? n>=22 : (m===1 ? n<=22 : (m===2||m===3||m===4||m===5||m===6 ? false : true));
+    var monthNums={Nisan:1,Iyyar:2,Sivan:3,Tamuz:4,Av:5,Elul:6,Tishrei:7,Cheshvan:8,Kislev:9,Tevet:10,Shvat:11,Adar:12,'Adar I':13,'Adar II':14};
+    var m=typeof data.hm==='number'?data.hm:(monthNums[data.hm]||0),n=+data.hd;
+    if(!m || !n)return;
+    var rain = (m===7 && n>=22) || m===8 || m===9 || m===10 || m===11 || m===12 || m===6 || m===13 || m===14 || (m===1 && n<=22);
     txt('tal-geshem-value',rain?'משיב הרוח ומוריד הגשם':'מוריד הטל');
     txt('tal-geshem-sub','בתפילת שמונה עשרה');
-    // Keep this field unasserted if detailed calendrical logic is unavailable.
-    txt('tachanun-value','–');
-    // Brikat hashanim depends on the Israeli calendar. Do not guess at boundary dates.
-    txt('barech-value','–');
+    var barech=(m===8 && n>=7) || m===9 || m===10 || m===11 || m===12 || m===13 || m===14 || m===7 || (m===1 && n<15);
+    txt('barech-value',barech?'ברך עלינו':'ברכנו');
+    txt('barech-sub','בברכת השנים');
+    updateTachanun();
+  }
+  function updateTachanun() {
+    if(!heb)return;
+    var map={Nisan:1,Iyyar:2,Sivan:3,Tamuz:4,Av:5,Elul:6,Tishrei:7,Cheshvan:8,Kislev:9,Tevet:10,Shvat:11,Adar:12,'Adar I':13,'Adar II':14};
+    var m=typeof heb.hm==='number'?heb.hm:map[heb.hm],n=+heb.hd,now=new Date(),reason='',i;
+    if(now.getDay()===6)reason='שבת קודש';
+    else if(m===1)reason='חודש ניסן';
+    else if(m===9 && n>=25 || m===10 && n<=3)reason='חנוכה';
+    else if((m===6 || m===14) && (n===14 || n===15))reason='פורים';
+    else if(m===2 && n===14)reason='פסח שני';
+    else if(m===2 && n===18)reason='ל"ג בעומר';
+    else if(m===3 && n<=12)reason='שבועות ואחריו';
+    else if(m===5 && n===15)reason='ט"ו באב';
+    else if(m===6 && n===29)reason='ערב ראש השנה';
+    else if(m===7 && n<=2)reason='ראש השנה';
+    else if(m===7 && n===9)reason='ערב יום כיפור';
+    else if(m===7 && n===10)reason='יום כיפור';
+    else if(m===7 && n>=15 && n<=23)reason='סוכות ושמיני עצרת';
+    else if(m===11 && n===15)reason='ט"ו בשבט';
+    for(i=0;i<items.length;i++) {
+      var event=items[i];
+      if(!event.date || event.date.slice(0,10)!==iso(now))continue;
+      if(event.category==='roshchodesh')reason='ראש חודש';
+      if(event.yomtov===true || event.category==='holiday')reason=event.hebrew || event.title || 'יום טוב';
+    }
+    txt('tachanun-value',reason?'אין תחנון':'יש תחנון');
+    txt('tachanun-reason',reason);
   }
   function readAll() {
     var day = iso(new Date()), root='https://www.hebcal.com/';
@@ -197,6 +227,8 @@
     });
     request(root+'hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&mf=on&ss=on&year='+day.slice(0,4)+'&month='+day.slice(5,7)+'&geo=geoname&geonameid='+geo+'&M=on',function(data,err){
       if(!data || !data.items)return;
+      items=items.concat(data.items);
+      updateTachanun();
       var now=day, event=null;
       for(var i=0;i<data.items.length;i++){
         var ev=data.items[i];
