@@ -414,10 +414,12 @@ if(!window.SHABBAT_LEGACY_LOADED){
    if(initialized)return;
    if(w.SHABBAT_LEGACY_STARTED){
      /* The main engine may be alive but unable to retrieve remote data. */
-     var name=el('parasha-name'),z=el('z-netz');
+     var name=el('parasha-name'),z=el('z-netz'),hd=el('hebrew-date');
      var cell=z&&z.querySelector('.zman-time');
-     if(w.SHABBAT_LG_DATA_RECEIVED||(cell&&cell.textContent&&cell.textContent!=='–')||
-        (name&&name.textContent&&name.textContent!=='טוען…'&&name.textContent!=='–'))return;
+     var hasZman=cell&&cell.textContent&&cell.textContent!=='–';
+     var hasParasha=name&&name.textContent&&name.textContent!=='טוען…'&&name.textContent!=='–';
+     var hasDate=hd&&hd.textContent&&hd.textContent.indexOf('טוען')<0;
+     if(hasZman&&hasParasha&&hasDate)return;
    }
    initialized=true;w.SHABBAT_LG_RECOVERY_ACTIVE=true;
    var now=new Date(),date=dayKey(now);
