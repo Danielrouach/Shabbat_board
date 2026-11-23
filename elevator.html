@@ -16,16 +16,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Frank+Ruhl+Libre:wght@600;700&display=swap" rel="stylesheet">
 <script src="cloud-config.js"></script>
-<script>
-(function(){
-  if(document.documentElement.className.indexOf('lg-tv-board')<0)return;
-  var legacy=false;
-  try{new Function('var x={a:1};return x?.a;')}catch(e){legacy=true}
-  if(!legacy)return;
-  document.documentElement.className+=' lg-legacy-elevator';
-  document.write('<script src="lg-elevator-legacy.js?v=20261123-elevator-v1"><\/script>');
-})();
-</script>
+<!-- Legacy LG runtime self-selects; modern browsers safely skip execution. -->
+<script src="lg-elevator-legacy.js?v=20261123-elevator-v3"></script>
 <script src="shabbat-elevator.js"></script>
 <script src="update-status.js"></script>
 <script src="theme.js"></script>
