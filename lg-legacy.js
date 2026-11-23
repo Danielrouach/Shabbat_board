@@ -6,7 +6,7 @@
   var geo = '294801', weeklyKey = 'halachic_kiosk_weekly_v1';
   var days = ['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','יום שבת'];
   var solar = {}, schedule = {}, heb = null, candles = null, havdalah = null, parasha = '', items = [], lastDay = '';
-  var manualTheme = null, fetchedSolar = false;
+  var manualTheme = null, fetchedSolar = false, calendarVerified = false;
   function el(id) { return d.getElementById(id); }
   function txt(id, value) { var n = el(id); if (n) n.textContent = value === null || value === undefined ? '–' : String(value); }
   function p2(n) { return n < 10 ? '0' + n : String(n); }
@@ -59,6 +59,52 @@
   function heading(str) { var e = d.createElement('div');e.className = 'weekly-heading';e.textContent = str;return e; }
   function validClock(t) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(t || ''); }
   function plusClock(t,n) { if(!validClock(t))return '';var v = ((+t.slice(0,2))*60+(+t.slice(3))+n)%1440;return p2(Math.floor(v/60))+':'+p2(v%60); }
+  function updateFeatureStatuses() {
+    var features=[['prayersUpdatedAt','prayers-update-status','תפילות שארית ישראל'],['elevatorUpdatedAt','elevator-update-status','מעלית שבת']];
+    for(var i=0;i<features.length;i++){
+      var info=features[i],best=0,k,date,node=el(info[1]);
+      if(!node)continue;
+      for(k in schedule)if(schedule.hasOwnProperty(k)&&schedule[k]&&schedule[k][info[0]]){
+        date=Date.parse(schedule[k][info[0]]);
+        if(!isNaN(date)&&date>best)best=date;
+      }
+      if(best){
+        date=new Date(best);
+        node.textContent=info[2]+': עדכון אחרון '+p2(date.getDate())+'/'+p2(date.getMonth()+1)+'/'+date.getFullYear()+' '+hour(date);
+        node.style.color='#91b7d4';
+      }else{
+        node.textContent=info[2]+': אין תאריך עדכון מתועד';
+        node.style.color='#d5a464';
+      }
+    }
+  }
+  function initScreenButtons() {
+    var full=el('fullscreen-btn'),awake=el('keep-awake-btn');
+    if(full){
+      full.textContent='⛶ מסך מלא';
+      full.onclick=function(){
+        var root=d.documentElement;
+        var enter=root.requestFullscreen||root.webkitRequestFullscreen||root.webkitRequestFullScreen||root.msRequestFullscreen;
+        var exit=d.exitFullscreen||d.webkitExitFullscreen||d.webkitCancelFullScreen||d.msExitFullscreen;
+        try{
+          if(d.fullscreenElement||d.webkitFullscreenElement){
+            if(exit)exit.call(d);
+          }else if(enter)enter.call(root);
+          else w.alert('דפדפן LG אינו מאפשר מעבר למסך מלא דרך האתר. ניתן להשתמש בכפתור המסך המלא של דפדפן הטלוויזיה.');
+        }catch(e){w.alert('בקשת המסך המלא לא נתמכה בטלוויזיה.');}
+      };
+      function fullLabel(){full.textContent=d.fullscreenElement||d.webkitFullscreenElement?'⤢ צא ממסך מלא':'⛶ מסך מלא';}
+      d.addEventListener('fullscreenchange',fullLabel,false);
+      d.addEventListener('webkitfullscreenchange',fullLabel,false);
+    }
+    if(awake){
+      awake.textContent='◌ מסך פעיל: לא נתמך ב-LG';
+      awake.title='גרסת webOS זו אינה תומכת ב-Screen Wake Lock; יש לבטל כיבוי אוטומטי בהגדרות הטלוויזיה';
+      awake.onclick=function(){
+        w.alert('בדפדפן הישן של LG אין תמיכה בנעילת מסך פעיל דרך אתר אינטרנט. יש לכבות טיימר שינה או כיבוי אוטומטי בהגדרות הטלוויזיה.');
+      };
+    }
+  }
   function prayerBoard(now) {
     var week = currentSchedule(now), data = week.data || {}, day = now.getDay(), box = el('weekly-board'), p = el('weekly-prayers'), e = el('weekly-elevators');
     if (!p) return;
@@ -164,7 +210,8 @@
     txt('hebrew-date',(data.heDateParts && data.heDateParts.d || data.hd) + ' ' + month + ' ' + (data.heDateParts && data.heDateParts.y || data.hy));
     var monthNums={Nisan:1,Iyyar:2,Sivan:3,Tamuz:4,Av:5,Elul:6,Tishrei:7,Cheshvan:8,Kislev:9,Tevet:10,Shvat:11,Adar:12,'Adar I':13,'Adar II':14};
     var m=typeof data.hm==='number'?data.hm:(monthNums[data.hm]||0),n=+data.hd;
-    if(!m || !n)return;
+    if(!m || !n){hidden(el('tal-geshem-card'),true);hidden(el('barech-card'),true);return;}
+    hidden(el('tal-geshem-card'),false);hidden(el('barech-card'),false);
     var rain = (m===7 && n>=22) || m===8 || m===9 || m===10 || m===11 || m===12 || m===6 || m===13 || m===14 || (m===1 && n<=22);
     txt('tal-geshem-value',rain?'משיב הרוח ומוריד הגשם':'מוריד הטל');
     txt('tal-geshem-sub','בתפילת שמונה עשרה');
@@ -197,6 +244,11 @@
       if(event.category==='roshchodesh')reason='ראש חודש';
       if(event.yomtov===true || event.category==='holiday')reason=event.hebrew || event.title || 'יום טוב';
     }
+    var card=el('tachanun-card');
+    // Only state the conclusion when calendar data for today was received;
+    // on offline first load, no-tachanun cannot reliably be inferred.
+    if(!calendarVerified){hidden(card,true);return;}
+    hidden(card,false);
     txt('tachanun-value',reason?'אין תחנון':'יש תחנון');
     txt('tachanun-reason',reason);
   }
@@ -228,6 +280,7 @@
     request(root+'hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&mf=on&ss=on&year='+day.slice(0,4)+'&month='+day.slice(5,7)+'&geo=geoname&geonameid='+geo+'&M=on',function(data,err){
       if(!data || !data.items)return;
       items=items.concat(data.items);
+      calendarVerified=true;
       updateTachanun();
       var now=day, event=null;
       for(var i=0;i<data.items.length;i++){
@@ -249,6 +302,7 @@
         for(k in newData)if(newData.hasOwnProperty(k) && /^20\d\d-\d\d-\d\d$/.test(k) && newData[k] && typeof newData[k]==='object')schedule[k]=newData[k];
         cacheSet(weeklyKey,schedule);
         prayerBoard(new Date());
+        updateFeatureStatuses();
       }
       finish();
     };
@@ -309,8 +363,12 @@
     hidden(el('settings-btn'),true);
     hidden(el('weekly-open-btn'),true);
     hidden(el('weekly-panel'),true);
+    hidden(el('omer-card'),true);
+    hidden(el('roshchodesh-card'),true);
+    hidden(el('holiday-card'),true);
+    hidden(el('tachanun-card'),true);
     schedule=cacheGet(weeklyKey)||{};
-    bindTheme();applyTheme();tick();readAll();prayerBoard(new Date());refreshCloud();
+    initScreenButtons();bindTheme();applyTheme();tick();readAll();prayerBoard(new Date());updateFeatureStatuses();refreshCloud();
     setInterval(tick,1000);
     setInterval(function(){lastDay='';readAll();},30*60*1000);
     setInterval(refreshCloud,15*60*1000);
