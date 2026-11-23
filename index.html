@@ -994,7 +994,7 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261123-lg-webos-v14">
+<link rel="stylesheet" href="responsive.css?v=20261123-lg-webos-v15">
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (orientation: portrait) and (max-width: 768px) {
@@ -1140,19 +1140,9 @@ html.light-theme .theme-auto-control{color:#40536b}
 }
 </style>
 <script src="cloud-config.js"></script>
-<!-- Older LG webOS 3 / Chromium 38 cannot parse the modern application scripts.
-     Load an independent ES5 read-only runtime only if feature detection fails. -->
-<script>
-(function(){
-  if(!document.documentElement.classList.contains('lg-tv-board'))return;
-  var legacy=false;
-  try { new Function('var o={a:{b:1}}; return o?.a?.b;'); }
-  catch(e){ legacy=true; }
-  if(!legacy || !window.XMLHttpRequest)return;
-  document.documentElement.classList.add('lg-legacy-runtime');
-  document.write('<script src="lg-legacy.js?v=20261123-es5-v2"><\/script>');
-})();
-</script>
+<!-- The ES5 runtime self-detects obsolete LG browsers and does nothing on modern browsers.
+     A normal script tag avoids unreliable document.write / feature-detection paths. -->
+<script src="lg-legacy.js?v=20261123-es5-v4"></script>
 <script src="shabbat-elevator.js"></script>
 <script src="update-status.js"></script>
 <script src="theme.js"></script>
