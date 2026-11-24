@@ -79,7 +79,7 @@ html.light-theme #legacy-status{color:#684000!important}
 #header{-webkit-flex:0 0 25%;flex:0 0 25%;padding:2px 12px 8px;}
 #parasha-block,#location-block{-webkit-flex:0 0 26%;flex:0 0 26%;width:26%;}
 #clock-block{-webkit-flex:0 0 48%;flex:0 0 48%;width:48%;overflow:visible;}
-#clock{font-family:Arial,sans-serif;font-size:140px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em;}
+#clock{font-family:Arial,sans-serif;font-size:180px;line-height:.88;font-variant-numeric:tabular-nums;letter-spacing:-.05em;-webkit-transform-origin:center center;transform-origin:center center;}
 #parasha-name{font-size:42px;line-height:1.13;}
 #hebrew-date{font-size:27px;line-height:1.25;}
 #day-of-week-left{font-size:30px;}
@@ -568,16 +568,23 @@ if(!window.SHABBAT_LEGACY_LOADED){
     setFont(g.selectors,size);
    }
   }
-  var header=d.getElementById('header'),block=d.getElementById('clock-block');
-  if(header&&block){
-   var width=block.clientWidth-8,height=header.clientHeight*0.79;
-   var font=240;
-   /* Desired size is 4x the old 60px. Fit to actual TV viewport instead of
-      clipping the clock or reducing other columns to illegibility. */
-   clock.style.fontSize=font+'px';
-   for(i=0;i<35&&font>55;i++){
-     if(clock.scrollWidth<=width+1&&clock.scrollHeight<=height+1)break;
-     font-=5;clock.style.fontSize=font+'px';
+  var block=d.getElementById('clock-block');
+  if(block){
+   /* Keep the clock exactly 3x its original 60px size (180px).
+      On older webOS browsers the scrollHeight can be inaccurate; NEVER
+      shrink the font back to 60px. If necessary only compress horizontally
+      to remain inside the clock column, leaving the height and font size. */
+   clock.style.fontSize='180px';
+   clock.style.lineHeight='.88';
+   clock.style.webkitTransform='none';
+   clock.style.transform='none';
+   var available=block.clientWidth-12;
+   var required=clock.scrollWidth;
+   if(available>0&&required>available){
+     var ratio=Math.max(.55,Math.min(1,available/required));
+     var scale='scaleX('+ratio+')';
+     clock.style.webkitTransform=scale;
+     clock.style.transform=scale;
    }
   }
  }
