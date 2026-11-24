@@ -607,7 +607,13 @@ if(!window.SHABBAT_LEGACY_LOADED){
   for(i=0;i<groups.length;i++){
    g=groups[i];
    px=Math.max(g.min,Math.round(g.base*ratio*10)/10);
-   nodes=d.querySelectorAll('#'+id+' '+g.selectors);
+   /* Scope EVERY comma-separated selector to this panel. */
+   var parts=g.selectors.split(','),scoped=[],part;
+   for(k=0;k<parts.length;k++){
+    part=parts[k].replace(/^\s+|\s+$/g,'');
+    scoped.push('#'+id+' '+part);
+   }
+   nodes=d.querySelectorAll(scoped.join(','));
    for(k=0;k<nodes.length;k++)nodes[k].style.fontSize=px+'px';
   }
  }
