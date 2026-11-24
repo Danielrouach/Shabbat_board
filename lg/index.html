@@ -240,6 +240,11 @@ html.light-theme #footer-left button,html.light-theme #footer-left a{
  color:#4e340b!important;-webkit-text-fill-color:#4e340b!important;
  background:#f7e9c6!important;border-color:#80601f!important;
 }
+/* Keep the footer visually separate from the physical-left prayer column.
+   Do not change the clock, header or the other two panels. */
+#right{overflow:hidden!important;}
+#footer{position:relative;z-index:2;background:#080c10;}
+html.light-theme #footer{background:#f4f7fc;}
 </style>
 <script>
 (function(){
@@ -709,10 +714,73 @@ if(!window.SHABBAT_LEGACY_LOADED){
   }
   return !failed;
  }
+ /* The prayer/Shabbat panel is physically on the LEFT (id="right" in RTL).
+    Older webOS sometimes paints its final rows beyond its box even with
+    overflow:hidden. Fit only this column against the footer, in two stages:
+    tighten vertical gaps first; shrink its text only when unavoidable. */
+ function fitPrayerColumn(){
+  var panel=d.getElementById('right'),footer=d.getElementById('footer');
+  if(!panel||!footer||!panel.getBoundingClientRect||!footer.getBoundingClientRect)return;
+  var rows=panel.querySelectorAll('.weekly-entry,.time-row');
+  var headings=panel.querySelectorAll('.weekly-heading,.weekday-section-title');
+  var times=panel.querySelectorAll('.weekly-entry-time,.time-val');
+  var labels=panel.querySelectorAll('.weekly-entry-label,.time-label');
+  var footerTop=footer.getBoundingClientRect().top;
+  var edge=Math.min(panel.getBoundingClientRect().bottom,footerTop)-14;
+  function lastBottom(){
+   var nodes=panel.querySelectorAll('.weekly-entry,.time-row,.weekly-heading,.weekday-section-title,.panel-title,#shabbat-big');
+   var bottom=0,i,n,b;
+   for(i=0;i<nodes.length;i++){
+    n=nodes[i];
+    if(n.hidden||n.style.display==='none')continue;
+    b=n.getBoundingClientRect().bottom;
+    if(b>bottom)bottom=b;
+   }
+   return bottom;
+  }
+  var i,step,base=[],node;
+  /* Reset our own vertical compacting every time, because content changes. */
+  for(i=0;i<rows.length;i++){
+   rows[i].style.paddingTop='';
+   rows[i].style.paddingBottom='';
+   rows[i].style.minHeight='';
+  }
+  for(i=0;i<headings.length;i++){
+   headings[i].style.marginTop='';
+   headings[i].style.marginBottom='';
+  }
+  if(lastBottom()<=edge)return;
+  for(i=0;i<rows.length;i++){
+   rows[i].style.paddingTop='2px';
+   rows[i].style.paddingBottom='2px';
+   rows[i].style.minHeight='27px';
+  }
+  for(i=0;i<headings.length;i++){
+   headings[i].style.marginTop='4px';
+   headings[i].style.marginBottom='3px';
+  }
+  if(lastBottom()<=edge)return;
+  /* Preserve all labels and times: reduce fonts only inside this column.
+     Store the current computed sizes as inline baselines after global zoom. */
+  var texts=panel.querySelectorAll('.weekly-entry-label,.weekly-entry-time,.time-label,.time-val,.weekly-heading,.weekday-section-title,.panel-title,#shabbat-big');
+  for(i=0;i<texts.length;i++){
+   node=texts[i];
+   var size=parseFloat(node.style.fontSize);
+   if(!size||!isFinite(size))size=22;
+   base.push(size);
+  }
+  for(step=1;step<=16 && lastBottom()>edge;step++){
+   var factor=Math.max(.72,1-step*.018);
+   for(i=0;i<texts.length;i++){
+    texts[i].style.fontSize=Math.max(15,Math.round(base[i]*factor*10)/10)+'px';
+   }
+  }
+ }
  function fitTypography(){
   var panels=d.getElementById('panels');
   if(!panels||!panels.clientHeight)return;
   setPanelScale(userScale);
+  fitPrayerColumn();
   var block=d.getElementById('clock');
   if(block){
    /* Keep the independently requested 3x clock untouched by these controls. */
