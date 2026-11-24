@@ -134,7 +134,7 @@ html.light-theme #legacy-status{color:#684000!important}
 #footer-left .theme-auto-control{font-size:16px;margin:3px 6px;}
 /* Make the checkbox itself remote-readable; do not enlarge its label. */
 #footer-left .theme-auto-control input[type="checkbox"]{
- width:27px!important;height:27px!important;min-width:27px!important;
+ width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;
  margin:0 5px 0 4px!important;vertical-align:middle!important;
  -webkit-appearance:checkbox;appearance:checkbox;
 }
@@ -584,21 +584,32 @@ if(!window.SHABBAT_LEGACY_LOADED){
  }
  function hasOverflow(id) {
   var panel=d.getElementById(id),footer=d.getElementById('footer');
-  if(!panel)return false;
-  /* scrollHeight alone is insufficient on webOS 3 with flex children. Check
-     the physical last visible descendant against the footer's top boundary. */
-  if(panel.scrollHeight>panel.clientHeight+1||panel.scrollWidth>panel.clientWidth+2)return true;
-  var edge=panel.getBoundingClientRect(),limit=edge.bottom-9;
-  if(footer&&footer.getBoundingClientRect)
-   limit=Math.min(limit,footer.getBoundingClientRect().top-12);
-  var selectors='.zman-row,.time-row,.weekly-entry,.weekly-heading,.panel-title,.halacha-card,.elevator-next-title,#shabbat-big';
-  var nodes=panel.querySelectorAll(selectors),i,node,rect,cs;
+  if(!panel||!panel.getBoundingClientRect)return false;
+  /* The top edge of the footer is a HARD content boundary on LG.
+     Use the actual rendered bounds, not just scrollHeight: old webOS flexbox
+     can report a short scrollHeight even when the last prayer crosses it. */
+  var edge=panel.getBoundingClientRect();
+  var footerTop=footer&&footer.getBoundingClientRect?
+    footer.getBoundingClientRect().top:edge.bottom;
+  var limit=Math.min(edge.bottom-16,footerTop-22);
+  if(panel.scrollHeight>panel.clientHeight+1||panel.scrollWidth>panel.clientWidth+3)return true;
+  var nodes=panel.querySelectorAll('.zman-row,.time-row,.weekly-entry,.weekly-heading,.panel-title,.halacha-card,.elevator-next-title,#shabbat-big,#weekly-prayers,#weekly-board,#weekly-elevators,#elevator-next-rows');
+  var i,node,rect;
   for(i=0;i<nodes.length;i++){
    node=nodes[i];
    if(node.hidden||node.style.display==='none')continue;
+   if(node.getClientRects&&node.getClientRects().length===0)continue;
    rect=node.getBoundingClientRect();
    if(rect.height<=0)continue;
-   if(rect.bottom>limit+1||rect.right>edge.right-4||rect.left<edge.left+4)return true;
+   if(rect.bottom>limit||rect.right>edge.right-3||rect.left<edge.left+3)return true;
+  }
+  /* Include any additional children supplied by the live timetable. */
+  var children=panel.children;
+  for(i=0;i<children.length;i++){
+   node=children[i];
+   if(node.hidden||node.style.display==='none')continue;
+   rect=node.getBoundingClientRect();
+   if(rect.height>0&&rect.bottom>limit)return true;
   }
   return false;
  }
@@ -618,16 +629,17 @@ if(!window.SHABBAT_LEGACY_LOADED){
   }
  }
  function setPanelScale(scale){
-  var ids=['left','center','right'],i,ratio,step;
-  /* Fit EACH COLUMN independently. One full prayer column cannot force the
-     zmanim and halacha panels to shrink. The footer is a hard boundary. */
+  var ids=['left','center','right'],i,ratio,step,smallest=.45;
+  /* Each column has its own effective maximum. An already-full prayer
+     column is NOT enlarged further when the user presses א+; other columns
+     may grow independently. Never allow content to meet the footer. */
   for(i=0;i<ids.length;i++){
    ratio=scale;
-   for(step=0;step<28;step++){
+   for(step=0;step<48;step++){
     applyPanelScale(ids[i],ratio);
     if(!hasOverflow(ids[i]))break;
-    ratio-=.025;
-    if(ratio<.50){applyPanelScale(ids[i],.50);break;}
+    ratio=Math.round((ratio-.025)*1000)/1000;
+    if(ratio<smallest){ratio=smallest;applyPanelScale(ids[i],ratio);break;}
    }
   }
  }
