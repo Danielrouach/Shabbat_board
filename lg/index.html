@@ -125,6 +125,23 @@ html.light-theme #legacy-status{color:#684000!important}
  #footer button,#footer a{font-size:15px;padding:4px 7px;}
 }
 
+/* LG text-size controls: affect ONLY the three content panels.
+   Footer controls stay readable across the large 16:9 TV screen. */
+#footer{-webkit-flex-basis:14%;flex-basis:14%;padding:6px 8px;}
+#footer-left{width:69%;-webkit-justify-content:flex-start;justify-content:flex-start;}
+#footer-right{width:30%;font-size:15px;}
+#footer-left button,#footer-left a{font-size:19px;line-height:1.2;padding:9px 13px;min-height:44px;margin:3px 5px;}
+#footer-left .theme-auto-control{font-size:16px;margin:3px 6px;}
+#lg-text-grow,#lg-text-shrink{font-size:25px!important;font-weight:bold;min-width:63px;min-height:46px!important;}
+#footer-left button:focus,#footer-left a:focus{outline:2px solid #e1c06a;outline-offset:2px;}
+#panels .zman-row,#panels .time-row,#panels .weekly-entry{gap:12px;}
+#panels .zman-name,#panels .time-label,#panels .weekly-entry-label{flex:1 1 64%;min-width:0;max-width:64%;}
+#panels .zman-time,#panels .time-val,#panels .weekly-entry-time{flex:0 0 34%;min-width:0;max-width:34%;text-align:left;white-space:nowrap;padding-right:0;}
+@media(max-height:750px){
+ #footer{-webkit-flex-basis:15%;flex-basis:15%;padding:4px 6px;}
+ #footer-left button,#footer-left a{font-size:17px;min-height:38px;padding:6px 10px;margin:2px 4px;}
+ #lg-text-grow,#lg-text-shrink{font-size:22px!important;min-height:40px!important;min-width:50px;}
+}
 </style>
 <script>
 (function(){
@@ -196,6 +213,8 @@ html.light-theme #legacy-status{color:#684000!important}
   <div id="footer-left">
    <button id="theme-toggle" data-theme-toggle type="button">☀ מצב בהיר</button>
    <label class="theme-auto-control"><input type="checkbox" data-theme-auto checked> אוטומטי לפי זריחה/שקיעה</label>
+   <button id="lg-text-grow" type="button" title="הגדלת טקסט בעמודות הלוח" aria-label="הגדל טקסט">א+</button>
+   <button id="lg-text-shrink" type="button" title="הקטנת טקסט בעמודות הלוח" aria-label="הקטן טקסט">א−</button>
    <button id="fullscreen-btn" type="button">⛶ מסך מלא</button>
    <button id="keep-awake-btn" type="button">מסך פעיל</button>
    <a data-elevator-link href="../elevator/">🛗 מסך מעלית</a>
@@ -531,16 +550,24 @@ if(!window.SHABBAT_LEGACY_LOADED){
  var app=d.getElementById('app'),clock=d.getElementById('clock');
  if(!app||!clock)return;
  var groups=[
-  {selectors:'.panel-title',base:29,min:19},
-  {selectors:'.zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time',base:26,min:17},
-  {selectors:'.time-row .time-label,.time-row .time-val',base:27,min:17},
-  {selectors:'.zman-sub',base:15,min:11},
-  {selectors:'.weekly-heading',base:22,min:15},
-  {selectors:'.halacha-label',base:19,min:13},
-  {selectors:'.halacha-value',base:29,min:19},
-  {selectors:'.halacha-sub',base:16,min:12},
-  {selectors:'#shabbat-big',base:28,min:18}
+  {selectors:'.panel-title',base:29,min:18},
+  {selectors:'.zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time',base:26,min:16},
+  {selectors:'.time-row .time-label,.time-row .time-val',base:27,min:16},
+  {selectors:'.zman-sub',base:15,min:10},
+  {selectors:'.weekly-heading',base:22,min:14},
+  {selectors:'.halacha-label',base:19,min:12},
+  {selectors:'.halacha-value',base:29,min:18},
+  {selectors:'.halacha-sub',base:16,min:11},
+  {selectors:'#shabbat-big',base:28,min:17},
+  {selectors:'.elevator-next-title',base:23,min:15},
+  {selectors:'#elevator-next-rows',base:16,min:11}
  ];
+ var sizeKey='rouach_lg_panel_text_scale_v1',userScale=1;
+ try{
+  var stored=parseFloat(localStorage.getItem(sizeKey));
+  if(isFinite(stored)&&stored>=0.8&&stored<=1.5)userScale=stored;
+ }catch(ignore){}
+ var sizes=[0.8,0.9,1,1.1,1.2,1.3,1.4,1.5];
  function clamp(value,lo,hi){return Math.max(lo,Math.min(hi,value));}
  function setFont(selector,size){
   var nodes=d.querySelectorAll(selector),i;
@@ -554,40 +581,74 @@ if(!window.SHABBAT_LEGACY_LOADED){
   }
   return false;
  }
+ function hasWideOverflow(){
+  var ids=['left','center','right'],i,n,rows,j,labels,one;
+  for(i=0;i<ids.length;i++){
+   n=d.getElementById(ids[i]);
+   if(!n)continue;
+   if(n.scrollWidth>n.clientWidth+4)return true;
+   rows=n.querySelectorAll('.zman-row,.time-row,.weekly-entry');
+   for(j=0;j<rows.length;j++){
+    one=rows[j];
+    if(one.scrollWidth>one.clientWidth+4)return true;
+   }
+  }
+  return false;
+ }
+ function setPanelScale(scale){
+  var i,g,steps=0,failed=false,ratio=scale;
+  /* Start with the selected size. Shrink only as needed; never grow after
+     overflowing its column. Clock/header/footer remain untouched. */
+  for(steps=0;steps<20;steps++){
+   for(i=0;i<groups.length;i++){
+    g=groups[i];
+    var px=Math.max(g.min,Math.round(g.base*ratio*10)/10);
+    setFont(g.selectors,px);
+   }
+   if(!panelOverflow()&&!hasWideOverflow())break;
+   ratio-=.035;
+   if(ratio<.65){failed=true;break;}
+  }
+  return !failed;
+ }
  function fitTypography(){
   var panels=d.getElementById('panels');
   if(!panels||!panels.clientHeight)return;
-  var n=panels.clientHeight,step=0,g,i,size;
-  /* Reset text scales, then shrink only if current content exceeds its column.
-     This keeps the existing no-scroll guarantee when more prayer rows appear. */
-  for(i=0;i<groups.length;i++)setFont(groups[i].selectors,groups[i].base);
-  for(step=0;step<12&&panelOverflow();step++){
-   for(i=0;i<groups.length;i++){
-    g=groups[i];
-    size=clamp(g.base-step*1.2,g.min,g.base);
-    setFont(g.selectors,size);
-   }
-  }
-  var block=d.getElementById('clock-block');
+  setPanelScale(userScale);
+  var block=d.getElementById('clock');
   if(block){
-   /* Keep the clock exactly 3x its original 60px size (180px).
-      On older webOS browsers the scrollHeight can be inaccurate; NEVER
-      shrink the font back to 60px. If necessary only compress horizontally
-      to remain inside the clock column, leaving the height and font size. */
+   /* Keep the independently requested 3x clock untouched by these controls. */
    clock.style.fontSize='180px';
    clock.style.lineHeight='.88';
    clock.style.webkitTransform='none';
    clock.style.transform='none';
-   var available=block.clientWidth-12;
-   var required=clock.scrollWidth;
-   if(available>0&&required>available){
+   var outer=d.getElementById('clock-block');
+   if(outer){
+    var available=outer.clientWidth-12,required=clock.scrollWidth;
+    if(available>0&&required>available){
      var ratio=Math.max(.55,Math.min(1,available/required));
-     var scale='scaleX('+ratio+')';
-     clock.style.webkitTransform=scale;
-     clock.style.transform=scale;
+     var transform='scaleX('+ratio+')';
+     clock.style.webkitTransform=transform;
+     clock.style.transform=transform;
+    }
    }
   }
  }
+ function changeText(direction){
+  var i,idx=2;
+  for(i=0;i<sizes.length;i++)if(Math.abs(sizes[i]-userScale)<.03){idx=i;break;}
+  idx=Math.max(0,Math.min(sizes.length-1,idx+direction));
+  var prior=userScale;
+  userScale=sizes[idx];
+  fitTypography();
+  /* Keep the requested scale saved; layout measurement always enforces fit. */
+  try{localStorage.setItem(sizeKey,String(userScale));}catch(err){}
+  var indicator=d.getElementById('lg-text-grow');
+  if(indicator)indicator.title='טקסט לוח '+Math.round(userScale*100)+'%';
+ }
+ var grow=d.getElementById('lg-text-grow'),shrink=d.getElementById('lg-text-shrink');
+ if(grow)grow.onclick=function(){changeText(1);};
+ if(shrink)shrink.onclick=function(){changeText(-1);};
  function debounceFit(){
   if(w.SHABBAT_LG_LAYOUT_PENDING)return;
   w.SHABBAT_LG_LAYOUT_PENDING=true;
