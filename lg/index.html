@@ -803,5 +803,52 @@ if(!window.SHABBAT_LEGACY_LOADED){
  setInterval(fitTypography,60000);
 })(document,window);
 </script>
+
+<script>
+/* Legacy LG inspector. Enabled only with ?diagnose=1; never alters the board. */
+(function(w,d){
+ if(!/(?:\?|&)diagnose=1(?:&|$)/.test(w.location.search||''))return;
+ var panel=d.createElement('div');
+ panel.id='lg-diagnostic-panel';
+ panel.setAttribute('dir','rtl');
+ panel.style.cssText='position:fixed;bottom:15%;left:4%;width:92%;height:64%;background:#10151d;color:#fff;border:4px solid #ebca55;z-index:99999;overflow:hidden;font:18px Arial,sans-serif;padding:12px;direction:rtl;';
+ var title=d.createElement('div');
+ title.style.cssText='font:bold 25px Arial,sans-serif;color:#ebca55;margin:3px 0 10px;';
+ title.textContent='אבחון תצוגת LG · טקסט אמיתי / גודל / צבע / מיקום';
+ panel.appendChild(title);
+ var pre=d.createElement('pre');pre.setAttribute('dir','rtl');
+ pre.style.cssText='margin:0;direction:rtl;white-space:pre-wrap;word-break:break-all;font:17px/1.36 Arial,sans-serif;color:#f8f9ff;';
+ panel.appendChild(pre);
+ d.body.appendChild(panel);
+ var ids=['parasha-label','parasha-name','hebrew-date','day-of-week-left','gregorian-date','location-name','theme-toggle','lg-text-grow','lg-text-shrink','fullscreen-btn','keep-awake-btn','prayers-update-status','elevator-update-status'];
+ function line(id){
+  var n=d.getElementById(id);
+  if(!n)return id+': ELEMENT NOT FOUND';
+  var txt=(n.textContent||'').replace(/\s+/g,' ').substr(0,48);
+  var st={},r={left:0,top:0,width:0,height:0};
+  try{st=w.getComputedStyle(n,null)||{};}catch(e){}
+  try{r=n.getBoundingClientRect();}catch(e){}
+  var behind='';
+  try{
+   var x=r.left+r.width/2,y=r.top+r.height/2,z=d.elementFromPoint(x,y);
+   behind=z?(z.id||z.tagName||'?'):'outside';
+  }catch(e){}
+  return id+' = ['+txt+']'+
+    ' | '+Math.round(r.width)+'×'+Math.round(r.height)+
+    ' y'+Math.round(r.top)+
+    ' | '+(st.display||'?')+'/'+(st.visibility||'?')+
+    ' | '+(st.color||'?')+
+    ' | top:'+behind;
+ }
+ function update(){
+  var parts=[],i;
+  parts.push('viewport '+(w.innerWidth||0)+'×'+(w.innerHeight||0)+' | mode '+d.documentElement.className);
+  parts.push('started '+(!!w.SHABBAT_LEGACY_STARTED)+' | recovery '+(!!w.SHABBAT_LG_RECOVERY_ACTIVE));
+  for(i=0;i<ids.length;i++)parts.push(line(ids[i]));
+  pre.textContent=parts.join('\n');
+ }
+ update();w.setInterval(update,2000);
+})(window,document);
+</script>
 </body>
 </html>
