@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>לוח שבת · תצוגת LG</title>
+<style>
+/* Standalone old-webOS kiosk: plain pixel units, conservative flexbox and ES5.
+   No modern dashboard stylesheet or JavaScript is loaded. */
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#080c10;color:#eef2f8;font-family:Arial,'Frank Ruhl Libre',sans-serif}
+body{direction:rtl}
+#app{height:97%;padding:10px 16px 5px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
+#header{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;-webkit-flex:0 0 18%;flex:0 0 18%;min-height:0;border-bottom:1px solid #30455c;padding:0 8px 5px}
+#parasha-block,#location-block{-webkit-flex:0 0 31%;flex:0 0 31%;width:31%;min-width:0}
+#clock-block{-webkit-flex:0 0 38%;flex:0 0 38%;width:38%;text-align:center;min-width:0}
+#bsd{font-size:16px;color:#bba166}
+#parasha-label,#location-name{font-size:15px;color:#9baabb}
+#parasha-name{font-size:33px;color:#d2b16c;font-weight:bold}
+#hebrew-date{font-size:21px}
+#clock{font-size:60px;font-weight:bold;direction:ltr;white-space:nowrap}
+#clock .sep{color:#7c95b5}
+#location-block{text-align:left;direction:rtl}
+#day-of-week-left{font-size:25px;font-weight:bold}
+#gregorian-date{font-size:20px;color:#c5d0de}
+#shabbat-kodesh-block{display:none;text-align:center}
+#shabbat-kodesh-block img{max-height:105px;max-width:95%}
+#shabbat-clock{font-size:22px}
+#panels{display:-webkit-flex;display:flex;-webkit-flex:1 1 auto;flex:1 1 auto;width:100%;min-height:0;padding-top:6px}
+.panel{display:block;width:32.75%;min-width:0;margin-left:.45%;height:100%;padding:11px 13px;background:#0e1725;border:1px solid #243c53;overflow:hidden}
+#left{-webkit-order:1;order:1}#center{-webkit-order:2;order:2}#right{-webkit-order:3;order:3}
+.panel-title{font-size:22px;color:#ddbf72;font-weight:bold;border-bottom:1px solid #3b4c60;padding:0 0 7px;margin-bottom:7px}
+.zman-row,.time-row,.weekly-entry{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e3042;min-height:34px}
+.zman-name,.time-label,.weekly-entry-label{font-size:18px}
+.zman-sub{display:block;font-size:12px;color:#9eabb8}
+.zman-time,.time-val,.weekly-entry-time{font-size:22px;font-weight:bold;direction:ltr;white-space:nowrap;padding-right:8px;color:#e0bd74}
+.weekday-section-title{font-size:20px;margin-top:5px}
+.weekly-heading{font-size:17px;color:#aebed2;font-weight:bold;margin-top:9px}
+#shabbat-big{display:block;font-size:22px;font-weight:bold;color:#d3b26c;margin-bottom:7px}
+.halacha-card{width:100%;display:block;border:1px solid #233c55;background:#132238;padding:9px 12px;margin:0 0 8px}
+.halacha-label{font-size:14px;color:#a8b6c8}
+.halacha-value{font-size:23px;font-weight:bold;color:#e0c17a}
+.halacha-sub{font-size:13px;color:#9eafc0}
+[hidden],.halacha-card[hidden],.halacha-card[style*="display: none"],.halacha-card[style*="display:none"]{display:none!important}
+#elevator-next-widget{border:1px solid #385e69;padding:7px;margin-bottom:6px}
+.elevator-next-title{font-size:17px;font-weight:bold;color:#b6d0db}
+#elevator-next-rows{font-size:16px}
+#footer{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;-webkit-flex:0 0 10%;flex:0 0 10%;min-height:0;border-top:1px solid #2e4258;padding:4px 6px}
+#footer-left{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;width:58%}
+#footer-right{display:block;width:41%;font-size:14px;text-align:left;direction:rtl}
+#footer-right span{display:block;padding:2px 0}
+#footer button,#footer a{display:inline-block;margin:3px 4px;padding:5px 9px;background:#172940;color:#e0c17a;border:1px solid #977d44;border-radius:4px;font-size:15px;text-decoration:none;cursor:pointer}
+#footer .theme-auto-control{font-size:13px}
+#last-updated,#legacy-status{font-size:13px;color:#b4c9d8;padding:1px 4px}
+#legacy-status{color:#d9b279}
+#copyright-bar{height:3%;font-size:11px;text-align:center;color:#7f91a5;padding:3px;background:#080c10}
+html.light-theme,html.light-theme body{background:#f4f7fc;color:#162437}
+html.light-theme .panel{background:#fff;border-color:#c9d4e1}
+html.light-theme .halacha-card{background:#f2f6fa;border-color:#c9d4e1}
+html.light-theme .zman-time,html.light-theme .time-val,html.light-theme .weekly-entry-time{color:#805d16}
+html.light-theme #copyright-bar{background:#f4f7fc}
+html.light-theme .panel-title,html.light-theme .weekly-heading,
+html.light-theme #parasha-name,html.light-theme #shabbat-big{color:#6d4e12}
+html.light-theme .halacha-value{color:#664b17}
+html.light-theme .halacha-label,html.light-theme .halacha-sub,
+html.light-theme .zman-sub,html.light-theme #location-name,
+html.light-theme #parasha-label,html.light-theme #gregorian-date{color:#41566f}
+html.light-theme #footer button,html.light-theme #footer a{
+ background:#fff5d9;color:#6d4e12;border-color:#927136
+}
+#legacy-status{font-weight:bold;font-size:15px!important;color:#e7c777!important}
+html.light-theme #legacy-status{color:#684000!important}
+#last-updated{font-size:14px}
+@media(max-height:750px){#header{flex-basis:16%}#footer{flex-basis:12%}.zman-row,.time-row,.weekly-entry{padding:4px 0;min-height:28px}.panel{padding:7px 10px}.zman-name,.time-label,.weekly-entry-label{font-size:16px}.zman-time,.time-val,.weekly-entry-time{font-size:18px}.halacha-card{padding:6px 9px}.halacha-value{font-size:19px}.panel-title{font-size:18px}}
+
+/* LG living-room readability enhancement. All rules remain on /lg/ only.
+   JS below measures actual boxes and reduces sizes if needed: no scrolling. */
+#app{padding:12px 22px 9px;}
+#header{-webkit-flex:0 0 25%;flex:0 0 25%;padding:2px 12px 8px;}
+#parasha-block,#location-block{-webkit-flex:0 0 26%;flex:0 0 26%;width:26%;}
+#clock-block{-webkit-flex:0 0 48%;flex:0 0 48%;width:48%;overflow:visible;}
+#clock{font-family:Arial,sans-serif;font-size:180px;line-height:.88;font-variant-numeric:tabular-nums;letter-spacing:-.05em;-webkit-transform-origin:center center;transform-origin:center center;}
+#parasha-name{font-size:42px;line-height:1.13;}
+#hebrew-date{font-size:27px;line-height:1.25;}
+#day-of-week-left{font-size:30px;}
+#gregorian-date{font-size:24px;}
+#location-name{font-size:19px;}
+#panels{padding-top:8px;}
+.panel{padding:13px 17px;}
+.panel-title{font-size:29px;padding-bottom:9px;margin-bottom:9px;}
+.zman-row,.time-row,.weekly-entry{min-height:42px;padding:7px 0;}
+.zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time{font-size:26px;line-height:1.15;}
+.zman-sub{font-size:15px;line-height:1.05;}
+.zman-time,.time-val,.weekly-entry-time{padding-right:15px;}
+.zman-name,.time-label,.weekly-entry-label{min-width:0;max-width:64%;}
+.zman-time,.time-val,.weekly-entry-time{min-width:0;max-width:36%;text-align:left;}
+.time-row .time-label,.time-row .time-val{font-weight:bold;font-size:27px;}
+.time-row .time-val{padding-right:20px;}
+.weekday-section-title{font-size:25px;}
+.weekly-heading{font-size:22px;margin-top:10px;}
+#shabbat-big{font-size:28px;}
+.halacha-card{padding:11px 14px;margin-bottom:9px;}
+.halacha-label{font-size:19px;}
+.halacha-value{font-size:29px;}
+.halacha-sub{font-size:16px;}
+.elevator-next-title{font-size:23px;}
+#footer{-webkit-flex:0 0 12%;flex:0 0 12%;}
+#footer button,#footer a{font-size:17px;padding:6px 10px;}
+#footer-right{font-size:16px;}
+#copyright-bar{height:3%;font-size:12px;}
+/* A minimum of 5px safe space accommodates the subtle pixel movement. */
+#app{padding-left:24px;padding-right:24px;}
+@media(max-height:750px){
+ #header{-webkit-flex-basis:23%;flex-basis:23%;}
+ #footer{-webkit-flex-basis:13%;flex-basis:13%;}
+ .panel{padding:8px 11px;}
+ .zman-row,.time-row,.weekly-entry{min-height:33px;padding:4px 0;}
+ .zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time{font-size:22px;}
+ .time-row .time-label,.time-row .time-val{font-size:23px;}
+ .halacha-card{padding:7px 10px;}
+ .halacha-value{font-size:23px;}
+ .panel-title{font-size:24px;margin-bottom:5px;padding-bottom:5px;}
+ .weekday-section-title{font-size:21px;}
+ .weekly-heading{font-size:19px;margin-top:6px;}
+ #footer button,#footer a{font-size:15px;padding:4px 7px;}
+}
+
+/* LG text-size controls: affect ONLY the three content panels.
+   Footer controls stay readable across the large 16:9 TV screen. */
+#footer{-webkit-flex-basis:14%;flex-basis:14%;padding:6px 8px;}
+#footer-left{width:69%;-webkit-justify-content:flex-start;justify-content:flex-start;}
+#footer-right{width:30%;font-size:15px;}
+#footer-left button,#footer-left a{font-size:19px;line-height:1.2;padding:9px 13px;min-height:44px;margin:3px 5px;}
+#footer-left .theme-auto-control{font-size:16px;margin:3px 6px;}
+#lg-text-grow,#lg-text-shrink{font-size:25px!important;font-weight:bold;min-width:63px;min-height:46px!important;}
+#footer-left button:focus,#footer-left a:focus{outline:2px solid #e1c06a;outline-offset:2px;}
+#panels .zman-row,#panels .time-row,#panels .weekly-entry{gap:12px;}
+#panels .zman-name,#panels .time-label,#panels .weekly-entry-label{flex:1 1 64%;min-width:0;max-width:64%;}
+#panels .zman-time,#panels .time-val,#panels .weekly-entry-time{flex:0 0 34%;min-width:0;max-width:34%;text-align:left;white-space:nowrap;padding-right:0;}
+@media(max-height:750px){
+ #footer{-webkit-flex-basis:15%;flex-basis:15%;padding:4px 6px;}
+ #footer-left button,#footer-left a{font-size:17px;min-height:38px;padding:6px 10px;margin:2px 4px;}
+ #lg-text-grow,#lg-text-shrink{font-size:22px!important;min-height:40px!important;min-width:50px;}
+}
+/* webOS 3 light-mode text visibility repair.
+   Do not touch flex geometry, clock scale, data or zoom calculations.
+   Some old LG engines fail inherited body text colors in nested elements. */
+html.light-theme #header,
+html.light-theme #header #bsd,
+html.light-theme #header #day-of-week-left,
+html.light-theme #header #hebrew-date,
+html.light-theme #header #shabbat-clock{
+ color:#182638!important;
+ -webkit-text-fill-color:#182638!important;
+}
+html.light-theme #header #parasha-label,
+html.light-theme #header #location-name,
+html.light-theme #header #gregorian-date{
+ color:#354b64!important;
+ -webkit-text-fill-color:#354b64!important;
+}
+html.light-theme #header #parasha-name{
+ color:#63450e!important;
+ -webkit-text-fill-color:#63450e!important;
+}
+html.light-theme #footer,
+html.light-theme #footer-left,
+html.light-theme #footer-right,
+html.light-theme #footer .theme-auto-control,
+html.light-theme #footer-right span{
+ color:#172839!important;
+ -webkit-text-fill-color:#172839!important;
+}
+html.light-theme #footer button,
+html.light-theme #footer a,
+html.light-theme #footer #lg-text-grow,
+html.light-theme #footer #lg-text-shrink{
+ color:#553903!important;
+ -webkit-text-fill-color:#553903!important;
+ background:#f7e9c6!important;
+ border:2px solid #80601f!important;
+ opacity:1!important;
+ visibility:visible!important;
+}
+html.light-theme #last-updated,
+html.light-theme #prayers-update-status,
+html.light-theme #elevator-update-status{
+ color:#263e52!important;
+ -webkit-text-fill-color:#263e52!important;
+}
+html.light-theme #legacy-status{
+ color:#684000!important;
+ -webkit-text-fill-color:#684000!important;
+}
+html.light-theme .weekday-section-title,
+html.light-theme .zman-name,
+html.light-theme .time-label,
+html.light-theme .weekly-entry-label,
+html.light-theme #weekly-prayers,
+html.light-theme #weekly-board{
+ color:#172839!important;
+ -webkit-text-fill-color:#172839!important;
+}
+/* webOS 3 legacy: fixed-position header and toolbar, without flex text layers.
+   All sizing below is local to header/footer. Preserve dashboard panels. */
+#header {
+ display:block!important;position:relative!important;
+ overflow:visible!important;
+}
+#header #parasha-block {
+ display:block!important;position:absolute!important;
+ top:6px!important;right:10px!important;left:auto!important;
+ width:26%!important;height:auto!important;
+ -webkit-flex:none!important;flex:none!important;
+ overflow:visible!important;text-align:right!important;
+}
+#header #clock-block {
+ display:block!important;position:absolute!important;
+ left:26%!important;top:0!important;
+ width:48%!important;height:100%!important;
+ -webkit-flex:none!important;flex:none!important;
+ overflow:visible!important;text-align:center!important;
+}
+#header #location-block {
+ display:block!important;position:absolute!important;
+ left:10px!important;right:auto!important;top:6px!important;
+ width:25%!important;height:auto!important;
+ -webkit-flex:none!important;flex:none!important;
+ overflow:visible!important;text-align:left!important;
+}
+#header #bsd,#header #parasha-label,#header #parasha-name,
+#header #hebrew-date,#header #day-of-week-left,
+#header #gregorian-date,#header #location-name{
+ display:block!important;position:static!important;
+ height:auto!important;min-height:1em!important;
+ overflow:visible!important;line-height:1.18!important;
+ opacity:1!important;visibility:visible!important;
+}
+#footer {
+ display:block!important;position:relative!important;
+ overflow:visible!important;
+}
+#footer #footer-left {
+ display:block!important;position:absolute!important;
+ right:7px!important;left:auto!important;top:5px!important;
+ width:69%!important;height:auto!important;
+ overflow:visible!important;text-align:right!important;
+}
+#footer #footer-right {
+ display:block!important;position:absolute!important;
+ left:7px!important;right:auto!important;top:5px!important;
+ width:30%!important;height:auto!important;
+ overflow:visible!important;text-align:right!important;
+}
+#footer #footer-left button,#footer #footer-left a {
+ display:inline-block!important;position:static!important;
+ height:auto!important;line-height:1.25!important;
+ vertical-align:middle!important;
+ white-space:nowrap!important;text-align:center!important;
+}
+#footer #footer-right span {
+ display:block!important;position:static!important;
+ height:auto!important;line-height:1.2!important;
+}
+</style>
+<script>
+(function(){
+ var agent=navigator.userAgent||'';
+ var legacy=/LG|webOS|Web0S|NetCast/i.test(agent);
+ try{new Function('return ({a:1})?.a;');legacy=false}catch(e){}
+ if(!legacy){
+   /* This route is a compatibility fallback, not the standard PC/mobile view. */
+ }
+})();
+</script>
+<script src="../cloud-config.js"></script>
+</head>
+<body>
+<div id="app">
+ <header id="header">
+  <div id="parasha-block">
+   <div id="bsd">בס״ד</div>
+   <div id="parasha-label">פרשת השבוע</div>
+   <div id="parasha-name">טוען…</div>
+   <div id="hebrew-date"></div>
+  </div>
+  <div id="clock-block">
+   <div id="clock"><span id="ch">00</span><span class="sep">:</span><span id="cm">00</span><span class="sep">:</span><span id="cs">00</span></div>
+   <div id="shabbat-kodesh-block">
+    <img src="../assets/shabbat-shalom.png" alt="שבת שלום">
+   </div>
+  </div>
+  <div id="location-block">
+   <div id="day-of-week-left"></div>
+   <div id="gregorian-date"></div>
+   <div id="location-name">חיפה, ישראל</div>
+   <div id="shabbat-clock" style="display:none"></div>
+  </div>
+ </header>
+ <main id="panels">
+  <section class="panel" id="left">
+   <div class="panel-title">זמני היום</div>
+   <div class="zman-row" id="z-alot-90"><span class="zman-name">עלות השחר <small class="zman-sub">90 דקות לפני הנץ</small></span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-alot-72"><span class="zman-name">עלות השחר <small class="zman-sub">72 דקות לפני הנץ</small></span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-misheyakir"><span class="zman-name">זמן ציצית ותפילין</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-netz"><span class="zman-name">הנץ החמה</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-sof-shma"><span class="zman-name">סוף זמן ק״ש</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-chatzot"><span class="zman-name">חצות היום</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-shkia"><span class="zman-name">שקיעה</span><span class="zman-time">–</span></div>
+   <div class="zman-row" id="z-tzeit"><span class="zman-name">צאת הכוכבים</span><span class="zman-time">–</span></div>
+  </section>
+  <section class="panel" id="center">
+   <div class="panel-title">הלכה למעשה</div>
+   <div class="halacha-card" id="holiday-card" hidden style="display:none"><div class="halacha-label">חג / מועד</div><div class="halacha-value" id="holiday-value"></div></div>
+   <div class="halacha-card" id="tal-geshem-card"><div class="halacha-label">גשם / טל</div><div class="halacha-value" id="tal-geshem-value">טוען…</div><div class="halacha-sub" id="tal-geshem-sub"></div></div>
+   <div class="halacha-card" id="barech-card"><div class="halacha-label">ברכת השנים</div><div class="halacha-value" id="barech-value">טוען…</div><div class="halacha-sub" id="barech-sub"></div></div>
+   <div class="halacha-card" id="tachanun-card" hidden style="display:none"><div class="halacha-label">תחנון</div><div class="halacha-value" id="tachanun-value"></div><div class="halacha-sub" id="tachanun-reason"></div></div>
+   <div class="halacha-card" id="roshchodesh-card" hidden style="display:none"><div class="halacha-label">ראש חודש</div><div class="halacha-value" id="roshchodesh-value"></div></div>
+   <div class="halacha-card" id="omer-card" hidden style="display:none"><div class="halacha-label">ספירת העומר</div><div class="halacha-value" id="omer-day-num"></div></div>
+  </section>
+  <section class="panel" id="right">
+   <div id="elevator-next-widget" hidden style="display:none"><div class="elevator-next-title">מעלית שבת · החלונות הקרובים</div><div id="elevator-next-rows"></div></div>
+   <div class="panel-title weekday-section-title" id="prayer-times-heading">זמני תפילות</div>
+   <div id="weekly-board" hidden><div id="weekly-prayers"></div><div id="weekly-elevators"></div></div>
+   <div id="shabbat-title-block"><div id="shabbat-big"></div></div>
+   <div class="panel-title weekday-section-title" id="shabbat-times-heading">זמני השבת</div>
+   <div class="time-row" id="row-candles"><span class="time-label">כניסת השבת</span><span class="time-val" id="val-candles">–</span></div>
+   <div class="time-row" id="row-havdalah"><span class="time-label">צאת השבת</span><span class="time-val" id="val-havdalah">–</span></div>
+   <div class="time-row" id="row-rt"><span class="time-label">רבנו תם</span><span class="time-val" id="val-rt">–</span></div>
+  </section>
+ </main>
+ <footer id="footer">
+  <div id="footer-left">
+   <button id="theme-toggle" data-theme-toggle type="button">☀ מצב בהיר</button>
+   <label class="theme-auto-control"><input type="checkbox" data-theme-auto checked> אוטומטי לפי זריחה/שקיעה</label>
+   <button id="lg-text-grow" type="button" title="הגדלת טקסט בעמודות הלוח" aria-label="הגדל טקסט">א+</button>
+   <button id="lg-text-shrink" type="button" title="הקטנת טקסט בעמודות הלוח" aria-label="הקטן טקסט">א−</button>
+   <button id="fullscreen-btn" type="button">⛶ מסך מלא</button>
+   <button id="keep-awake-btn" type="button">מסך פעיל</button>
+   <a data-elevator-link href="../elevator/">🛗 מסך מעלית</a>
+  </div>
+  <div id="footer-right">
+   <span id="prayers-update-status">זמני תפילות: בודק…</span>
+   <span id="elevator-update-status">זמני מעלית: בודק…</span>
+   <span id="last-updated"></span>
+   <span id="legacy-status">מנוע התאימות נטען…</span>
+  </div>
+ </footer>
+</div>
+<div id="copyright-bar">לוח שבת · משפחת רואש · תצוגה מותאמת לדפדפן LG ישן</div>
+<script>
+/* Independent fallback clock and diagnostic indicator, even if remote data fails. */
+(function(){
+ var status=document.getElementById('legacy-status');
+ function pad(n){return n<10?'0'+n:String(n)}
+ function fallbackClock(){
+   var now=new Date(), ids=['ch','cm','cs'], v=[now.getHours(),now.getMinutes(),now.getSeconds()];
+   for(var i=0;i<ids.length;i++){var n=document.getElementById(ids[i]);if(n)n.textContent=pad(v[i])}
+ }
+ fallbackClock();
+ setInterval(fallbackClock,1000);
+ if(status)status.textContent='תצוגת LG · מפעיל את מנוע הנתונים';
+ /* Critical controls and civil date work even if the data module cannot load. */
+ var dateNode=document.getElementById('gregorian-date'),dayNode=document.getElementById('day-of-week-left');
+ var dow=['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','יום שבת'];
+ function civil(){
+   var v=new Date();
+   if(!window.SHABBAT_LEGACY_STARTED){
+     if(dateNode)dateNode.textContent=pad(v.getDate())+'/'+pad(v.getMonth()+1)+'/'+v.getFullYear();
+     if(dayNode)dayNode.textContent=dow[v.getDay()];
+   }
+ }
+ civil();setInterval(civil,30000);
+ var full=document.getElementById('fullscreen-btn');
+ if(full)full.onclick=function(){
+   var root=document.documentElement,go=root.requestFullscreen||root.webkitRequestFullscreen||root.webkitRequestFullScreen||root.msRequestFullscreen,
+       exit=document.exitFullscreen||document.webkitExitFullscreen||document.webkitCancelFullScreen||document.msExitFullscreen;
+   try{
+     if(document.fullscreenElement||document.webkitFullscreenElement){if(exit)exit.call(document);}
+     else if(go)go.call(root);
+     else alert('נסה את סמל מסך מלא בסרגל הדפדפן של LG');
+   }catch(err){alert('לא ניתן להשלים מסך מלא דרך האתר; נסה את הכפתור בדפדפן LG.');}
+ };
+ var keepAwake=document.getElementById('keep-awake-btn');
+ if(keepAwake){
+   keepAwake.textContent='⚠ מסך פעיל: לא נתמך ב-LG';
+   keepAwake.title='לא ניתן למנוע שומר מסך דרך Screen Wake Lock בדפדפן זה';
+   keepAwake.onclick=function(){alert('דפדפן LG webOS 3 אינו מספק Screen Wake Lock. השאר את הטלוויזיה דולקת באמצעות ביטול טיימר שינה או כיבוי אוטומטי בהגדרות הטלוויזיה.');};
+ }
+ var themeButton=document.getElementById('theme-toggle');
+ if(themeButton)themeButton.onclick=function(){
+   window.SHABBAT_LG_THEME_TOUCHED=true;
+   var doc=document.documentElement,light=(' '+doc.className+' ').indexOf(' light-theme ')<0;
+   doc.className=doc.className.split('light-theme').join('').replace(/  +/g,' ')+(light?' light-theme':'');
+   themeButton.textContent=light?'☾ מצב כהה':'☀ מצב בהיר';
+   try{localStorage.setItem('rouach_shabbat_theme_v1',light?'light':'dark')}catch(err){}
+ };
+ window.onerror=function(message){
+   if(status)status.textContent='⚠ תקלה בדפדפן LG: '+String(message).slice(0,95);
+   return false;
+ };
+})();
+</script>
+<script>window.SHABBAT_FORCE_LEGACY=true;</script>
+<script src="../lg-legacy.js?v=20261124-lg-v5" onerror="document.getElementById('legacy-status').textContent='⚠ קובץ הנתונים של LG לא נטען';"></script>
+<script>
+if(!window.SHABBAT_LEGACY_LOADED){
+ var legacyNode=document.getElementById('legacy-status');
+ if(legacyNode)legacyNode.textContent='⚠ מנוע הנתונים של LG לא הופעל';
+}
+</script>
+
+<script>
+/* Minimal, self-contained ES5 data path for the 2016 LG browser.
+   Runs only if the external advanced LG runtime did not start. */
+(function(w,d) {
+ var initialized=false, done={}, failures=[], saved={};
+ var shabbatItems=[], calendarItems=[], solar={}, hebDate=null;
+ function el(id){return d.getElementById(id);}
+ function put(id,text){var n=el(id);if(n)n.textContent=text;}
+ function pad(n){return n<10?'0'+n:String(n);}
+ function dayKey(date){return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());}
+ function localDate(key){var p=key.split('-');return new Date(+p[0],+p[1]-1,+p[2],12);}
+ function dateObj(v){var d=new Date(v);return isNaN(d.getTime())?null:d;}
+ function clock(v){var d=dateObj(v);return d?pad(d.getHours())+':'+pad(d.getMinutes()):'–';}
+ function clear(e){while(e && e.firstChild)e.removeChild(e.firstChild);}
+ function show(e,on){if(!e)return;if(on){e.removeAttribute('hidden');e.hidden=false;e.style.display='block';}else{e.hidden=true;e.style.display='none';}}
+ function note(text){put('legacy-status',text);}
+ function readDayCache(date){
+   try{
+     var value=JSON.parse(localStorage.getItem('lg_tv_board_cache_v1')||'null');
+     return value&&value.date===date?value:null;
+   }catch(e){return null;}
+ }
+ function storeDayCache(kind,payload){
+   try{
+     var date=dayKey(new Date()),current=readDayCache(date)||{date:date};
+     if(kind==='זמני יום'&&payload.times)current.z=payload.times;
+     else if(kind==='שבת'&&payload.items)current.shabbat=payload.items;
+     else if(kind==='תאריך'&&payload.hy)current.heb=payload;
+     else if(kind==='לוח'&&payload.items)current.calendar=payload.items;
+     localStorage.setItem('lg_tv_board_cache_v1',JSON.stringify(current));
+   }catch(e){}
+ }
+ function safeRequest(kind,url,onData){
+   var finished=false,x=null;
+   function finish(payload,error){
+     if(finished)return;finished=true;
+     if(payload) {
+       done[kind]=true;
+       try{onData(payload);storeDayCache(kind,payload);}catch(e){failures.push(kind+': שגיאת הצגה');}
+     }else failures.push(kind+': '+(error||'תקשורת'));
+     var count=0,key;
+     for(key in done)if(done.hasOwnProperty(key))count++;
+     put('last-updated','מקורות זמן: '+count+'/4'+(failures.length?' · ⚠ '+failures.join(' | '):''));
+   }
+   try{
+     x=new XMLHttpRequest();
+     x.open('GET',url,true);
+     x.onreadystatechange=function(){
+       if(x.readyState!==4)return;
+       if(x.status>=200&&x.status<300){
+         try{finish(JSON.parse(x.responseText),null);}catch(err){finish(null,'JSON');}
+       }else finish(null,'HTTP '+x.status);
+     };
+     x.onerror=function(){finish(null,'רשת/CORS');};
+     x.send(null);
+     setTimeout(function(){finish(null,'זמן המתנה');},15000);
+   }catch(err){finish(null,'הדפדפן חסם בקשה');}
+ }
+ function dataTime(id,when){
+   var row=el(id);if(!row)return;
+   var cell=row.querySelector('.zman-time');
+   if(cell)cell.textContent=when?clock(when):'–';
+ }
+ function onZmanim(data){
+   var z=data.times||{};solar=z;
+   var rise=dateObj(z.sunrise),sunset=dateObj(z.sunset);
+   function shift(d,m){return d?new Date(d.getTime()+m*60000):null;}
+   dataTime('z-alot-90',shift(rise,-90));dataTime('z-alot-72',shift(rise,-72));
+   dataTime('z-misheyakir',z.misheyakir);
+   dataTime('z-netz',z.sunrise);
+   dataTime('z-sof-shma',z.sofZmanShma);
+   dataTime('z-chatzot',z.chatzot);
+   dataTime('z-shkia',z.sunset);
+   dataTime('z-tzeit',shift(sunset,18));
+   var auto=d.querySelector('[data-theme-auto]');
+   /* Automatic mode follows daylight unless the user changed the mode manually. */
+   if((!auto||auto.checked)&&!w.SHABBAT_LG_THEME_TOUCHED&&rise&&sunset){
+     var daylight=new Date()>=rise&&new Date()<sunset;
+     d.documentElement.className=d.documentElement.className.split('light-theme').join('')+(daylight?' light-theme':'');
+     put('theme-toggle',daylight?'☾ מצב כהה':'☀ מצב בהיר');
+   }
+ }
+ function numeral(n){
+   n=Number(n);if(!n||n<1)return String(n);
+   if(n===15)return 'ט״ו';if(n===16)return 'ט״ז';
+   var amount=[400,300,200,100,90,80,70,60,50,40,30,20,10,9,8,7,6,5,4,3,2,1];
+   var letters=['ת','ש','ר','ק','צ','פ','ע','ס','נ','מ','ל','כ','י','ט','ח','ז','ו','ה','ד','ג','ב','א'];
+   var i,out='';for(i=0;i<amount.length;i++)while(n>=amount[i]){out+=letters[i];n-=amount[i];}
+   return out.length===1?out+'׳':out.slice(0,-1)+'״'+out.slice(-1);
+ }
+ function year(n){n=Number(n);return n>=1000?numeral(Math.floor(n/1000))+numeral(n%1000):numeral(n);}
+ function onHebrew(v){
+   hebDate=v;if(!v.hy||!v.hd)return;
+   var months={Nisan:'ניסן',Iyyar:'אייר',Sivan:'סיון',Tamuz:'תמוז',Av:'אב',Elul:'אלול',Tishrei:'תשרי',Cheshvan:'חשוון',Kislev:'כסלו',Tevet:'טבת',Shvat:'שבט',Adar:'אדר','Adar I':'אדר א׳','Adar II':'אדר ב׳'};
+   var month=(v.heDateParts&&v.heDateParts.m)||months[v.hm]||v.hm;
+   put('hebrew-date',numeral(v.hd)+' ב'+month+' '+year(v.hy));
+   var names={Nisan:1,Iyyar:2,Sivan:3,Tamuz:4,Av:5,Elul:6,Tishrei:7,Cheshvan:8,Kislev:9,Tevet:10,Shvat:11,Adar:12,'Adar I':13,'Adar II':14};
+   var m=typeof v.hm==='number'?v.hm:names[v.hm],hd=+v.hd;
+   if(m&&hd){
+     var rain=(m===7&&hd>=22)||m===8||m===9||m===10||m===11||m===12||m===6||m===13||m===14||(m===1&&hd<=22);
+     put('tal-geshem-value',rain?'משיב הרוח ומוריד הגשם':'מוריד הטל');
+     var barech=(m===8&&hd>=7)||m===9||m===10||m===11||m===12||m===13||m===14||m===7||(m===1&&hd<15);
+     put('barech-value',barech?'ברך עלינו':'ברכנו');
+   }
+ }
+ function onShabbat(info){
+   shabbatItems=info.items||[];
+   var candles=null, havdalah=null,p='',i,e;
+   for(i=0;i<shabbatItems.length;i++){
+     e=shabbatItems[i];
+     if(e.category==='parashat')p=e.hebrew||e.title||'';
+     if(e.category==='candles')candles=e.date;
+     if(e.category==='havdalah')havdalah=e.date;
+   }
+   put('parasha-name',p||'–');
+   put('shabbat-big',p?'שבת '+p:'שבת קודש');
+   put('val-candles',candles?clock(candles):'–');
+   put('val-havdalah',havdalah?clock(havdalah):'–');
+   put('val-rt',havdalah?clock(new Date(dateObj(havdalah).getTime()+30*60000)):'–');
+ }
+ function onCalendar(data){
+   calendarItems=data.items||[];
+   var now=new Date(),today=dayKey(now),sun=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);
+   sun.setDate(sun.getDate()-sun.getDay());
+   var sat=new Date(sun);sat.setDate(sun.getDate()+6);
+   var first=dayKey(sun),last=dayKey(sat),h=null,rc=null,ev,i,date;
+   for(i=0;i<calendarItems.length;i++){
+     ev=calendarItems[i];date=String(ev.date||'').slice(0,10);
+     if(date<first||date>last)continue;
+     if(!h&&date>=today&&(ev.category==='holiday'||ev.category==='major'||ev.subcat==='major'))h=ev;
+     if(!rc&&(ev.category==='roshchodesh'||(ev.title&&ev.title.indexOf('Rosh Chodesh')===0)))rc=ev;
+   }
+   show(el('holiday-card'),!!h);
+   if(h)put('holiday-value',h.hebrew||h.title);
+   show(el('roshchodesh-card'),!!rc);
+   if(rc)put('roshchodesh-value',rc.hebrew||rc.title);
+   show(el('omer-card'),false);
+   /* Do not make unreliable Tachanun assumptions without complete calendar logic. */
+   show(el('tachanun-card'),false);
+ }
+ function localStore(){
+   try{var x=JSON.parse(localStorage.getItem('halachic_kiosk_weekly_v1')||'{}');return x&&typeof x==='object'?x:{};}catch(e){return {};}
+ }
+ function currentWeek(date){
+   var day=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12);
+   day.setDate(day.getDate()-day.getDay());return dayKey(day);
+ }
+ function latest(weeks,feature){
+   var k,best=0,t;
+   for(k in weeks)if(weeks.hasOwnProperty(k)&&weeks[k]&&weeks[k][feature]){
+     t=Date.parse(weeks[k][feature]);if(!isNaN(t)&&t>best)best=t;
+   }
+   if(!best)return 'אין תאריך עדכון מתועד';
+   var x=new Date(best);return pad(x.getDate())+'/'+pad(x.getMonth()+1)+'/'+x.getFullYear()+' '+clock(x);
+ }
+ function heading(name){
+   var node=d.createElement('div');node.className='weekly-heading';node.textContent=name;return node;
+ }
+ function entry(name,time){
+   var row=d.createElement('div'),a=d.createElement('span'),b=d.createElement('span');
+   row.className='weekly-entry';a.className='weekly-entry-label';b.className='weekly-entry-time';
+   a.textContent=name;b.textContent=time;row.appendChild(a);row.appendChild(b);return row;
+ }
+ function onSchedule(db){
+   saved=db;
+   put('prayers-update-status','תפילות: '+latest(db,'prayersUpdatedAt'));
+   put('elevator-update-status','מעלית: '+latest(db,'elevatorUpdatedAt'));
+   var current=currentWeek(new Date()),key=null,k,day=new Date().getDay(),item;
+   if(db[current])key=current;
+   else for(k in db)if(db.hasOwnProperty(k)&&/^20\d\d-\d\d-\d\d$/.test(k)&&k<current&&(!key||k>key))key=k;
+   var p=el('weekly-prayers'),box=el('weekly-board');if(!p||!box)return;
+   clear(p);
+   if(day===6){
+     p.appendChild(heading('בית הכנסת הרב אליהו אבוחצרא · שבת'));
+     p.appendChild(entry('שחרית','08:00'));
+   }else{
+     p.appendChild(heading('בית הכנסת אור וישועה'));
+     p.appendChild(entry('שחרית','07:10'));
+     p.appendChild(heading('בית הכנסת רמב״ם'));
+     p.appendChild(entry('שחרית','07:00'));
+     p.appendChild(entry('שחרית','08:00'));
+   }
+   if(key){
+     item=db[key]||{};
+     var rows=[];
+     if(day<=4){if(item.weekdayMincha)rows.push(['מנחה',item.weekdayMincha]);if(item.weekdayArvit)rows.push(['ערבית',item.weekdayArvit]);}
+     else if(day===5){if(item.fridayMinchaGedola)rows.push(['מנחה גדולה',item.fridayMinchaGedola]);}
+     else{if(item.shabbatMinchaGedola)rows.push(['מנחה גדולה',item.shabbatMinchaGedola]);if(item.shabbatArvit)rows.push(['ערבית',item.shabbatArvit]);}
+     if(rows.length)p.appendChild(heading('בית הכנסת שארית ישראל'));
+     for(var j=0;j<rows.length;j++)p.appendChild(entry(rows[j][0],rows[j][1]));
+     if(key!==current)p.appendChild(heading('⚠ נתונים מהשבוע הקודם'));
+   }
+   show(box,true);
+ }
+ function cloudRequest(){
+   var api=w.SHABBAT_CLOUD_READ_URL;
+   if(!api||api.indexOf('https://script.google.com/macros/s/')!==0){
+     note('⚠ כתובת ענן לא קיימת; מוצגים זמנים קבועים בלבד');
+     return;
+   }
+   var callback='shabbatCloudCallback_'+new Date().getTime()+Math.floor(Math.random()*10000);
+   var script=d.createElement('script'),finished=false;
+   function clearCb(){if(finished)return;finished=true;try{delete w[callback];}catch(e){w[callback]=null;}if(script.parentNode)script.parentNode.removeChild(script);}
+   w[callback]=function(payload){
+     if(payload&&payload.ok===true&&payload.data&&payload.data.format==='halachic-weekly-v1'&&payload.data.weeks){
+       var db=localStore(),x=payload.data.weeks,k;
+       for(k in x)if(x.hasOwnProperty(k)&&/^20\d\d-\d\d-\d\d$/.test(k)&&x[k])db[k]=x[k];
+       try{localStorage.setItem('halachic_kiosk_weekly_v1',JSON.stringify(db));}catch(err){}
+       onSchedule(db);put('legacy-status','LG · נתוני תפילות ומעלית התקבלו');
+     }else put('legacy-status','⚠ שירות התפילות החזיר נתונים לא תקינים');
+     clearCb();
+   };
+   script.onerror=function(){clearCb();put('legacy-status','⚠ בקשת תפילות ומעלית נכשלה');};
+   script.src=api+(api.indexOf('?')>=0?'&':'?')+'callback='+encodeURIComponent(callback)+'&t='+new Date().getTime();
+   (d.head||d.getElementsByTagName('head')[0]).appendChild(script);
+   setTimeout(function(){if(!finished){clearCb();put('legacy-status','⚠ שירות התפילות לא השיב');}},20000);
+ }
+ function start(){
+   if(initialized)return;
+   if(w.SHABBAT_LEGACY_STARTED){
+     /* The main engine may be alive but unable to retrieve remote data. */
+     var name=el('parasha-name'),z=el('z-netz'),hd=el('hebrew-date');
+     var cell=z&&z.querySelector('.zman-time');
+     var hasZman=cell&&cell.textContent&&cell.textContent!=='–';
+     var hasParasha=name&&name.textContent&&name.textContent!=='טוען…'&&name.textContent!=='–';
+     var hasDate=hd&&hd.textContent&&hd.textContent.indexOf('טוען')<0;
+     if(hasZman&&hasParasha&&hasDate)return;
+   }
+   initialized=true;w.SHABBAT_LG_RECOVERY_ACTIVE=true;
+   var now=new Date(),date=dayKey(now);
+   note('מנוע התאוששות LG פעיל · טוען מידע');
+   show(el('holiday-card'),false);show(el('roshchodesh-card'),false);show(el('tachanun-card'),false);show(el('omer-card'),false);
+   onSchedule(localStore());
+   var cache=readDayCache(date);
+   if(cache){
+     try{
+       if(cache.z)onZmanim({times:cache.z});
+       if(cache.shabbat)onShabbat({items:cache.shabbat});
+       if(cache.heb)onHebrew(cache.heb);
+       if(cache.calendar)onCalendar({items:cache.calendar});
+       put('last-updated','LG · נתונים שמורים מהיום; בודק עדכונים');
+     }catch(cacheError){}
+   }
+   safeRequest('זמני יום','https://www.hebcal.com/zmanim?cfg=json&geonameid=294801&date='+date+'&sec=1',onZmanim);
+   safeRequest('שבת','https://www.hebcal.com/shabbat?cfg=json&geonameid=294801&m=18&b=18&M=on',onShabbat);
+   safeRequest('תאריך','https://www.hebcal.com/converter?cfg=json&date='+date+'&g2h=1&strict=1',onHebrew);
+   safeRequest('לוח','https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&mf=on&ss=on&year='+date.slice(0,4)+'&month='+date.slice(5,7)+'&geo=geoname&geonameid=294801&M=on',onCalendar);
+   cloudRequest();
+ }
+ setTimeout(start,5500);
+})(window,document);
+</script>
+
+<script>
+/* LG-only screen-fitting typography and bounded 30-minute pixel shift.
+   ES5 compatible with webOS 3.0. Does not alter time / schedule / cloud data. */
+(function(d,w){
+ var app=d.getElementById('app'),clock=d.getElementById('clock');
+ if(!app||!clock)return;
+ var groups=[
+  {selectors:'.panel-title',base:29,min:18},
+  {selectors:'.zman-name,.zman-time,.time-label,.time-val,.weekly-entry-label,.weekly-entry-time',base:26,min:16},
+  {selectors:'.time-row .time-label,.time-row .time-val',base:27,min:16},
+  {selectors:'.zman-sub',base:15,min:10},
+  {selectors:'.weekly-heading',base:22,min:14},
+  {selectors:'.halacha-label',base:19,min:12},
+  {selectors:'.halacha-value',base:29,min:18},
+  {selectors:'.halacha-sub',base:16,min:11},
+  {selectors:'#shabbat-big',base:28,min:17},
+  {selectors:'.elevator-next-title',base:23,min:15},
+  {selectors:'#elevator-next-rows',base:16,min:11}
+ ];
+ var sizeKey='rouach_lg_panel_text_scale_restored_v2',userScale=1;
+ try{
+  var stored=parseFloat(localStorage.getItem(sizeKey));
+  if(isFinite(stored)&&stored>=0.8&&stored<=1.5)userScale=stored;
+ }catch(ignore){}
+ var sizes=[0.8,0.9,1,1.1,1.2,1.3,1.4,1.5];
+ function clamp(value,lo,hi){return Math.max(lo,Math.min(hi,value));}
+ function setFont(selector,size){
+  var nodes=d.querySelectorAll(selector),i;
+  for(i=0;i<nodes.length;i++)nodes[i].style.fontSize=size+'px';
+ }
+ function panelOverflow(){
+  var ids=['left','center','right'],i,n;
+  for(i=0;i<ids.length;i++){
+   n=d.getElementById(ids[i]);
+   if(n&&n.scrollHeight>n.clientHeight+2)return true;
+  }
+  return false;
+ }
+ function hasWideOverflow(){
+  var ids=['left','center','right'],i,n,rows,j,labels,one;
+  for(i=0;i<ids.length;i++){
+   n=d.getElementById(ids[i]);
+   if(!n)continue;
+   if(n.scrollWidth>n.clientWidth+4)return true;
+   rows=n.querySelectorAll('.zman-row,.time-row,.weekly-entry');
+   for(j=0;j<rows.length;j++){
+    one=rows[j];
+    if(one.scrollWidth>one.clientWidth+4)return true;
+   }
+  }
+  return false;
+ }
+ function setPanelScale(scale){
+  var i,g,steps=0,failed=false,ratio=scale;
+  /* Start with the selected size. Shrink only as needed; never grow after
+     overflowing its column. Clock/header/footer remain untouched. */
+  for(steps=0;steps<20;steps++){
+   for(i=0;i<groups.length;i++){
+    g=groups[i];
+    var px=Math.max(g.min,Math.round(g.base*ratio*10)/10);
+    setFont(g.selectors,px);
+   }
+   if(!panelOverflow()&&!hasWideOverflow())break;
+   ratio-=.035;
+   if(ratio<.65){failed=true;break;}
+  }
+  return !failed;
+ }
+ function fitTypography(){
+  var panels=d.getElementById('panels');
+  if(!panels||!panels.clientHeight)return;
+  setPanelScale(userScale);
+  var block=d.getElementById('clock');
+  if(block){
+   /* Keep the independently requested 3x clock untouched by these controls. */
+   clock.style.fontSize='180px';
+   clock.style.lineHeight='.88';
+   clock.style.webkitTransform='none';
+   clock.style.transform='none';
+   var outer=d.getElementById('clock-block');
+   if(outer){
+    var available=outer.clientWidth-12,required=clock.scrollWidth;
+    if(available>0&&required>available){
+     var ratio=Math.max(.55,Math.min(1,available/required));
+     var transform='scaleX('+ratio+')';
+     clock.style.webkitTransform=transform;
+     clock.style.transform=transform;
+    }
+   }
+  }
+ }
+ function changeText(direction){
+  var i,idx=2;
+  for(i=0;i<sizes.length;i++)if(Math.abs(sizes[i]-userScale)<.03){idx=i;break;}
+  idx=Math.max(0,Math.min(sizes.length-1,idx+direction));
+  var prior=userScale;
+  userScale=sizes[idx];
+  fitTypography();
+  /* Keep the requested scale saved; layout measurement always enforces fit. */
+  try{localStorage.setItem(sizeKey,String(userScale));}catch(err){}
+  var indicator=d.getElementById('lg-text-grow');
+  if(indicator)indicator.title='טקסט לוח '+Math.round(userScale*100)+'%';
+ }
+ var grow=d.getElementById('lg-text-grow'),shrink=d.getElementById('lg-text-shrink');
+ if(grow)grow.onclick=function(){changeText(1);};
+ if(shrink)shrink.onclick=function(){changeText(-1);};
+ function debounceFit(){
+  if(w.SHABBAT_LG_LAYOUT_PENDING)return;
+  w.SHABBAT_LG_LAYOUT_PENDING=true;
+  setTimeout(function(){w.SHABBAT_LG_LAYOUT_PENDING=false;fitTypography();},120);
+ }
+ /* Tiny 2px maximum offsets distribute static edges across neighboring pixels.
+    This is mitigation, NOT a guarantee against image retention or burn-in. */
+ var offsets=[[0,0],[2,0],[2,2],[0,2],[-2,2],[-2,0],[-2,-2],[0,-2],[2,-2]];
+ var index=-1;
+ function pixelShift(){
+  index=(index+1)%offsets.length;
+  var xy=offsets[index],v='translate('+xy[0]+'px,'+xy[1]+'px)';
+  app.style.webkitTransform=v;
+  app.style.transform=v;
+  app.style.webkitBackfaceVisibility='hidden';
+  app.style.backfaceVisibility='hidden';
+ }
+ /* Align changes to half-hour boundaries and never shift more often. */
+ function scheduleShift(){
+  pixelShift();
+  var now=new Date();
+  var elapsed=(now.getMinutes()%30)*60000+now.getSeconds()*1000+now.getMilliseconds();
+  var remain=1800000-elapsed;
+  setTimeout(scheduleShift,remain);
+ }
+ fitTypography();
+ scheduleShift();
+ if(w.addEventListener)w.addEventListener('resize',debounceFit,false);
+ /* The schedule is populated asynchronously; adapt after it arrives, and
+    periodically account for prayer/Shabbat mode changes without reloading. */
+ setTimeout(fitTypography,7500);
+ setInterval(fitTypography,60000);
+})(document,window);
+</script>
+
+<script>
+/* Legacy LG inspector. Enabled only with ?diagnose=1; never alters the board. */
+(function(w,d){
+ /* Dedicated diagnostic document: display inspector unconditionally. */
+ var panel=d.createElement('div');
+ panel.id='lg-diagnostic-panel';
+ panel.setAttribute('dir','rtl');
+ panel.style.cssText='position:fixed;bottom:15%;left:4%;width:92%;height:64%;background:#10151d;color:#fff;border:4px solid #ebca55;z-index:99999;overflow:hidden;font:18px Arial,sans-serif;padding:12px;direction:rtl;';
+ var title=d.createElement('div');
+ title.style.cssText='font:bold 25px Arial,sans-serif;color:#ebca55;margin:3px 0 10px;';
+ title.textContent='אבחון תצוגת LG · טקסט אמיתי / גודל / צבע / מיקום';
+ panel.appendChild(title);
+ var pre=d.createElement('pre');pre.setAttribute('dir','rtl');
+ pre.style.cssText='margin:0;direction:rtl;white-space:pre-wrap;word-break:break-all;font:17px/1.36 Arial,sans-serif;color:#f8f9ff;';
+ panel.appendChild(pre);
+ d.body.appendChild(panel);
+ var ids=['parasha-label','parasha-name','hebrew-date','day-of-week-left','gregorian-date','location-name','theme-toggle','lg-text-grow','lg-text-shrink','fullscreen-btn','keep-awake-btn','prayers-update-status','elevator-update-status'];
+ function line(id){
+  var n=d.getElementById(id);
+  if(!n)return id+': ELEMENT NOT FOUND';
+  var txt=(n.textContent||'').replace(/\s+/g,' ').substr(0,48);
+  var st={},r={left:0,top:0,width:0,height:0};
+  try{st=w.getComputedStyle(n,null)||{};}catch(e){}
+  try{r=n.getBoundingClientRect();}catch(e){}
+  var behind='';
+  try{
+   var x=r.left+r.width/2,y=r.top+r.height/2,z=d.elementFromPoint(x,y);
+   behind=z?(z.id||z.tagName||'?'):'outside';
+  }catch(e){}
+  return id+' = ['+txt+']'+
+    ' | '+Math.round(r.width)+'×'+Math.round(r.height)+
+    ' y'+Math.round(r.top)+
+    ' | '+(st.display||'?')+'/'+(st.visibility||'?')+
+    ' | '+(st.color||'?')+
+    ' | top:'+behind;
+ }
+ function update(){
+  var parts=[],i;
+  parts.push('viewport '+(w.innerWidth||0)+'×'+(w.innerHeight||0)+' | mode '+d.documentElement.className);
+  parts.push('started '+(!!w.SHABBAT_LEGACY_STARTED)+' | recovery '+(!!w.SHABBAT_LG_RECOVERY_ACTIVE));
+  for(i=0;i<ids.length;i++)parts.push(line(ids[i]));
+  pre.textContent=parts.join('\n');
+ }
+ update();w.setInterval(update,2000);
+})(window,document);
+</script>
+</body>
+</html>
