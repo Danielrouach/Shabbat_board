@@ -288,3 +288,10 @@ Android <=1024px is routed to `fitAndroidBoard()` ahead of the legacy landscape 
 
 - Physical LG screenshot after restored zoom layout showed missing/invisible header labels and footer button captions **while times still loaded**. The current working hypothesis is low or broken inherited text contrast in legacy webOS light mode, not missing schedule data. Scoped, explicitly colored and prefixed `-webkit-text-fill-color` overrides were added at the end of `lg/index.html` CSS for the header (weekday, parasha, dates), footer controls, status and prayer labels. Button backgrounds/borders now have strong light-mode contrast. This is a **visual-only fix**; no changes to layout dimensions, font scaling, async data, Fullscreen API, or screen shift.
 - All eight inline JavaScript blocks syntax-validated. A physical TV retest is required to confirm that missing captions return; if not, inspect webOS paint/overlay or DOM visibility before making additional font-fit modifications.
+
+
+## LG missing captions in BOTH themes (2026-11-24)
+
+- Physical LG photos show header titles/day-of-week and footer button labels missing or nearly invisible in **both** light and dark modes, though static markup and timetable data exist. Previous light-only contrast patch was inadequate.
+- Current `lg/index.html` includes a final scoped CSS block for both theme states that explicitly sets `color`, `-webkit-text-fill-color`, `visibility` and `opacity` on header titles/dates and footer buttons/links/statuses. Dark theme uses light text on dark controls; light theme uses dark text on light controls. This is a rendering-only change with no font sizing, panel fitting, or cloud logic changes.
+- The root cause is still a hypothesis: possible old Chromium 38 text painting/inheritance. Test the TV in both modes. If captions still vanish, verify whether DOM `textContent` is present or whether clipping/layer composition is the root cause before making more CSS modifications.
