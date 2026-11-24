@@ -201,6 +201,45 @@ html.light-theme #weekly-board{
  color:#172839!important;
  -webkit-text-fill-color:#172839!important;
 }
+/* Legacy webOS 3 text painting fix for BOTH themes.
+   Button labels and header fields exist in DOM but can be painted with an
+   inherited/incorrect fill color. Explicitly set text/fill and opacity.
+   No font-size, layout or data behavior changes. */
+#header #bsd,#header #parasha-label,#header #parasha-name,
+#header #hebrew-date,#header #day-of-week-left,
+#header #gregorian-date,#header #location-name,
+#footer,#footer .theme-auto-control,#footer-right span{
+ color:#edf5ff!important;
+ -webkit-text-fill-color:#edf5ff!important;
+ opacity:1!important;visibility:visible!important;
+}
+#header #parasha-name,#header #hebrew-date{
+ color:#f3db9d!important;-webkit-text-fill-color:#f3db9d!important;
+}
+#footer-left button,#footer-left a{
+ color:#f9e2a9!important;-webkit-text-fill-color:#f9e2a9!important;
+ background:#172940!important;border-color:#b99449!important;
+ opacity:1!important;visibility:visible!important;
+}
+#header #parasha-block,#header #location-block,
+#footer-left,#footer-right{
+ opacity:1!important;visibility:visible!important;
+}
+html.light-theme #header #bsd,html.light-theme #header #parasha-label,
+html.light-theme #header #hebrew-date,
+html.light-theme #header #day-of-week-left,html.light-theme #header #gregorian-date,
+html.light-theme #header #location-name,
+html.light-theme #footer,html.light-theme #footer .theme-auto-control,
+html.light-theme #footer-right span{
+ color:#1a2d43!important;-webkit-text-fill-color:#1a2d43!important;
+}
+html.light-theme #header #parasha-name{
+ color:#67440a!important;-webkit-text-fill-color:#67440a!important;
+}
+html.light-theme #footer-left button,html.light-theme #footer-left a{
+ color:#4e340b!important;-webkit-text-fill-color:#4e340b!important;
+ background:#f7e9c6!important;border-color:#80601f!important;
+}
 </style>
 <script>
 (function(){
