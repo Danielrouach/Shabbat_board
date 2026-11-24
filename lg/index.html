@@ -245,6 +245,27 @@ html.light-theme #footer-left button,html.light-theme #footer-left a{
 #right{overflow:hidden!important;}
 #footer{position:relative;z-index:2;background:#080c10;}
 html.light-theme #footer{background:#f4f7fc;}
+/* Older LG GPU compositor can fail to paint static Hebrew labels in
+   header/footer under transformed ancestors. Keep the pixel shift as
+   relative left/top movement, preserving these elements as normal text. */
+#app{position:relative;-webkit-transform:none;transform:none;}
+#header,#footer,#parasha-block,#location-block,
+#footer-left,#footer-right,#footer button,#footer a{
+ -webkit-backface-visibility:visible!important;
+ backface-visibility:visible!important;
+}
+#header #bsd,#header #parasha-label,#header #parasha-name,
+#header #hebrew-date,#header #day-of-week-left,
+#header #gregorian-date,#header #location-name{
+ display:block;
+}
+#footer-right span{display:block;}
+#footer button,#footer a{
+ -webkit-appearance:none;
+ appearance:none;
+ font-family:Arial,sans-serif!important;
+ font-weight:700!important;
+}
 </style>
 <script>
 (function(){
@@ -826,11 +847,16 @@ if(!window.SHABBAT_LEGACY_LOADED){
  var index=-1;
  function pixelShift(){
   index=(index+1)%offsets.length;
-  var xy=offsets[index],v='translate('+xy[0]+'px,'+xy[1]+'px)';
-  app.style.webkitTransform=v;
-  app.style.transform=v;
-  app.style.webkitBackfaceVisibility='hidden';
-  app.style.backfaceVisibility='hidden';
+  var xy=offsets[index];
+  /* webOS 3 Chromium 38 can drop static Hebrew glyphs when the entire
+     dashboard is hardware-composited using transform/backface-visibility.
+     Use normal positioned layout offsets instead; same +/-2px movement. */
+  app.style.webkitTransform='none';
+  app.style.transform='none';
+  app.style.webkitBackfaceVisibility='visible';
+  app.style.backfaceVisibility='visible';
+  app.style.left=xy[0]+'px';
+  app.style.top=xy[1]+'px';
  }
  /* Align changes to half-hour boundaries and never shift more often. */
  function scheduleShift(){
