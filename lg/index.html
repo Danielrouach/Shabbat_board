@@ -132,15 +132,6 @@ html.light-theme #legacy-status{color:#684000!important}
 #footer-right{width:30%;font-size:15px;}
 #footer-left button,#footer-left a{font-size:19px;line-height:1.2;padding:9px 13px;min-height:44px;margin:3px 5px;}
 #footer-left .theme-auto-control{font-size:16px;margin:3px 6px;}
-/* Make the checkbox itself remote-readable; do not enlarge its label. */
-#footer-left .theme-auto-control input[type="checkbox"]{
- width:27px!important;height:27px!important;min-width:27px!important;
- margin:0 5px 0 4px!important;vertical-align:middle!important;
- -webkit-appearance:checkbox;appearance:checkbox;
-}
-#footer{-webkit-flex-shrink:0!important;flex-shrink:0!important;}
-#panels{min-height:0!important;overflow:hidden!important;padding-bottom:9px!important;}
-
 #lg-text-grow,#lg-text-shrink{font-size:25px!important;font-weight:bold;min-width:63px;min-height:46px!important;}
 #footer-left button:focus,#footer-left a:focus{outline:2px solid #e1c06a;outline-offset:2px;}
 #panels .zman-row,#panels .time-row,#panels .weekly-entry{gap:12px;}
@@ -571,7 +562,7 @@ if(!window.SHABBAT_LEGACY_LOADED){
   {selectors:'.elevator-next-title',base:23,min:15},
   {selectors:'#elevator-next-rows',base:16,min:11}
  ];
- var sizeKey='rouach_lg_panel_text_scale_v1',userScale=1;
+ var sizeKey='rouach_lg_panel_text_scale_restored_v2',userScale=1;
  try{
   var stored=parseFloat(localStorage.getItem(sizeKey));
   if(isFinite(stored)&&stored>=0.8&&stored<=1.5)userScale=stored;
@@ -582,54 +573,43 @@ if(!window.SHABBAT_LEGACY_LOADED){
   var nodes=d.querySelectorAll(selector),i;
   for(i=0;i<nodes.length;i++)nodes[i].style.fontSize=size+'px';
  }
- function hasOverflow(id) {
-  var panel=d.getElementById(id),footer=d.getElementById('footer');
-  if(!panel)return false;
-  /* scrollHeight alone is insufficient on webOS 3 with flex children. Check
-     the physical last visible descendant against the footer's top boundary. */
-  if(panel.scrollHeight>panel.clientHeight+1||panel.scrollWidth>panel.clientWidth+2)return true;
-  var edge=panel.getBoundingClientRect(),limit=edge.bottom-9;
-  if(footer&&footer.getBoundingClientRect)
-   limit=Math.min(limit,footer.getBoundingClientRect().top-12);
-  var selectors='.zman-row,.time-row,.weekly-entry,.weekly-heading,.panel-title,.halacha-card,.elevator-next-title,#shabbat-big';
-  var nodes=panel.querySelectorAll(selectors),i,node,rect,cs;
-  for(i=0;i<nodes.length;i++){
-   node=nodes[i];
-   if(node.hidden||node.style.display==='none')continue;
-   rect=node.getBoundingClientRect();
-   if(rect.height<=0)continue;
-   if(rect.bottom>limit+1||rect.right>edge.right-4||rect.left<edge.left+4)return true;
+ function panelOverflow(){
+  var ids=['left','center','right'],i,n;
+  for(i=0;i<ids.length;i++){
+   n=d.getElementById(ids[i]);
+   if(n&&n.scrollHeight>n.clientHeight+2)return true;
   }
   return false;
  }
- function applyPanelScale(id,ratio){
-  var i,g,nodes,k,px;
-  for(i=0;i<groups.length;i++){
-   g=groups[i];
-   px=Math.max(g.min,Math.round(g.base*ratio*10)/10);
-   /* Scope EVERY comma-separated selector to this panel. */
-   var parts=g.selectors.split(','),scoped=[],part;
-   for(k=0;k<parts.length;k++){
-    part=parts[k].replace(/^\s+|\s+$/g,'');
-    scoped.push('#'+id+' '+part);
+ function hasWideOverflow(){
+  var ids=['left','center','right'],i,n,rows,j,labels,one;
+  for(i=0;i<ids.length;i++){
+   n=d.getElementById(ids[i]);
+   if(!n)continue;
+   if(n.scrollWidth>n.clientWidth+4)return true;
+   rows=n.querySelectorAll('.zman-row,.time-row,.weekly-entry');
+   for(j=0;j<rows.length;j++){
+    one=rows[j];
+    if(one.scrollWidth>one.clientWidth+4)return true;
    }
-   nodes=d.querySelectorAll(scoped.join(','));
-   for(k=0;k<nodes.length;k++)nodes[k].style.fontSize=px+'px';
   }
+  return false;
  }
  function setPanelScale(scale){
-  var ids=['left','center','right'],i,ratio,step;
-  /* Fit EACH COLUMN independently. One full prayer column cannot force the
-     zmanim and halacha panels to shrink. The footer is a hard boundary. */
-  for(i=0;i<ids.length;i++){
-   ratio=scale;
-   for(step=0;step<28;step++){
-    applyPanelScale(ids[i],ratio);
-    if(!hasOverflow(ids[i]))break;
-    ratio-=.025;
-    if(ratio<.50){applyPanelScale(ids[i],.50);break;}
+  var i,g,steps=0,failed=false,ratio=scale;
+  /* Start with the selected size. Shrink only as needed; never grow after
+     overflowing its column. Clock/header/footer remain untouched. */
+  for(steps=0;steps<20;steps++){
+   for(i=0;i<groups.length;i++){
+    g=groups[i];
+    var px=Math.max(g.min,Math.round(g.base*ratio*10)/10);
+    setFont(g.selectors,px);
    }
+   if(!panelOverflow()&&!hasWideOverflow())break;
+   ratio-=.035;
+   if(ratio<.65){failed=true;break;}
   }
+  return !failed;
  }
  function fitTypography(){
   var panels=d.getElementById('panels');
@@ -658,6 +638,7 @@ if(!window.SHABBAT_LEGACY_LOADED){
   var i,idx=2;
   for(i=0;i<sizes.length;i++)if(Math.abs(sizes[i]-userScale)<.03){idx=i;break;}
   idx=Math.max(0,Math.min(sizes.length-1,idx+direction));
+  var prior=userScale;
   userScale=sizes[idx];
   fitTypography();
   /* Keep the requested scale saved; layout measurement always enforces fit. */
@@ -698,10 +679,8 @@ if(!window.SHABBAT_LEGACY_LOADED){
  if(w.addEventListener)w.addEventListener('resize',debounceFit,false);
  /* The schedule is populated asynchronously; adapt after it arrives, and
     periodically account for prayer/Shabbat mode changes without reloading. */
- setTimeout(fitTypography,2000);
  setTimeout(fitTypography,7500);
- setTimeout(fitTypography,15000);
- setInterval(fitTypography,15000);
+ setInterval(fitTypography,60000);
 })(document,window);
 </script>
 </body>
