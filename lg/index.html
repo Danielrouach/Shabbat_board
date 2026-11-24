@@ -142,6 +142,65 @@ html.light-theme #legacy-status{color:#684000!important}
  #footer-left button,#footer-left a{font-size:17px;min-height:38px;padding:6px 10px;margin:2px 4px;}
  #lg-text-grow,#lg-text-shrink{font-size:22px!important;min-height:40px!important;min-width:50px;}
 }
+/* webOS 3 light-mode text visibility repair.
+   Do not touch flex geometry, clock scale, data or zoom calculations.
+   Some old LG engines fail inherited body text colors in nested elements. */
+html.light-theme #header,
+html.light-theme #header #bsd,
+html.light-theme #header #day-of-week-left,
+html.light-theme #header #hebrew-date,
+html.light-theme #header #shabbat-clock{
+ color:#182638!important;
+ -webkit-text-fill-color:#182638!important;
+}
+html.light-theme #header #parasha-label,
+html.light-theme #header #location-name,
+html.light-theme #header #gregorian-date{
+ color:#354b64!important;
+ -webkit-text-fill-color:#354b64!important;
+}
+html.light-theme #header #parasha-name{
+ color:#63450e!important;
+ -webkit-text-fill-color:#63450e!important;
+}
+html.light-theme #footer,
+html.light-theme #footer-left,
+html.light-theme #footer-right,
+html.light-theme #footer .theme-auto-control,
+html.light-theme #footer-right span{
+ color:#172839!important;
+ -webkit-text-fill-color:#172839!important;
+}
+html.light-theme #footer button,
+html.light-theme #footer a,
+html.light-theme #footer #lg-text-grow,
+html.light-theme #footer #lg-text-shrink{
+ color:#553903!important;
+ -webkit-text-fill-color:#553903!important;
+ background:#f7e9c6!important;
+ border:2px solid #80601f!important;
+ opacity:1!important;
+ visibility:visible!important;
+}
+html.light-theme #last-updated,
+html.light-theme #prayers-update-status,
+html.light-theme #elevator-update-status{
+ color:#263e52!important;
+ -webkit-text-fill-color:#263e52!important;
+}
+html.light-theme #legacy-status{
+ color:#684000!important;
+ -webkit-text-fill-color:#684000!important;
+}
+html.light-theme .weekday-section-title,
+html.light-theme .zman-name,
+html.light-theme .time-label,
+html.light-theme .weekly-entry-label,
+html.light-theme #weekly-prayers,
+html.light-theme #weekly-board{
+ color:#172839!important;
+ -webkit-text-fill-color:#172839!important;
+}
 </style>
 <script>
 (function(){
