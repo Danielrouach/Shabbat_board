@@ -850,5 +850,44 @@ if(!window.SHABBAT_LEGACY_LOADED){
  update();w.setInterval(update,2000);
 })(window,document);
 </script>
+<script>
+/* Compare legacy webOS Hebrew text rendering and DOM getters in isolation. */
+(function(w,d){
+ var box=d.createElement('div');
+ box.style.cssText='position:fixed;top:2%;left:2%;right:2%;z-index:100001;border:4px solid #eaba42;background:#131b29;color:white;padding:10px;font:22px Arial,sans-serif;direction:rtl;';
+ var header=d.createElement('div');
+ header.textContent='בדיקת כתיבה בעברית · ארבע שיטות';
+ header.style.cssText='font:bold 23px Arial;color:#ffdf70;';
+ box.appendChild(header);
+ function row(label){
+  var n=d.createElement('div');
+  n.style.cssText='background:#28354a;color:#fff;border-bottom:1px solid #9ab0cb;font:22px Arial,sans-serif;padding:5px;margin:3px;min-height:27px;';
+  box.appendChild(n);
+  return n;
+ }
+ var a=row(''),b=row(''),c=row(''),e=row('');
+ a.innerHTML='1. HTML: &#1508;&#1512;&#1513;&#1514; &#1492;&#1513;&#1489;&#1493;&#1506; | &#1502;&#1510;&#1489; &#1489;&#1492;&#1497;&#1512;';
+ b.textContent='2. TEXTCONTENT: פרשת השבוע | מצב בהיר';
+ c.appendChild(d.createTextNode('3. NODE: פרשת השבוע | מצב בהיר'));
+ e.innerText='4. INNERTEXT: פרשת השבוע | מצב בהיר';
+ var summary=d.createElement('div');
+ summary.style.cssText='font:16px Arial,sans-serif;color:#ffdf70;';
+ box.appendChild(summary);
+ function reading(id){
+  var n=d.getElementById(id);
+  if(!n)return id+':none';
+  var child=n.firstChild;
+  return id+' textContent='+(n.textContent||'').length+
+    ' innerText='+(n.innerText||'').length+
+    ' innerHTML='+(n.innerHTML||'').length+
+    ' nodeValue='+(child&&child.nodeValue||'').length;
+ }
+ function refresh(){
+  summary.textContent=reading('parasha-label')+' | '+reading('theme-toggle');
+ }
+ refresh();w.setInterval(refresh,2000);
+ d.body.appendChild(box);
+})(window,document);
+</script>
 </body>
 </html>
