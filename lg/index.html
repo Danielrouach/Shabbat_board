@@ -201,6 +201,67 @@ html.light-theme #weekly-board{
  color:#172839!important;
  -webkit-text-fill-color:#172839!important;
 }
+/* webOS 3 legacy: fixed-position header and toolbar, without flex text layers.
+   All sizing below is local to header/footer. Preserve dashboard panels. */
+#header {
+ display:block!important;position:relative!important;
+ overflow:visible!important;
+}
+#header #parasha-block {
+ display:block!important;position:absolute!important;
+ top:6px!important;right:10px!important;left:auto!important;
+ width:26%!important;height:auto!important;
+ -webkit-flex:none!important;flex:none!important;
+ overflow:visible!important;text-align:right!important;
+}
+#header #clock-block {
+ display:block!important;position:absolute!important;
+ left:26%!important;top:0!important;
+ width:48%!important;height:100%!important;
+ -webkit-flex:none!important;flex:none!important;
+ overflow:visible!important;text-align:center!important;
+}
+#header #location-block {
+ display:block!important;position:absolute!important;
+ left:10px!important;right:auto!important;top:6px!important;
+ width:25%!important;height:auto!important;
+ -webkit-flex:none!important;flex:none!important;
+ overflow:visible!important;text-align:left!important;
+}
+#header #bsd,#header #parasha-label,#header #parasha-name,
+#header #hebrew-date,#header #day-of-week-left,
+#header #gregorian-date,#header #location-name{
+ display:block!important;position:static!important;
+ height:auto!important;min-height:1em!important;
+ overflow:visible!important;line-height:1.18!important;
+ opacity:1!important;visibility:visible!important;
+}
+#footer {
+ display:block!important;position:relative!important;
+ overflow:visible!important;
+}
+#footer #footer-left {
+ display:block!important;position:absolute!important;
+ right:7px!important;left:auto!important;top:5px!important;
+ width:69%!important;height:auto!important;
+ overflow:visible!important;text-align:right!important;
+}
+#footer #footer-right {
+ display:block!important;position:absolute!important;
+ left:7px!important;right:auto!important;top:5px!important;
+ width:30%!important;height:auto!important;
+ overflow:visible!important;text-align:right!important;
+}
+#footer #footer-left button,#footer #footer-left a {
+ display:inline-block!important;position:static!important;
+ height:auto!important;line-height:1.25!important;
+ vertical-align:middle!important;
+ white-space:nowrap!important;text-align:center!important;
+}
+#footer #footer-right span {
+ display:block!important;position:static!important;
+ height:auto!important;line-height:1.2!important;
+}
 </style>
 <script>
 (function(){
