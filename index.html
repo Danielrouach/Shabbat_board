@@ -4053,5 +4053,89 @@ document.addEventListener('webkitfullscreenchange',updateFullscreenButton);
 updateFullscreenButton();
 
 </script>
+<script>
+/* Read-only TV diagnostics, enabled exclusively by the exact ?tv1 URL.
+   Do not force a layout here: the goal is to observe the browser's real choice. */
+(function(){
+ if(location.search !== '?tv1')return;
+ var root=document.documentElement;
+ var box=document.createElement('div');
+ box.id='tv1-debug';
+ box.setAttribute('dir','ltr');
+ box.style.cssText='position:fixed;left:1%;right:1%;top:1%;z-index:2147483647;background:#08121e;color:#fff;border:2px solid #70d8ff;padding:8px 12px;font:normal 14px/1.27 monospace;box-shadow:0 4px 20px #000;max-height:96%;overflow:auto;box-sizing:border-box;text-align:left;transform:none;';
+ var controls=document.createElement('div');
+ controls.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:5px;';
+ var title=document.createElement('strong');
+ title.textContent='TV DEBUG v1 | ?tv1';
+ title.style.cssText='color:#70d8ff;font-size:16px;margin-right:12px;';
+ controls.appendChild(title);
+ function button(label,handler){
+  var b=document.createElement('button');
+  b.type='button';b.textContent=label;
+  b.style.cssText='background:#153451;color:white;border:1px solid #70d8ff;border-radius:4px;padding:4px 10px;font:bold 14px Arial;cursor:pointer;';
+  b.onclick=handler;controls.appendChild(b);return b;
+ }
+ var pre=document.createElement('pre');
+ pre.style.cssText='white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;margin:0;font:inherit;line-height:1.27;color:#fff;';
+ var fullButton=button('Enter / exit fullscreen',function(){
+  var f=document.fullscreenElement||document.webkitFullscreenElement;
+  try{
+   var method=f?(document.exitFullscreen||document.webkitExitFullscreen):(root.requestFullscreen||root.webkitRequestFullscreen);
+   if(method){var p=method.call(f?document:root);if(p&&p.catch)p.catch(function(e){lastEvent='Fullscreen error: '+e.message;render();});}
+   else {lastEvent='Fullscreen API unavailable';render();}
+  }catch(e){lastEvent='Fullscreen error: '+e.message;render();}
+ });
+ button('Refresh',function(){lastEvent='Manual refresh';render();});
+ var hide=button('Hide details',function(){var hidden=pre.style.display==='none';pre.style.display=hidden?'block':'none';hide.textContent=hidden?'Hide details':'Show details';});
+ box.appendChild(controls);box.appendChild(pre);document.body.appendChild(box);
+ var lastEvent='Page opened',previous='',initial='';
+ function value(v){return v===undefined||v===null?'n/a':String(v);}
+ function num(v){return typeof v==='number'?String(Math.round(v*100)/100):value(v);}
+ function pair(w,h){return num(w)+' x '+num(h);}
+ function mq(q){try{return window.matchMedia(q).matches?'yes':'no';}catch(e){return 'n/a';}}
+ function full(){var e=document.fullscreenElement||document.webkitFullscreenElement;return e?(e.id||e.tagName||'yes'):'no';}
+ function dims(){var vv=window.visualViewport;return 'window '+pair(window.innerWidth,window.innerHeight)+' | root '+pair(root.clientWidth,root.clientHeight)+' | visual '+(vv?pair(vv.width,vv.height):'n/a')+' | fullscreen '+full();}
+ function info(id){
+  var el=document.getElementById(id);if(!el)return id+': absent';
+  var c=window.getComputedStyle(el),r=el.getBoundingClientRect();
+  return id+': '+pair(r.width,r.height)+' @ '+pair(r.left,r.top)+' | display='+c.display+' | font='+c.fontSize+' | scroll/client '+pair(el.scrollWidth,el.scrollHeight)+' / '+pair(el.clientWidth,el.clientHeight);
+ }
+ function render(){
+  var vv=window.visualViewport,sc=window.screen||{},app=document.getElementById('app'),css=document.getElementById('board-responsive-css'),cs=app?window.getComputedStyle(app):null;
+  var current=dims();
+  if(!initial)initial=current;
+  if(previous&&previous!==current)lastEvent='Viewport changed: '+previous;
+  previous=current;
+  var ua=navigator.userAgent||'';
+  var tvUA=/Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bTV\b/i.test(ua);
+  var nonTouch=/Android/i.test(ua)&&!/Mobile/i.test(ua)&&navigator.maxTouchPoints===0&&mq('(orientation: landscape)')==='yes'&&mq('(any-pointer: coarse)')==='no';
+  var classes=root.className||'(none)';
+  var mode=root.classList.contains('android-tv-desktop')?'TV desktop':root.classList.contains('android-board-recovery')?'Android compact':mq('(max-width: 1024px)')==='yes'?(mq('(orientation: landscape)')==='yes'?'compact landscape':'compact portrait'):'desktop';
+  var data=[
+   'UA: '+ua,
+   'platform: '+value(navigator.platform)+' | vendor: '+value(navigator.vendor)+' | touch points: '+value(navigator.maxTouchPoints),
+   'Android UA: '+/Android/i.test(ua)+' | Mobile UA: '+/Mobile/i.test(ua)+' | TV token: '+tvUA+' | non-touch TV heuristic: '+nonTouch,
+   'screen CSS: '+pair(sc.width,sc.height)+' | available: '+pair(sc.availWidth,sc.availHeight)+' | DPR: '+value(window.devicePixelRatio)+' | colorDepth: '+value(sc.colorDepth),
+   'physical pixel estimate (screen x DPR): '+(typeof sc.width==='number'&&window.devicePixelRatio?pair(sc.width*window.devicePixelRatio,sc.height*window.devicePixelRatio):'n/a'),
+   'NOW: '+current+' | outer '+pair(window.outerWidth,window.outerHeight),
+   'OPEN: '+initial,
+   'visual scale: '+(vv?num(vv.scale):'n/a')+' | offset: '+(vv?pair(vv.offsetLeft,vv.offsetTop):'n/a')+' | orientation: '+value(sc.orientation&&sc.orientation.type),
+   'media: <=1024 '+mq('(max-width: 1024px)')+' | landscape '+mq('(orientation: landscape)')+' | coarse '+mq('(any-pointer: coarse)')+' | fine '+mq('(any-pointer: fine)')+' | hover '+mq('(hover: hover)'),
+   'fullscreen API: '+!!(root.requestFullscreen||root.webkitRequestFullscreen)+' | enabled: '+value(document.fullscreenEnabled===undefined?document.webkitFullscreenEnabled:document.fullscreenEnabled),
+   'MODE: '+mode+' | html classes: '+classes+' | responsive.css media: '+(css?value(css.media):'missing'),
+   'app zoom: '+(cs?value(cs.zoom):'n/a')+' | inline zoom: '+(app?value(app.style.zoom):'n/a')+' | transform: '+(cs?value(cs.transform):'n/a'),
+   'app grid: '+(cs?cs.gridTemplateRows+' / '+cs.gridTemplateColumns:'n/a'),
+   info('app'),info('header'),info('clock'),info('mobile-theme-controls'),info('left'),info('center'),info('right'),info('footer'),
+   'Last event: '+lastEvent
+  ];
+  pre.textContent=data.join('\n');
+ }
+ function changed(e){lastEvent=e.type;render();}
+ window.addEventListener('resize',changed);window.addEventListener('orientationchange',changed);
+ document.addEventListener('fullscreenchange',changed);document.addEventListener('webkitfullscreenchange',changed);
+ if(window.visualViewport)window.visualViewport.addEventListener('resize',changed);
+ render();setInterval(render,1000);
+})();
+</script>
 </body>
 </html>
