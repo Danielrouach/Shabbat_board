@@ -2882,14 +2882,40 @@ function isAndroidBoard(){
         window.matchMedia('(max-width: 1024px)').matches;
 }
 let androidFitQueued=false,androidFitBusy=false;
+let androidLastGoodZoom=null;
+const androidBoardDevice=/Android/i.test(navigator.userAgent);
+const androidBoardTV=androidBoardDevice && /Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bTV\b/i.test(navigator.userAgent);
+// Remove stale compact zoom when fullscreen crosses the layout breakpoint.
+function syncAndroidBoardMode(){
+ if(!androidBoardDevice)return;
+ const root=document.documentElement;
+ const compact=window.matchMedia('(max-width: 1024px)').matches;
+ if(compact){root.classList.add('android-board-recovery');return;}
+ if(!root.classList.contains('android-board-recovery'))return;
+ root.classList.remove('android-board-recovery');
+ const app=document.getElementById('app');
+ if(app){
+  app.style.removeProperty('zoom');
+  app.style.removeProperty('--android-board-width');
+  app.style.removeProperty('--android-board-height');
+ }
+ androidLastGoodZoom=null;
+}
 function fitAndroidBoard(){
  if(!isAndroidBoard()||androidFitBusy)return;
  const app=document.getElementById('app');
  if(!app)return;
  androidFitBusy=true;
  try{
-  const vw=Math.max(1,Math.floor((window.visualViewport && window.visualViewport.width)||window.innerWidth));
-  const vh=Math.max(1,Math.floor((window.visualViewport && window.visualViewport.height)||window.innerHeight));
+  // Fullscreen can briefly report a stale or tiny visual viewport.
+  const visual=window.visualViewport;
+  const layoutW=document.documentElement.clientWidth||window.innerWidth;
+  const layoutH=document.documentElement.clientHeight||window.innerHeight;
+  const nativeFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  const useLayout=androidBoardTV||nativeFull;
+  const vw=Math.floor(useLayout?layoutW:((visual&&visual.width)||window.innerWidth));
+  const vh=Math.floor(useLayout?layoutH:((visual&&visual.height)||window.innerHeight));
+  if(!Number.isFinite(vw)||!Number.isFinite(vh)||vw<200||vh<120)return;
   const bar=document.getElementById('copyright-bar');
   const barHeight=(bar && bar.getBoundingClientRect().height)||18;
   const available=Math.max(1,vh-barHeight-2);
@@ -2897,10 +2923,13 @@ function fitAndroidBoard(){
   const parts=['header','mobile-theme-controls','bday-row','left','center','right','footer']
     .map(id=>document.getElementById(id)).filter(Boolean);
   const visible=el=>el.getClientRects().length>0&&getComputedStyle(el).display!=='none';
-  const fits=zoom=>{
+  const applyZoom=zoom=>{
    app.style.zoom=String(zoom);
    app.style.setProperty('--android-board-width',(vw/zoom).toFixed(2)+'px');
    app.style.setProperty('--android-board-height',(available/zoom).toFixed(2)+'px');
+  };
+  const fits=zoom=>{
+   applyZoom(zoom);
    if(app.scrollHeight>app.clientHeight+2||app.scrollWidth>app.clientWidth+2)return false;
    const ar=app.getBoundingClientRect();
    if(ar.left< -2||ar.right>vw+2||ar.top< -2||ar.bottom>available+2)return false;
@@ -2921,11 +2950,13 @@ function fitAndroidBoard(){
    }
    return true;
   };
-  if(fits(1))return;
-  let low=.2,high=1;
-  for(let i=0;i<12&&!fits(low);i++)low*=.5;
+  if(fits(1)){androidLastGoodZoom=1;return;}
+  // Failed measurements must never leave an unreadably small zoom active.
+  const minimum=androidBoardTV ? .35 : .2;
+  let low=minimum,high=1;
   if(!fits(low)){
-   console.warn('Android kiosk: content cannot fit at minimum zoom');
+   applyZoom(androidLastGoodZoom===null?1:Math.max(minimum,androidLastGoodZoom));
+   console.warn('Android kiosk: fit unavailable; restored readable zoom');
    return;
   }
   for(let i=0;i<15;i++){
@@ -2933,7 +2964,8 @@ function fitAndroidBoard(){
    if(fits(mid))low=mid;
    else high=mid;
   }
-  fits(Math.max(.0001,low-.0003));
+  applyZoom(low);
+  androidLastGoodZoom=low;
  }finally{androidFitBusy=false;}
 }
 function requestAndroidFit(){
@@ -3024,6 +3056,7 @@ function fitZmanimFont(){
 }
 let fitColumnsQueued=false;
 function requestColumnFit(){
+ syncAndroidBoardMode();
  if(isAndroidBoard()){requestAndroidFit();return;}
   if(isLandscapeBoard()){requestLandscapeFit();return;}
  if(fitColumnsQueued)return;
@@ -3097,6 +3130,7 @@ function fitShabbatFont(){
  } finally {rightFitBusy=false}
 }
 function requestRightFit(){
+  syncAndroidBoardMode();
   if(isAndroidBoard()){requestAndroidFit();return;}
   if(isLandscapeBoard()){requestLandscapeFit();return;}
   if(rightFitQueued)return;
@@ -3124,6 +3158,17 @@ window.addEventListener('resize',requestColumnFit);
 window.addEventListener('orientationchange',requestColumnFit);
 window.addEventListener('load',requestColumnFit);
 document.addEventListener('fullscreenchange',requestColumnFit);
+if(androidBoardDevice){
+ // Android TV browsers may dispatch resize before the viewport settles.
+ let androidSettleTimers=[];
+ const settleAndroidFullscreen=()=>{
+  androidSettleTimers.forEach(clearTimeout);
+  androidSettleTimers=[100,350,900].map(delay=>setTimeout(requestColumnFit,delay));
+ };
+ document.addEventListener('fullscreenchange',settleAndroidFullscreen);
+ document.addEventListener('webkitfullscreenchange',settleAndroidFullscreen);
+ window.addEventListener('resize',settleAndroidFullscreen);
+}
 if (window.visualViewport) window.visualViewport.addEventListener('resize',requestColumnFit);
 
 // ── Burn-in / pixel-shift protection ─────────────────────────
@@ -3151,7 +3196,7 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize',reque
 
   // Android Chrome sometimes loses the composited grid layer when a
   // transform is applied to the entire #app. Never transform it on phones.
-  if (document.documentElement.classList.contains('android-board-recovery')) return;
+  if (document.documentElement.classList.contains('android-board-recovery') || androidBoardTV) return;
   applyShift(); // apply immediately on load
   setInterval(applyShift, 3 * 60 * 1000); // shift every 3 minutes
 })();
