@@ -16,7 +16,21 @@
       }
       document.documentElement.classList.add('lg-tv-board');
     }
-    if (/Android/i.test(navigator.userAgent) &&
+    var ua=navigator.userAgent;
+    var android=/Android/i.test(ua);
+    var tvOverride=/(?:^|[?&])tv=1(?:&|$)/.test(location.search);
+    var tvUA=/Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bTV\b/i.test(ua);
+    // TV browsers often omit the TV token; a non-touch Android landscape
+    // device with no coarse pointer is a TV/desktop-style kiosk.
+    var nonTouchTV=android && !/Mobile/i.test(ua) &&
+      navigator.maxTouchPoints===0 &&
+      window.matchMedia('(orientation: landscape)').matches &&
+      !window.matchMedia('(any-pointer: coarse)').matches;
+    if (!document.documentElement.classList.contains('lg-tv-board') &&
+        (tvOverride || (android && (tvUA || nonTouchTV)))) {
+      document.documentElement.classList.add('android-tv-desktop');
+    }
+    if (android && !document.documentElement.classList.contains('android-tv-desktop') &&
         window.matchMedia('(max-width: 1024px)').matches) {
       document.documentElement.classList.add('android-board-recovery');
     }
@@ -1000,7 +1014,52 @@ html.light-theme #footer-right .feature-update-status.stale{color:#a34713}
 html.light-theme .theme-auto-control{color:#40536b}
 </style>
 <!-- Mobile/tablet overrides must follow the kiosk stylesheet. -->
-<link rel="stylesheet" href="responsive.css?v=20261123-lg-webos-v15">
+<link rel="stylesheet" id="board-responsive-css" href="responsive.css?v=20261123-lg-webos-v15">
+<script>
+(function(){
+ var root=document.documentElement;
+ if(root.classList.contains('android-tv-desktop')){
+  document.getElementById('board-responsive-css').media='not all';
+ }
+})();
+</script>
+<style>
+/* TV-only desktop kiosk: preserve the original desktop styling at compact
+   CSS viewport widths, independently of the mobile stylesheet. */
+html.android-tv-desktop,html.android-tv-desktop body {
+ width:100%;height:100%;overflow:hidden;
+ -webkit-text-size-adjust:100%;
+}
+html.android-tv-desktop #app {
+ width:100%;height:calc(100vh - 26px);min-height:0;
+ height:var(--tv-board-height,calc(100vh - 26px));
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ grid-template-rows:auto auto minmax(0,1fr) auto;
+ grid-template-areas:"header header header" "bday bday bday" "left center right" "footer footer footer";
+ padding:clamp(5px,1.4vh,16px) clamp(8px,1.8vw,24px) 5px;
+ gap:clamp(4px,.8vh,12px);
+ transform:none!important;
+}
+html.android-tv-desktop #app > * {min-width:0}
+html.android-tv-desktop #mobile-theme-controls {display:none!important}
+html.android-tv-desktop #header {
+ display:flex;align-items:center;justify-content:space-between;
+ gap:8px;padding-bottom:clamp(4px,1vh,14px);
+ max-height:26vh;overflow:hidden;
+}
+html.android-tv-desktop #parasha-block {min-width:0;flex:1 1 30%}
+html.android-tv-desktop #clock-block {min-width:0;flex:1 1 40%}
+html.android-tv-desktop #location-block {min-width:0;flex:1 1 30%;align-items:flex-end;text-align:left}
+html.android-tv-desktop #clock {font-size:clamp(28px,6.5vw,12vh);white-space:nowrap}
+html.android-tv-desktop #parasha-name {font-size:clamp(18px,2.8vw,5.5vh)}
+html.android-tv-desktop #hebrew-date {font-size:clamp(14px,2vw,4vh)}
+html.android-tv-desktop #bsd {margin:2px 0;font-size:clamp(10px,1.1vw,16px)}
+html.android-tv-desktop #header #shabbat-combined-img {max-height:18vh;max-width:100%;object-fit:contain}
+html.android-tv-desktop #footer {font-size:clamp(10px,1vw,14px);justify-content:space-between;max-height:none;overflow:visible;gap:3px 8px}
+html.android-tv-desktop #footer-left {flex:1 1 55%;justify-content:flex-start;gap:3px 5px}
+html.android-tv-desktop #footer-right {flex:0 1 40%;width:auto;min-width:0;max-width:45%;align-items:flex-start;text-align:right;font-size:inherit}
+html.android-tv-desktop #footer-left > button,html.android-tv-desktop #footer-left > a[data-elevator-link] {min-height:22px;font-size:inherit}
+</style>
 <!-- Critical narrow-header fallback: protects the date/parasha even if responsive.css is cached or unavailable. -->
 <style>
 @media (orientation: portrait) and (max-width: 768px) {
@@ -2884,9 +2943,22 @@ function isAndroidBoard(){
 let androidFitQueued=false,androidFitBusy=false;
 let androidLastGoodZoom=null;
 const androidBoardDevice=/Android/i.test(navigator.userAgent);
-const androidBoardTV=androidBoardDevice && /Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bTV\b/i.test(navigator.userAgent);
+const androidBoardTV=document.documentElement.classList.contains('android-tv-desktop');
+function fitTVViewport(){
+ if(!androidBoardTV)return;
+ const app=document.getElementById('app');
+ const bar=document.getElementById('copyright-bar');
+ const h=document.documentElement.clientHeight||window.innerHeight;
+ if(app&&h>=120){
+  const room=Math.max(1,h-(bar?bar.offsetHeight:26));
+  const value=room+'px';
+  if(app.style.getPropertyValue('--tv-board-height')!==value)
+   app.style.setProperty('--tv-board-height',value);
+ }
+}
 // Remove stale compact zoom when fullscreen crosses the layout breakpoint.
 function syncAndroidBoardMode(){
+ if(androidBoardTV){fitTVViewport();return;}
  if(!androidBoardDevice)return;
  const root=document.documentElement;
  const compact=window.matchMedia('(max-width: 1024px)').matches;
@@ -2980,7 +3052,7 @@ function requestAndroidFit(){
 // Expand the board's logical dimensions while scaling it down to the visible
 // viewport. Re-measure after prayer, elevator, holiday and birthday updates.
 function isLandscapeBoard(){
- return window.matchMedia('(orientation: landscape) and (max-width: 1024px)').matches;
+ return !androidBoardTV && window.matchMedia('(orientation: landscape) and (max-width: 1024px)').matches;
 }
 let landscapeFitQueued=false, landscapeFitBusy=false;
 function fitLandscapeBoard(){
@@ -3043,7 +3115,7 @@ function requestLandscapeFit(){
  });
 }
 function isCompactLayout(){
- return window.matchMedia('(max-width: 1024px)').matches;
+ return !androidBoardTV && window.matchMedia('(max-width: 1024px)').matches;
 }
 function fitZmanimFont(){
  // Touch layouts grow vertically; kiosk fitting would shrink text unnecessarily.
@@ -3158,7 +3230,7 @@ window.addEventListener('resize',requestColumnFit);
 window.addEventListener('orientationchange',requestColumnFit);
 window.addEventListener('load',requestColumnFit);
 document.addEventListener('fullscreenchange',requestColumnFit);
-if(androidBoardDevice){
+if(androidBoardDevice||androidBoardTV){
  // Android TV browsers may dispatch resize before the viewport settles.
  let androidSettleTimers=[];
  const settleAndroidFullscreen=()=>{
