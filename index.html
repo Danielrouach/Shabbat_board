@@ -19,7 +19,7 @@
     var ua=navigator.userAgent;
     var android=/Android/i.test(ua);
     var tvOverride=/(?:^|[?&])tv=1(?:&|$)/.test(location.search);
-    var tvUA=/Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bTV\b/i.test(ua);
+    var tvUA=/Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bMIBOX[0-9A-Z]*\b|\bTV\b/i.test(ua);
     // TV browsers often omit the TV token; a non-touch Android landscape
     // device with no coarse pointer is a TV/desktop-style kiosk.
     var nonTouchTV=android && !/Mobile/i.test(ua) &&
@@ -4107,7 +4107,7 @@ updateFullscreenButton();
   if(previous&&previous!==current)lastEvent='Viewport changed: '+previous;
   previous=current;
   var ua=navigator.userAgent||'';
-  var tvUA=/Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bTV\b/i.test(ua);
+  var tvUA=/Android TV|Google TV|\bAFT[A-Z0-9]+\b|\bBRAVIA\b|\bSMART-TV\b|\bSHIELD\b|\bMIBOX[0-9A-Z]*\b|\bTV\b/i.test(ua);
   var nonTouch=/Android/i.test(ua)&&!/Mobile/i.test(ua)&&navigator.maxTouchPoints===0&&mq('(orientation: landscape)')==='yes'&&mq('(any-pointer: coarse)')==='no';
   var classes=root.className||'(none)';
   var mode=root.classList.contains('android-tv-desktop')?'TV desktop':root.classList.contains('android-board-recovery')?'Android compact':mq('(max-width: 1024px)')==='yes'?(mq('(orientation: landscape)')==='yes'?'compact landscape':'compact portrait'):'desktop';
