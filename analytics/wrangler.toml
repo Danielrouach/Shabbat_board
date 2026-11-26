@@ -1,0 +1,19 @@
+# Production configuration. Database ID is not a secret; credentials are stored in Cloudflare.
+# Your Cloudflare DNS entry shabbat.rouach.org MUST be orange-cloud/proxied.
+name = "shabbat-analytics"
+main = "src/worker.js"
+compatibility_date = "2026-11-20"
+workers_dev = false
+routes = [{ pattern = "shabbat.rouach.org/datapanel", zone_name = "rouach.org" }, { pattern = "shabbat.rouach.org/datapanel/*", zone_name = "rouach.org" }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shabbat-analytics"
+database_id = "ed650399-f9c9-4820-952c-0aa05bab3367"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html", "**/*.css", "**/dashboard-client.js"]
+
+[triggers]
+crons = ["0 4 * * *"]
