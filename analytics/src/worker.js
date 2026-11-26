@@ -222,7 +222,7 @@ export default {
     if (path === PREFIX + '/app.css' && request.method === 'GET') return response(dashboardCss, 200, 'text/css; charset=utf-8');
     if (path === PREFIX + '/app.js' && request.method === 'GET') return response(dashboardJs, 200, 'text/javascript; charset=utf-8');
     if (path === PREFIX + '/privacy' && request.method === 'GET') return response(privacyHtml, 200, 'text/html; charset=utf-8');
-    if (path === PREFIX + '/health' && request.method === 'GET') return json({ ok: !!env.DB });
+    if (path === PREFIX + '/health' && request.method === 'GET') return json({ ok: configOK(env) });
     if (!configOK(env)) return json({ error: 'Analytics backend is not configured' }, 503);
     try {
       if (path === PREFIX + '/collect' && request.method === 'POST') return await collect(request, env, url);
