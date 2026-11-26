@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="color-scheme" content="dark">
+  <title>אנליטיקה פרטית · לוח שבת</title>
+  <link rel="stylesheet" href="/_analytics/app.css">
+  <script src="/_analytics/app.js" defer></script>
+</head>
+<body>
+  <div class="ambience" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="top">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span><div>
+        <div class="eyebrow">SHABBAT BOARD · PRIVATE ANALYTICS</div>
+        <div class="brand-name">מרכז הבקרה <span>לוח שבת</span></div>
+      </div></div>
+      <div class="top-right"><span class="private-chip"><span class="shield">◈</span> אזור ניהול מאובטח</span></div>
+    </header>
+
+    <section id="loginView" class="login-layout" aria-labelledby="loginTitle">
+      <div class="login-intro">
+        <p class="eyebrow accent">תמונה מלאה · בזמן אמת</p>
+        <h1 id="loginTitle">כל הנתונים שלך.<br><em>במקום אחד.</em></h1>
+        <p>מי צופה בלוח השבת ובמסך המעלית, כמה כניסות נרשמו, מאילו מכשירים ומהיכן נכנסו.</p>
+        <div class="login-points"><span>● ללא Google Analytics</span><span>● נתונים פרטיים</span><span>● עדכון אוטומטי</span></div>
+      </div>
+      <form id="loginForm" class="login-card">
+        <div class="login-symbol" aria-hidden="true">🔐</div>
+        <h2>כניסת מנהל</h2>
+        <p>הזן את הסיסמה הפרטית כדי לצפות בנתונים.</p>
+        <label for="password">סיסמת ניהול</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="הסיסמה שלך" required minlength="1" autofocus>
+        <button class="primary-button" id="loginBtn" type="submit">התחברות לפאנל <span aria-hidden="true">←</span></button>
+        <div id="loginError" role="alert" class="login-error" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section id="dashboardView" hidden>
+      <div class="dashboard-heading">
+        <div>
+          <div class="eyebrow accent">סקירה חיה של האתר</div>
+          <h1>בוקר טוב, מנהל <span class="wave" aria-hidden="true">✦</span></h1>
+          <p>לוח השבת ומסך המעלית · הנתונים נאספים רק מרגע הפעלת השירות</p>
+        </div>
+        <div class="toolbar">
+          <label class="sr-only" for="range">טווח נתונים</label>
+          <select id="range"><option value="day">24 שעות</option><option value="week">7 ימים</option><option value="month">30 ימים</option></select>
+          <button id="refreshBtn" class="quiet-button" type="button" title="רענון נתונים">⟳ רענן</button>
+          <button id="logoutBtn" class="quiet-button logout" type="button">יציאה</button>
+        </div>
+      </div>
+      <div class="live-bar">
+        <span class="live-indicator"></span><strong>מעקב פעיל</strong>
+        <span id="lastUpdated" aria-live="polite">טוען נתונים...</span>
+        <span class="live-help">צופים כעת = דפדפנים שדיווחו ב־90 השניות האחרונות</span>
+      </div>
+
+      <div class="kpis">
+        <article class="kpi featured"><div class="kpi-top"><span>צופים כעת</span><span class="kpi-icon">◉</span></div>
+          <div class="kpi-number" id="activeNumber">—</div><div class="kpi-detail">מסכים / דפדפנים פתוחים</div><div class="kpi-foot"><span class="mini-dot"></span> נתון שמתעדכן אוטומטית</div>
+        </article>
+        <article class="kpi"><div class="kpi-top"><span>צפיות בעמודים</span><span class="kpi-icon">◫</span></div>
+          <div class="kpi-number" id="viewNumber">—</div><div class="kpi-detail">כניסות בתקופה שנבחרה</div><div class="kpi-foot">כולל כניסות חוזרות</div>
+        </article>
+        <article class="kpi"><div class="kpi-top"><span>מבקרים ייחודיים</span><span class="kpi-icon">♙</span></div>
+          <div class="kpi-number" id="uniqueNumber">—</div><div class="kpi-detail">מזהי דפדפן שונים</div><div class="kpi-foot">לא זיהוי אישי של אנשים</div>
+        </article>
+        <article class="kpi"><div class="kpi-top"><span>לוח שבת / מעלית</span><span class="kpi-icon">▤</span></div>
+          <div class="kpi-split"><span id="boardViews">—</span><span class="kpi-slash">/</span><span id="elevatorViews">—</span></div>
+          <div class="kpi-detail">צפיות בכל אחד מהמסכים</div><div class="kpi-foot" id="activeBreakdown">כעת: —</div>
+        </article>
+      </div>
+
+      <div class="panels-two">
+        <section class="panel chart-panel"><div class="panel-heading"><div><div class="overline">תנועה באתר</div><h2>מגמת צפיות</h2></div><span class="panel-meta" id="trendLabel">24 שעות אחרונות</span></div>
+          <div class="chart-area" id="chart" role="img" aria-label="גרף עמודות של צפיות לאורך הזמן"></div><div class="chart-footer"><span>הגרף מציג כניסות חדשות</span><span>שעון ישראל</span></div>
+        </section>
+        <section class="panel"><div class="panel-heading"><div><div class="overline">התפלגות</div><h2>באיזה מסך צופים?</h2></div><span class="panel-meta">בתקופה שנבחרה</span></div>
+          <div class="donut-wrap"><div id="donut" class="donut"><div class="donut-inner"><strong id="donutTotal">0</strong><small>צפיות</small></div></div></div>
+          <div class="legend"><div><span class="legend-dot board"></span><span>לוח שבת</span><strong id="boardLegend">0</strong></div><div><span class="legend-dot elevator"></span><span>מעלית שבת</span><strong id="elevatorLegend">0</strong></div></div>
+        </section>
+      </div>
+
+      <div class="panels-three">
+        <section class="panel"><div class="panel-heading"><div><div class="overline">תוכן</div><h2>עמודים פופולריים</h2></div></div><div id="pagesList" class="bars-list"></div></section>
+        <section class="panel"><div class="panel-heading"><div><div class="overline">טכנולוגיה</div><h2>סוגי מכשירים</h2></div></div><div id="devicesList" class="bars-list"></div></section>
+        <section class="panel"><div class="panel-heading"><div><div class="overline">דפדפנים</div><h2>ממה גולשים?</h2></div></div><div id="browsersList" class="bars-list"></div></section>
+      </div>
+
+      <section class="panel recent-panel"><div class="panel-heading"><div><div class="overline">פרטי פעילות</div><h2>כניסות אחרונות</h2><p>כתובת IP, מדינה/עיר, סוג מכשיר וזמן פעילות. כתובות IP נמחקות מהרשומות לאחר 7 ימים.</p></div><span class="panel-meta">עד 80 כניסות</span></div>
+        <div class="table-scroll"><table><thead><tr><th>פעילות אחרונה</th><th>מסך / כתובת</th><th>מזהה מבקר</th><th>כתובת IP</th><th>מיקום משוער</th><th>מכשיר ודפדפן</th><th>מפנה</th></tr></thead><tbody id="recentRows"></tbody></table></div>
+      </section>
+      <footer class="footer"><span>נתונים לפי שעון ישראל · ללא מעקב Google</span><a href="/_analytics/privacy" target="_blank" rel="noopener noreferrer">מדיניות נתונים ופרטיות</a><span id="errorStatus" role="status"></span></footer>
+    </section>
+  </main>
+</body>
+</html>
