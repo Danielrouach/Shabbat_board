@@ -186,7 +186,7 @@ async function stats(env, url) {
     env.DB.prepare('SELECT device AS name, COUNT(*) AS views FROM visits WHERE started_at >= ? GROUP BY device ORDER BY views DESC').bind(cutoff).all(),
     env.DB.prepare('SELECT browser AS name, COUNT(*) AS views FROM visits WHERE started_at >= ? GROUP BY browser ORDER BY views DESC LIMIT 8').bind(cutoff).all(),
     env.DB.prepare('SELECT country AS name, COUNT(*) AS views FROM visits WHERE started_at >= ? GROUP BY country ORDER BY views DESC LIMIT 8').bind(cutoff).all(),
-    env.DB.prepare('SELECT visitor_id, screen, path, started_at, last_seen, ip, country, city, browser, os, device, referrer FROM visits WHERE last_seen >= ? ORDER BY last_seen DESC LIMIT 80').bind(cutoff).all()
+    env.DB.prepare('SELECT visitor_id, screen, path, started_at, last_seen, CASE WHEN started_at < ? THEN NULL ELSE ip END AS ip, country, city, browser, os, device, referrer FROM visits WHERE last_seen >= ? ORDER BY last_seen DESC LIMIT 80').bind(now - 7 * DAY_MS, cutoff).all()
   ]);
   return json({
     ok: true, now, range, activeWindowSeconds: 90,
@@ -205,8 +205,8 @@ async function stats(env, url) {
 async function cleanup(env) {
   const now = Date.now();
   await env.DB.batch([
-    env.DB.prepare('UPDATE visits SET ip = NULL WHERE ip IS NOT NULL AND started_at < ?').bind(now - 7 * DAY_MS),
-    env.DB.prepare('DELETE FROM visits WHERE started_at < ?').bind(now - 90 * DAY_MS),
+    env.DB.prepare('UPDATE visits SET ip = NULL WHERE ip IS NOT NULL AND started_at < ?').bind(now - 6 * DAY_MS),
+    env.DB.prepare('DELETE FROM visits WHERE started_at < ?').bind(now - 89 * DAY_MS),
     env.DB.prepare('DELETE FROM login_attempts WHERE window_start < ?').bind(now - DAY_MS)
   ]);
 }
