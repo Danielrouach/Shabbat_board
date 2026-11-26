@@ -131,7 +131,7 @@
     txt('elevatorLegend', num(counts.elevator));
     txt('donutTotal', num(counts.board + counts.elevator));
     var percent = counts.board + counts.elevator ? 100 * counts.board / (counts.board + counts.elevator) : 50;
-    byId('donut').style.background = 'conic-gradient(#d7b36a 0% ' + percent + '%, #54ad9d ' + percent + '% 100%)';
+    byId('donut').style.background = (counts.board + counts.elevator) ? 'conic-gradient(#d7b36a 0% ' + percent + '%, #54ad9d ' + percent + '% 100%)' : '#35495b';
     renderTrend(data);
     renderBars('pagesList', data.pages, function (r) { return (r.screen === 'elevator' ? 'מעלית · ' : 'לוח · ') + r.path; });
     renderBars('devicesList', data.devices, function (r) { return r.name || 'אחר'; });
