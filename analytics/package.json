@@ -1,0 +1,15 @@
+{
+  "name": "shabbat-board-private-analytics",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Private Cloudflare Worker and D1 analytics for the Shabbat Board",
+  "scripts": {
+    "check": "node --check src/worker.js && node --check src/dashboard-client.js && node --check ../analytics-tracker.js",
+    "deploy": "wrangler deploy",
+    "migrate:remote": "wrangler d1 execute shabbat-analytics --remote --file=./schema.sql",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.50.0"
+  }
+}
