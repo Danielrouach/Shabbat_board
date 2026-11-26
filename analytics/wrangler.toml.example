@@ -4,7 +4,7 @@ name = "shabbat-analytics"
 main = "src/worker.js"
 compatibility_date = "2026-11-20"
 workers_dev = false
-routes = [{ pattern = "shabbat.rouach.org/_analytics/*", zone_name = "rouach.org" }]
+routes = [{ pattern = "shabbat.rouach.org/datapanel", zone_name = "rouach.org" }, { pattern = "shabbat.rouach.org/datapanel/*", zone_name = "rouach.org" }]
 
 [[d1_databases]]
 binding = "DB"

@@ -1,6 +1,6 @@
 'use strict';
 (function () {
-  var API = '/_analytics/api';
+  var API = '/datapanel/api';
   var nf = new Intl.NumberFormat('he-IL');
   var state = { range: 'day', loading: false };
   function byId(id) { return document.getElementById(id); }

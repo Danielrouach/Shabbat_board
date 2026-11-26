@@ -3,7 +3,7 @@ import dashboardCss from './dashboard.css';
 import dashboardJs from './dashboard-client.js';
 import privacyHtml from './privacy.html';
 
-const PREFIX = '/_analytics';
+const PREFIX = '/datapanel';
 const ACTIVE_MS = 90 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SESSION_MS = 12 * 60 * 60 * 1000;
@@ -166,7 +166,7 @@ async function login(request, env, url) {
   await env.DB.prepare('DELETE FROM login_attempts WHERE ip_hash=?').bind(ipHash).run();
   const token = await signSession(env);
   return json({ ok: true }, 200, {
-    'Set-Cookie': 'sb_admin_session=' + token + '; Path=/_analytics; Max-Age=43200; HttpOnly; Secure; SameSite=Strict'
+    'Set-Cookie': 'sb_admin_session=' + token + '; Path=/datapanel; Max-Age=43200; HttpOnly; Secure; SameSite=Strict'
   });
 }
 async function stats(env, url) {
@@ -229,7 +229,7 @@ export default {
       if (path === PREFIX + '/api/login' && request.method === 'POST') return await login(request, env, url);
       if (path === PREFIX + '/api/logout' && request.method === 'POST') {
         if (!sameOrigin(request, url)) return json({ error: 'Forbidden' }, 403);
-        return json({ ok: true }, 200, { 'Set-Cookie': 'sb_admin_session=; Path=/_analytics; Max-Age=0; HttpOnly; Secure; SameSite=Strict' });
+        return json({ ok: true }, 200, { 'Set-Cookie': 'sb_admin_session=; Path=/datapanel; Max-Age=0; HttpOnly; Secure; SameSite=Strict' });
       }
       if (path === PREFIX + '/api/stats' && request.method === 'GET') {
         if (!await authenticated(request, env)) return json({ error: 'נדרשת כניסה' }, 401);

@@ -1,11 +1,11 @@
 /* Small, ES5-compatible and fail-closed: never affects the kiosk display.
- * Uses a same-origin Cloudflare Worker route only when /_analytics/health responds.
+ * Uses a same-origin Cloudflare Worker route only when /datapanel/health responds.
  * No Google Analytics, cookies, third-party scripts or query parameters.
  */
 (function (w, d) {
   'use strict';
   if (w.SHABBAT_DISABLE_ANALYTICS || !w.XMLHttpRequest) return;
-  var prefix = '/_analytics/';
+  var prefix = '/datapanel/';
   var path = w.location.pathname || '/';
   var screen = /(?:^|\/)elevator(?:\/|\.html|$)/i.test(path) ? 'elevator' : 'board';
   function randomId() {
