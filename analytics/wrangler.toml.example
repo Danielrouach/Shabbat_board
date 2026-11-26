@@ -1,0 +1,19 @@
+# Copy this to wrangler.toml, fill your own D1 database ID, then deploy.
+# Your Cloudflare DNS entry shabbat.rouach.org MUST be orange-cloud/proxied.
+name = "shabbat-analytics"
+main = "src/worker.js"
+compatibility_date = "2026-11-20"
+workers_dev = false
+routes = [{ pattern = "shabbat.rouach.org/_analytics/*", zone_name = "rouach.org" }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shabbat-analytics"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html", "**/*.css", "**/dashboard-client.js"]
+
+[triggers]
+crons = ["0 4 * * *"]
