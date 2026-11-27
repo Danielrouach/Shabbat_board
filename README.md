@@ -174,7 +174,7 @@ python -m http.server 8000
 3. הריצו **npx wrangler d1 create shabbat-analytics** והעתיקו את מזהה מסד הנתונים (UUID).
 4. העתיקו **wrangler.toml.example** אל **wrangler.toml** והחליפו את REPLACE_WITH_D1_DATABASE_ID במזהה שקיבלתם. הקובץ המקומי wrangler.toml מוחרג מ־Git.
 5. הריצו **npx wrangler d1 execute shabbat-analytics --remote --file=./schema.sql** ליצירת טבלאות הנתונים.
-6. הריצו **npx wrangler deploy** לפריסת השירות. לאחר מכן הריצו **npx wrangler secret put ADMIN_PASSWORD** והזינו סיסמה חזקה וייחודית, 16 תווים לפחות; הריצו **npx wrangler secret put SESSION_SECRET** והזינו סוד אקראי של 32 תווים לפחות (למשל יצירה מקומית ב־**openssl rand -hex 32**). אין להזין סיסמאות בקוד או בצ'אט.
+6. הריצו **npx wrangler deploy** לפריסת השירות. לאחר מכן הריצו **npx wrangler secret put ADMIN_PASSWORD** והזינו סיסמה חזקה וייחודית, 8 תווים לפחות; הריצו **npx wrangler secret put SESSION_SECRET** והזינו סוד אקראי של 32 תווים לפחות (למשל יצירה מקומית ב־**openssl rand -hex 32**). אין להזין סיסמאות בקוד או בצ'אט.
 7. בקרו ב־https://shabbat.rouach.org/datapanel/health ובדקו שהוחזר ok:true; היכנסו לכתובת הפאנל, פתחו את לוח השבת במסוף נוסף ורעננו את הפאנל. אם מתקבל 404, בדקו את המסלול ואת מצב ה־Proxy; אם מתקבל ok:false, בדקו סודות שירות וקישור ל־D1.
 
 הפאנל מאמת סיסמה בצד השרת עם הגבלת ניסיונות, ומנפיק עוגיית התחברות HttpOnly, Secure, SameSite=Strict בתוקף 12 שעות. המידע המפורט, כולל כתובות IP, נגיש רק לאחר כניסה. משימת ניקוי יומית מופעלת דרך Cloudflare Cron. אין לפרסם סיסמאות או פרטי כניסות בציבור. מומלץ ליידע את השכנים על איסוף נתוני השימוש ולשתף את קישור מדיניות הפרטיות.

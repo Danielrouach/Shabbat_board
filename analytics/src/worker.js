@@ -26,7 +26,7 @@ function response(body, status = 200, type = 'application/json; charset=utf-8', 
 const json = (data, status = 200, extras = {}) => response(JSON.stringify(data), status, 'application/json; charset=utf-8', extras);
 
 function configOK(env) {
-  return !!(env.DB && typeof env.ADMIN_PASSWORD === 'string' && env.ADMIN_PASSWORD.length >= 16 &&
+  return !!(env.DB && typeof env.ADMIN_PASSWORD === 'string' && env.ADMIN_PASSWORD.length >= 8 &&
     typeof env.SESSION_SECRET === 'string' && env.SESSION_SECRET.length >= 32);
 }
 function hexId(value) {
